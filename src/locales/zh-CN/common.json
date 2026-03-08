@@ -49,7 +49,16 @@
     "title": "设置与治理",
     "description": "这里可以管理语言、主题、项目根路径与自定义扫描路径。",
     "language": "界面语言",
+    "languageOptions": {
+      "zhCN": "简体中文",
+      "enUS": "English",
+      "jaJP": "日本語"
+    },
     "themeMode": "主题模式",
+    "sections": {
+      "basic": "基础设置",
+      "scan": "扫描配置"
+    },
     "themeModes": {
       "system": "跟随系统",
       "light": "浅色",

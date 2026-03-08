@@ -23,7 +23,7 @@ export function SettingsPage() {
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-box border border-base-300 bg-base-100 p-6">
-          <h3 className="text-lg font-semibold">基础设置</h3>
+          <h3 className="text-lg font-semibold">{t('settings.sections.basic')}</h3>
           <div className="mt-5 space-y-5">
             <label className="form-control">
               <span className="mb-2 text-sm font-medium">{t('settings.language')}</span>
@@ -54,7 +54,7 @@ export function SettingsPage() {
         </div>
 
         <div className="rounded-box border border-base-300 bg-base-100 p-6">
-          <h3 className="text-lg font-semibold">扫描配置</h3>
+          <h3 className="text-lg font-semibold">{t('settings.sections.scan')}</h3>
           <div className="mt-5 space-y-5">
             <label className="form-control">
               <span className="mb-2 text-sm font-medium">{t('settings.projectRoots')}</span>

@@ -49,7 +49,16 @@
     "title": "Settings & Governance",
     "description": "Manage language, theme, project roots, and custom scan roots here.",
     "language": "Interface language",
+    "languageOptions": {
+      "zhCN": "Simplified Chinese",
+      "enUS": "English",
+      "jaJP": "Japanese"
+    },
     "themeMode": "Theme mode",
+    "sections": {
+      "basic": "Basic settings",
+      "scan": "Scan configuration"
+    },
     "themeModes": {
       "system": "Follow system",
       "light": "Light",

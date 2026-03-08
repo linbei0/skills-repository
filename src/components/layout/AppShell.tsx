@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
+import { resolveThemeMode } from '../../lib/theme'
+import type { AppLocale } from '../../types/app'
 import { useAppStore } from '../../stores/use-app-store'
 import { useSettingsStore } from '../../stores/use-settings-store'
 import { useTaskStore } from '../../stores/use-task-store'
@@ -32,14 +34,31 @@ export function AppShell() {
   const overview = useAppStore((state) => state.overview)
   const system = useAppStore((state) => state.system)
   const settings = useSettingsStore((state) => state.settings)
+  const setLanguage = useSettingsStore((state) => state.setLanguage)
   const setThemeMode = useSettingsStore((state) => state.setThemeMode)
   const saveSettings = useSettingsStore((state) => state.save)
+  const saving = useSettingsStore((state) => state.saving)
   const tasks = useTaskStore((state) => state.tasks)
 
   const activeTasks = useMemo(
     () => tasks.filter((task) => task.status === 'queued' || task.status === 'running'),
     [tasks],
   )
+  const resolvedTheme = system
+    ? resolveThemeMode(settings.themeMode, system.theme)
+    : 'skills-light'
+  const isDarkTheme = resolvedTheme === 'skills-dark'
+
+  const languageOptions: Array<{ value: AppLocale; label: string }> = [
+    { value: 'zh-CN', label: t('settings.languageOptions.zhCN') },
+    { value: 'en-US', label: t('settings.languageOptions.enUS') },
+    { value: 'ja-JP', label: t('settings.languageOptions.jaJP') },
+  ]
+
+  const updateLanguageQuickly = async (language: AppLocale) => {
+    setLanguage(language)
+    await saveSettings()
+  }
 
   const toggleThemeQuickly = async () => {
     const nextTheme = settings.themeMode === 'dark' ? 'light' : 'dark'
@@ -48,8 +67,8 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex min-h-screen bg-base-200 text-base-content">
-      <aside className="flex w-72 flex-col border-r border-base-300 bg-base-100/90 backdrop-blur">
+    <div className="flex h-screen overflow-hidden bg-base-200 text-base-content">
+      <aside className="sticky top-0 flex h-screen w-72 shrink-0 flex-col overflow-y-auto border-r border-base-300 bg-base-100/90 backdrop-blur">
         <div className="border-b border-base-300 px-5 py-5">
           <p className="text-xs uppercase tracking-[0.24em] text-primary">skills manager</p>
           <h1 className="mt-2 text-2xl font-semibold">{t('app.title')}</h1>
@@ -85,7 +104,7 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-base-300 bg-base-100/90 px-6 py-4 backdrop-blur">
           <div className="flex-1">
             <label className="input input-bordered flex items-center gap-2 bg-base-200">
@@ -99,14 +118,30 @@ export function AppShell() {
             </label>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full bg-base-200 px-3 py-2 text-xs font-medium text-base-content/70 md:flex">
+          <label className="hidden items-center gap-2 rounded-full bg-base-200 px-3 py-2 text-xs font-medium text-base-content/70 md:flex">
             <span>{t('topbar.language')}:</span>
-            <span>{settings.language}</span>
-          </div>
+            <select
+              className="select select-ghost select-xs min-h-0 h-auto border-0 bg-transparent pr-6 font-medium text-base-content focus:outline-none"
+              value={settings.language}
+              onChange={(event) => void updateLanguageQuickly(event.target.value as AppLocale)}
+              disabled={saving}
+              aria-label={t('topbar.language')}
+            >
+              {languageOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-          <button className="btn btn-ghost btn-sm" onClick={() => void toggleThemeQuickly()}>
-            <i className="hn hn-sun" aria-hidden />
-            <span>{t('topbar.theme')}</span>
+          <button
+            className="btn btn-ghost btn-circle btn-sm text-xl"
+            onClick={() => void toggleThemeQuickly()}
+            aria-label={t('topbar.theme')}
+            title={t('topbar.theme')}
+          >
+            <i className={cn('hn', isDarkTheme ? 'hn-sun' : 'hn-moon')} aria-hidden />
           </button>
 
           <button className="btn btn-primary btn-sm" onClick={() => setTasksOpen((open) => !open)}>
@@ -118,8 +153,8 @@ export function AppShell() {
           </button>
         </header>
 
-        <main className="flex flex-1 gap-6 overflow-hidden px-6 py-6">
-          <section className="min-w-0 flex-1">
+        <main className="flex min-h-0 flex-1 gap-6 overflow-hidden px-6 py-6">
+          <section className="min-w-0 flex-1 overflow-y-auto pr-1">
             <div className="mb-6 grid gap-4 md:grid-cols-4">
               <div className="rounded-box border border-base-300 bg-base-100 p-4">
                 <p className="text-xs uppercase tracking-wide text-base-content/55">
@@ -152,7 +187,7 @@ export function AppShell() {
 
           <aside
             className={cn(
-              'w-full max-w-[420px] shrink-0 rounded-box border border-base-300 bg-base-100 transition-all duration-200',
+              'w-full max-w-[420px] shrink-0 self-start rounded-box border border-base-300 bg-base-100 transition-all duration-200',
               tasksOpen
                 ? 'translate-x-0 opacity-100'
                 : 'pointer-events-none hidden opacity-0 xl:block xl:translate-x-4',
