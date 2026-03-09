@@ -187,11 +187,31 @@ impl AgentRegistry {
         &self.agents
     }
 
+    pub fn agent_by_label(&self, label: &str) -> Option<&AgentCapability> {
+        self.agents.iter().find(|agent| agent.label == label)
+    }
+
     pub fn global_path_claims(&self) -> &[AgentPathClaim] {
         &self.global_path_claims
     }
 
     pub fn project_path_claims(&self) -> &[AgentPathClaim] {
         &self.project_path_claims
+    }
+
+    pub fn preferred_global_path_for(&self, label: &str) -> Option<&str> {
+        self.global_path_claims
+            .iter()
+            .filter(|claim| claim.agent_label == label)
+            .max_by_key(|claim| claim.priority)
+            .map(|claim| claim.path.as_str())
+    }
+
+    pub fn preferred_project_path_for(&self, label: &str) -> Option<&str> {
+        self.project_path_claims
+            .iter()
+            .filter(|claim| claim.agent_label == label)
+            .max_by_key(|claim| claim.priority)
+            .map(|claim| claim.path.as_str())
     }
 }

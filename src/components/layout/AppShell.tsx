@@ -13,6 +13,7 @@ const navItems = [
   { to: '/skills', key: 'skills', icon: 'hn-folder' },
   { to: '/market', key: 'market', icon: 'hn-search' },
   { to: '/security', key: 'security', icon: 'hn-shield' },
+  { to: '/templates', key: 'templates', icon: 'hn-list' },
   { to: '/settings', key: 'settings', icon: 'hn-settings' },
 ] as const
 

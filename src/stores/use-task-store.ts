@@ -4,9 +4,16 @@ import {
   onTaskFailed,
   onTaskProgress,
 } from '../lib/tauri-client'
-import type { ScanSkillsResult, TaskProgress } from '../types/app'
+import type {
+  DistributionResult,
+  ScanSkillsResult,
+  TaskProgress,
+  TemplateInjectionResult,
+} from '../types/app'
 import { useAppStore } from './use-app-store'
+import { useSecurityStore } from './use-security-store'
 import { useSkillsStore } from './use-skills-store'
+import { useTemplatesStore } from './use-templates-store'
 
 interface TaskStoreState {
   attached: boolean
@@ -49,6 +56,21 @@ export const useTaskStore = create<TaskStoreState>((set, get) => ({
         useSkillsStore.getState().applyScanResult(result)
         useAppStore.getState().setOverview(result.overview)
       }
+
+      if (event.taskType === 'distribute' && event.payload) {
+        const result = event.payload as DistributionResult
+        useSkillsStore.getState().applyDistributionResult(result)
+      }
+
+      if (event.taskType === 'rescan_security') {
+        void useSecurityStore.getState().refresh()
+      }
+
+      if (event.taskType === 'inject_template' && event.payload) {
+        const result = event.payload as TemplateInjectionResult
+        useTemplatesStore.getState().applyInjectionResult(result)
+        void useSecurityStore.getState().refresh()
+      }
     }
 
     const unlistenProgress = await onTaskProgress((event) => {
@@ -57,6 +79,25 @@ export const useTaskStore = create<TaskStoreState>((set, get) => ({
     const unlistenCompleted = await onTaskCompleted(handleCompletedLikeEvent)
     const unlistenFailed = await onTaskFailed((event) => {
       get().upsertTask(event)
+
+      if (event.taskType === 'distribute' && event.payload) {
+        const result = event.payload as DistributionResult
+        useSkillsStore.getState().applyDistributionResult(result)
+      }
+
+      if (event.taskType === 'rescan_security') {
+        void useSecurityStore.getState().refresh()
+      }
+
+      if (event.taskType === 'inject_template') {
+        if (event.payload) {
+          const result = event.payload as TemplateInjectionResult
+          useTemplatesStore.getState().applyInjectionResult(result)
+        } else {
+          useTemplatesStore.getState().setInjectionError(event.message)
+        }
+        void useSecurityStore.getState().refresh()
+      }
     })
 
     return () => {

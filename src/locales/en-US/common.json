@@ -9,6 +9,7 @@
     "skills": "My Skills",
     "market": "Market",
     "security": "Security",
+    "templates": "Templates",
     "settings": "Settings"
   },
   "topbar": {
@@ -44,32 +45,158 @@
     "empty": "No skills discovered yet. Run a scan first.",
     "sharedPath": "Compatible agents: {{agents}}",
     "aliases": "Alias matches: {{agents}}",
-    "priority": "Path priority: {{value}}"
+    "priority": "Path priority: {{value}}",
+    "distributionStatus": "Distribution status",
+    "distributionCount": "{{count}} distribution targets",
+    "distributionEmpty": "Not distributed yet",
+    "actions": "Actions",
+    "distribute": "Distribute to default path",
+    "distributionUnavailable": "Custom-source skills do not support one-click distribution yet",
+    "statusValues": {
+      "notDistributed": "Not distributed",
+      "active": "Distributed",
+      "failed": "Distribution failed"
+    }
   },
   "market": {
     "title": "Market",
-    "description": "Marketplace aggregation will be connected in the next phase. This page preserves the structure and entry point."
+    "description": "The market page now searches a real provider with SQLite-backed cache. Install flow and risk prompts will be connected in later tasks.",
+    "searchPlaceholder": "Search skills, repository names, or use cases",
+    "search": "Search",
+    "searching": "Searching...",
+    "helper": "GitHub is enabled by default in this build. Cache hits and provider failures are shown explicitly.",
+    "providersTitle": "Provider status",
+    "providersEmpty": "No search has been run yet. Provider status, cache hits, and failure reasons will appear here after searching.",
+    "providerReady": "The provider returned live results successfully.",
+    "providerStatuses": {
+      "ok": "Live",
+      "cached": "Cached",
+      "error": "Error",
+      "unavailable": "Unavailable in this build"
+    },
+    "cacheHit": "Cache hit",
+    "resultsTitle": "Results",
+    "resultsCount": "{{count}} results",
+    "idle": "Enter a keyword to search a real provider. Leaving it empty returns the default skills-related query.",
+    "empty": "No matching results were found. Try a broader keyword or search again later.",
+    "noDescription": "This repository does not provide a description yet.",
+    "openSource": "Open repository",
+    "author": "Author: {{author}}",
+    "version": "Default branch: {{version}}"
   },
   "security": {
     "title": "Security",
-    "description": "The security engine will be enabled in the next phase. For now, observe the scan foundation through the task center.",
-    "notConnectedTitle": "Security engine not connected",
-    "notConnectedDescription": "This phase keeps the information architecture and entry point only. Fake risk counts are no longer shown; real results will appear after scan rules, scoring, and blocking are fully connected.",
+    "description": "This page now shows real pre-install scan results and security rescans. High-risk skills are blocked; medium-risk skills keep review guidance.",
+    "rescan": "Rescan installed skills",
+    "rescanning": "Scanning...",
+    "liveData": "Live data",
+    "reportsTitle": "Security reports",
+    "reportsCount": "{{count}} reports",
+    "loading": "Loading security reports...",
+    "empty": "No security reports are available yet. Install a market skill or trigger a rescan first.",
+    "unlinkedSkill": "Temporary scan without linked skill",
+    "temporaryScan": "Temporary scan directory",
+    "blockedBadge": "Blocked",
+    "score": "Score: {{score}}",
+    "scope": "Scope: {{scope}}",
+    "issuesTitle": "Issues",
+    "issuesEmpty": "No risk rules were triggered.",
+    "recommendationsTitle": "Recommended actions",
+    "levels": {
+      "safe": "Safe",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
     "cards": {
       "safe": {
         "label": "Safe / Low",
-        "title": "Waiting for real scan results",
-        "description": "Real safe and low-risk counts will appear only after the security rules engine is connected."
+        "title": "Safe to continue",
+        "description": "Safe and low-risk skills now come from real scan results and can move through the next governance steps."
       },
       "medium": {
         "label": "Medium",
-        "title": "Waiting for risk scoring",
-        "description": "The UI no longer shows a fake 0 for medium-risk skills. Future work will expose matched rules and recommended actions."
+        "title": "Needs review",
+        "description": "Medium-risk results keep matched rules and recommended actions so the user can decide whether to continue."
       },
       "blocked": {
         "label": "Blocked",
-        "title": "Waiting for blocking workflow",
-        "description": "High-risk blocking is not implemented yet. Future results will include blocking reasons, logs, and recovery guidance."
+        "title": "Blocked by policy",
+        "description": "High-risk skills are now blocked before they enter the canonical store, with an explorable report."
+      }
+    }
+  },
+  "templates": {
+    "title": "Templates",
+    "description": "Manage reusable skill bundles and inject them into project-level agent paths with explicit results.",
+    "create": "New template",
+    "createTitle": "Create template",
+    "editTitle": "Edit template",
+    "builtin": "Built-in",
+    "listTitle": "Template list",
+    "count": "{{count}} templates",
+    "loading": "Loading templates...",
+    "empty": "No templates available yet. Create one to start the injection workflow.",
+    "noDescription": "No description provided.",
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "scope": "Scope",
+      "tags": "Tags",
+      "targetAgents": "Target agents",
+      "itemType": "Item type",
+      "skillRef": "Skill reference",
+      "displayName": "Display name",
+      "required": "Required"
+    },
+    "placeholders": {
+      "name": "Frontend starter",
+      "description": "Bundle for a new project",
+      "tags": "react, vite, typescript",
+      "targetAgents": "Claude Code, OpenAI Codex",
+      "skillRef": "skill id, source url, or market ref",
+      "displayName": "Readable item name"
+    },
+    "scopeOptions": {
+      "user": "User",
+      "system": "System"
+    },
+    "itemsTitle": "Template items",
+    "itemsEmpty": "Add at least one template item to describe what should be injected.",
+    "addItem": "Add item",
+    "removeItem": "Remove item",
+    "save": "Save template",
+    "saving": "Saving...",
+    "delete": "Delete template",
+    "deleting": "Deleting...",
+    "injection": {
+      "title": "Inject into project",
+      "description": "Reuse installed skills or install missing ones, then distribute them into the selected project.",
+      "selectTemplateFirst": "Select or create a template before injecting.",
+      "projectPath": "Target project path",
+      "projectPlaceholder": "E:/workspace/demo-project",
+      "overwriteStrategy": "Overwrite strategy",
+      "overwriteOptions": {
+        "skipExisting": "Skip existing targets",
+        "overwrite": "Overwrite existing targets"
+      },
+      "inject": "Inject template",
+      "injecting": "Injecting...",
+      "statuses": {
+        "completed": "Injection completed",
+        "partial": "Injection completed with partial failures",
+        "failed": "Injection failed"
+      },
+      "itemStatuses": {
+        "installed": "Installed",
+        "skipped": "Skipped",
+        "failed": "Failed"
+      },
+      "summary": {
+        "installed": "Installed: {{count}}",
+        "skipped": "Skipped: {{count}}",
+        "failed": "Failed: {{count}}"
       }
     }
   },

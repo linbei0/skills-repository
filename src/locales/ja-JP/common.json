@@ -9,6 +9,7 @@
     "skills": "My Skills",
     "market": "マーケット",
     "security": "セキュリティ",
+    "templates": "テンプレート",
     "settings": "設定"
   },
   "topbar": {
@@ -44,32 +45,158 @@
     "empty": "まだ skill が見つかっていません。先にスキャンを実行してください。",
     "sharedPath": "互換 Agent: {{agents}}",
     "aliases": "別名ヒット: {{agents}}",
-    "priority": "パス優先度: {{value}}"
+    "priority": "パス優先度: {{value}}",
+    "distributionStatus": "配布状態",
+    "distributionCount": "{{count}} 件の配布先",
+    "distributionEmpty": "まだ配布されていません",
+    "actions": "操作",
+    "distribute": "既定パスへ配布",
+    "distributionUnavailable": "カスタム由来の skill はまだワンクリック配布に対応していません",
+    "statusValues": {
+      "notDistributed": "未配布",
+      "active": "配布済み",
+      "failed": "配布失敗"
+    }
   },
   "market": {
     "title": "マーケット",
-    "description": "マーケット集約は次フェーズで接続します。このページでは構造と入口のみを保持します。"
+    "description": "このページは実際の provider 検索と SQLite キャッシュに接続されています。インストールとリスク表示は後続タスクで接続します。",
+    "searchPlaceholder": "skills、リポジトリ名、用途を検索",
+    "search": "検索",
+    "searching": "検索中...",
+    "helper": "このビルドでは GitHub provider を既定で有効化しています。キャッシュ命中や provider 失敗は明示的に表示します。",
+    "providersTitle": "Provider 状態",
+    "providersEmpty": "まだ検索は実行されていません。検索後に provider 状態、キャッシュ命中、失敗理由がここに表示されます。",
+    "providerReady": "provider はリアルタイム結果を正常に返しました。",
+    "providerStatuses": {
+      "ok": "ライブ結果",
+      "cached": "キャッシュ命中",
+      "error": "失敗",
+      "unavailable": "このビルドでは未対応"
+    },
+    "cacheHit": "キャッシュ命中",
+    "resultsTitle": "検索結果",
+    "resultsCount": "{{count}} 件",
+    "idle": "キーワードを入力すると実際の provider を検索します。空のままなら既定の skills 関連クエリを使います。",
+    "empty": "一致する結果は見つかりませんでした。より広いキーワードで再検索するか、時間をおいて試してください。",
+    "noDescription": "このリポジトリには説明がありません。",
+    "openSource": "リポジトリを開く",
+    "author": "作者: {{author}}",
+    "version": "既定ブランチ: {{version}}"
   },
   "security": {
     "title": "セキュリティ",
-    "description": "セキュリティエンジンは次フェーズで有効化されます。現時点ではタスクセンターでスキャン基盤を確認できます。",
-    "notConnectedTitle": "セキュリティエンジンは未接続です",
-    "notConnectedDescription": "このフェーズでは情報設計と入口だけを維持しています。偽のリスク件数は表示せず、実際の結果はスキャンルール・スコアリング・阻断処理が接続された後に表示されます。",
+    "description": "このページでは、実際の事前スキャン結果とセキュリティ再スキャン結果を表示します。高リスクは阻断され、中リスクには確認用の提案が残ります。",
+    "rescan": "インストール済み skill を再スキャン",
+    "rescanning": "スキャン中...",
+    "liveData": "実データ",
+    "reportsTitle": "セキュリティレポート",
+    "reportsCount": "{{count}} 件のレポート",
+    "loading": "セキュリティレポートを読み込み中...",
+    "empty": "まだセキュリティレポートはありません。先にマーケットからインストールするか再スキャンを実行してください。",
+    "unlinkedSkill": "skill 未関連の一時スキャン",
+    "temporaryScan": "一時スキャンディレクトリ",
+    "blockedBadge": "阻断済み",
+    "score": "スコア: {{score}}",
+    "scope": "範囲: {{scope}}",
+    "issuesTitle": "検出された問題",
+    "issuesEmpty": "リスクルールには一致しませんでした。",
+    "recommendationsTitle": "推奨アクション",
+    "levels": {
+      "safe": "安全",
+      "low": "低リスク",
+      "medium": "中リスク",
+      "high": "高リスク",
+      "critical": "重大"
+    },
     "cards": {
       "safe": {
         "label": "Safe / Low",
-        "title": "実際のスキャン結果待ち",
-        "description": "safe / low リスク件数は、セキュリティルールエンジン接続後にのみ表示されます。"
+        "title": "継続可能",
+        "description": "safe / low リスクの skill は実スキャン結果に基づき、次のガバナンス操作へ進めます。"
       },
       "medium": {
         "label": "Medium",
-        "title": "リスクスコア待ち",
-        "description": "中リスク件数を 0 で偽装することはやめました。今後は一致ルールと推奨アクションを表示します。"
+        "title": "要確認",
+        "description": "中リスク結果には一致ルールと推奨アクションを残し、継続可否をユーザーが判断できます。"
       },
       "blocked": {
         "label": "Blocked",
-        "title": "阻断ワークフロー待ち",
-        "description": "高リスク阻断はまだ未実装です。今後は阻断理由、ログ、復旧ガイダンスを返します。"
+        "title": "ポリシーにより阻断",
+        "description": "高リスク skill は canonical store に入る前に阻断され、説明可能なレポートが残ります。"
+      }
+    }
+  },
+  "templates": {
+    "title": "テンプレート",
+    "description": "再利用可能な skill の組み合わせを管理し、明示的な結果付きでプロジェクト単位の Agent パスへ注入します。",
+    "create": "新規テンプレート",
+    "createTitle": "テンプレート作成",
+    "editTitle": "テンプレート編集",
+    "builtin": "内蔵",
+    "listTitle": "テンプレート一覧",
+    "count": "{{count}} 件のテンプレート",
+    "loading": "テンプレートを読み込み中...",
+    "empty": "まだテンプレートがありません。まずテンプレートを作成してください。",
+    "noDescription": "説明はありません。",
+    "fields": {
+      "name": "名前",
+      "description": "説明",
+      "scope": "範囲",
+      "tags": "タグ",
+      "targetAgents": "対象 Agent",
+      "itemType": "項目タイプ",
+      "skillRef": "Skill 参照",
+      "displayName": "表示名",
+      "required": "必須"
+    },
+    "placeholders": {
+      "name": "フロントエンド初期化テンプレート",
+      "description": "新規プロジェクト向けの skill バンドル",
+      "tags": "react, vite, typescript",
+      "targetAgents": "Claude Code, OpenAI Codex",
+      "skillRef": "skill id、source url、market ref",
+      "displayName": "分かりやすい表示名"
+    },
+    "scopeOptions": {
+      "user": "ユーザー",
+      "system": "システム"
+    },
+    "itemsTitle": "テンプレート項目",
+    "itemsEmpty": "少なくとも 1 件のテンプレート項目を追加してください。",
+    "addItem": "項目追加",
+    "removeItem": "項目削除",
+    "save": "テンプレート保存",
+    "saving": "保存中...",
+    "delete": "テンプレート削除",
+    "deleting": "削除中...",
+    "injection": {
+      "title": "プロジェクトへ注入",
+      "description": "既存の skill を再利用し、足りないものは先にインストールしてから対象プロジェクトへ配布します。",
+      "selectTemplateFirst": "注入前にテンプレートを選択または作成してください。",
+      "projectPath": "対象プロジェクトパス",
+      "projectPlaceholder": "E:/workspace/demo-project",
+      "overwriteStrategy": "上書き戦略",
+      "overwriteOptions": {
+        "skipExisting": "既存ターゲットをスキップ",
+        "overwrite": "既存ターゲットを上書き"
+      },
+      "inject": "テンプレート注入",
+      "injecting": "注入中...",
+      "statuses": {
+        "completed": "注入完了",
+        "partial": "一部失敗で完了",
+        "failed": "注入失敗"
+      },
+      "itemStatuses": {
+        "installed": "導入済み",
+        "skipped": "スキップ",
+        "failed": "失敗"
+      },
+      "summary": {
+        "installed": "導入: {{count}}",
+        "skipped": "スキップ: {{count}}",
+        "failed": "失敗: {{count}}"
       }
     }
   },

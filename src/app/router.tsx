@@ -5,6 +5,7 @@ import { OverviewPage } from '../pages/OverviewPage'
 import { SecurityPage } from '../pages/SecurityPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { SkillsPage } from '../pages/SkillsPage'
+import { TemplatesPage } from '../pages/TemplatesPage'
 
 export const router = createHashRouter([
   {
@@ -15,6 +16,7 @@ export const router = createHashRouter([
       { path: 'skills', element: <SkillsPage /> },
       { path: 'market', element: <MarketPage /> },
       { path: 'security', element: <SecurityPage /> },
+      { path: 'templates', element: <TemplatesPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

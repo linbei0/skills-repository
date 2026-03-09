@@ -9,6 +9,7 @@
     "skills": "我的 Skills",
     "market": "市场",
     "security": "安全",
+    "templates": "模板",
     "settings": "设置"
   },
   "topbar": {
@@ -44,32 +45,158 @@
     "empty": "尚未发现任何 skill。请先执行扫描。",
     "sharedPath": "兼容 Agent：{{agents}}",
     "aliases": "别名命中：{{agents}}",
-    "priority": "路径优先级：{{value}}"
+    "priority": "路径优先级：{{value}}",
+    "distributionStatus": "分发状态",
+    "distributionCount": "共 {{count}} 个分发目标",
+    "distributionEmpty": "尚未分发",
+    "actions": "操作",
+    "distribute": "分发到默认路径",
+    "distributionUnavailable": "自定义来源暂不支持一键分发",
+    "statusValues": {
+      "notDistributed": "未分发",
+      "active": "已分发",
+      "failed": "分发失败"
+    }
   },
   "market": {
     "title": "市场",
-    "description": "市场聚合将在下一阶段接入真实数据源。本页仅保留结构与入口。"
+    "description": "市场页现已接入真实 provider 搜索与缓存结果；安装与风险提示将在后续任务中继续补齐。",
+    "searchPlaceholder": "搜索 skills、仓库名称或用途",
+    "search": "搜索",
+    "searching": "搜索中...",
+    "helper": "当前默认接入 GitHub provider。若 provider 不可用或缓存命中，页面会明确展示原因。",
+    "providersTitle": "Provider 状态",
+    "providersEmpty": "尚未发起搜索。搜索后这里会展示 provider 状态、缓存命中与错误原因。",
+    "providerReady": "provider 已正常返回实时结果。",
+    "providerStatuses": {
+      "ok": "实时结果",
+      "cached": "缓存命中",
+      "error": "请求失败",
+      "unavailable": "未在当前构建中启用"
+    },
+    "cacheHit": "缓存命中",
+    "resultsTitle": "搜索结果",
+    "resultsCount": "共 {{count}} 条结果",
+    "idle": "输入关键词后即可检索真实 provider 数据。若留空，将返回默认 skills 相关结果。",
+    "empty": "未找到匹配结果。可以尝试更通用的关键词，或稍后重试。",
+    "noDescription": "该仓库暂未提供描述。",
+    "openSource": "打开仓库",
+    "author": "作者：{{author}}",
+    "version": "默认分支：{{version}}"
   },
   "security": {
     "title": "安全",
-    "description": "安全扫描引擎将在下一阶段启用。当前可通过任务中心观察扫描基础流程。",
-    "notConnectedTitle": "安全引擎尚未接通",
-    "notConnectedDescription": "当前阶段只保留安全中心的信息架构与入口，不展示伪造的风险统计。后续阶段会在真实扫描规则、风险评分与阻断策略接通后返回可解释结果。",
+    "description": "这里展示真实的安全预扫描与重扫结果。高风险会被阻断，中风险会保留建议动作。",
+    "rescan": "重新扫描已安装技能",
+    "rescanning": "扫描中...",
+    "liveData": "真实数据",
+    "reportsTitle": "安全报告",
+    "reportsCount": "共 {{count}} 份报告",
+    "loading": "正在读取安全报告...",
+    "empty": "尚未产生安全报告。先从市场安装技能或执行重扫。",
+    "unlinkedSkill": "未关联 skill 的临时扫描",
+    "temporaryScan": "临时扫描目录",
+    "blockedBadge": "已阻断",
+    "score": "评分：{{score}}",
+    "scope": "范围：{{scope}}",
+    "issuesTitle": "命中问题",
+    "issuesEmpty": "未命中风险规则。",
+    "recommendationsTitle": "建议动作",
+    "levels": {
+      "safe": "安全",
+      "low": "低风险",
+      "medium": "中风险",
+      "high": "高风险",
+      "critical": "严重"
+    },
     "cards": {
       "safe": {
         "label": "低风险",
-        "title": "等待真实扫描结果",
-        "description": "只有在安全规则引擎接通后，才会显示真实的 safe/low 风险数量。"
+        "title": "可继续使用",
+        "description": "safe / low 风险技能来自真实扫描结果，可继续后续治理动作。"
       },
       "medium": {
         "label": "中风险",
-        "title": "等待风险评分模型",
-        "description": "当前不再用 0 假装中风险数量；后续会展示命中规则、建议动作与解释。"
+        "title": "需要人工复核",
+        "description": "中风险结果会保留命中规则和建议动作，允许继续但需要人工确认。"
       },
       "blocked": {
         "label": "已阻断",
-        "title": "等待阻断链路接通",
-        "description": "高风险默认阻断尚未完成实现，后续会返回阻断原因、日志与恢复建议。"
+        "title": "已被策略阻断",
+        "description": "高风险结果会在进入 canonical store 前被阻断，并留下可解释报告。"
+      }
+    }
+  },
+  "templates": {
+    "title": "模板",
+    "description": "在这里维护可复用的 skill 组合，并把它们注入到项目级 Agent 路径中，且全程返回显式结果。",
+    "create": "新建模板",
+    "createTitle": "创建模板",
+    "editTitle": "编辑模板",
+    "builtin": "内置",
+    "listTitle": "模板列表",
+    "count": "共 {{count}} 个模板",
+    "loading": "正在读取模板...",
+    "empty": "还没有模板。先创建一个模板，再执行注入。",
+    "noDescription": "暂无描述。",
+    "fields": {
+      "name": "名称",
+      "description": "描述",
+      "scope": "范围",
+      "tags": "标签",
+      "targetAgents": "目标 Agent",
+      "itemType": "条目类型",
+      "skillRef": "Skill 引用",
+      "displayName": "显示名称",
+      "required": "必需"
+    },
+    "placeholders": {
+      "name": "前端初始化模板",
+      "description": "适用于新项目的 skills 组合",
+      "tags": "react, vite, typescript",
+      "targetAgents": "Claude Code, OpenAI Codex",
+      "skillRef": "skill id、source url 或 market ref",
+      "displayName": "便于识别的名称"
+    },
+    "scopeOptions": {
+      "user": "用户",
+      "system": "系统"
+    },
+    "itemsTitle": "模板条目",
+    "itemsEmpty": "至少添加一个模板条目，定义需要注入的 skill。",
+    "addItem": "添加条目",
+    "removeItem": "移除条目",
+    "save": "保存模板",
+    "saving": "保存中...",
+    "delete": "删除模板",
+    "deleting": "删除中...",
+    "injection": {
+      "title": "注入到项目",
+      "description": "复用已安装 skill，或先安装缺失项，再把它们分发到目标项目。",
+      "selectTemplateFirst": "请先选择或创建模板，再执行注入。",
+      "projectPath": "目标项目路径",
+      "projectPlaceholder": "E:/workspace/demo-project",
+      "overwriteStrategy": "覆盖策略",
+      "overwriteOptions": {
+        "skipExisting": "跳过已存在目标",
+        "overwrite": "覆盖已存在目标"
+      },
+      "inject": "执行注入",
+      "injecting": "注入中...",
+      "statuses": {
+        "completed": "注入完成",
+        "partial": "注入完成，但部分条目失败",
+        "failed": "注入失败"
+      },
+      "itemStatuses": {
+        "installed": "已安装",
+        "skipped": "已跳过",
+        "failed": "失败"
+      },
+      "summary": {
+        "installed": "已安装：{{count}}",
+        "skipped": "已跳过：{{count}}",
+        "failed": "失败：{{count}}"
       }
     }
   },
