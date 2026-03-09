@@ -13,6 +13,7 @@ import { useTaskStore } from './stores/use-task-store'
 function App() {
   const { i18n } = useTranslation()
   const startedRef = useRef(false)
+  const initialScanStartedRef = useRef(false)
   const [startupStep, setStartupStep] = useState('准备附加任务监听')
   const { bootstrapped, bootstrapping, error, setBootstrapPayload, setBootstrapError } =
     useAppStore()
@@ -28,15 +29,25 @@ function App() {
 
     let mounted = true
     let disposeTasks: VoidFunction | undefined
+    let bootstrapGuardsActive = true
+
+    const removeBootstrapGlobalListeners = () => {
+      if (!bootstrapGuardsActive) return
+      bootstrapGuardsActive = false
+      window.removeEventListener('error', handleWindowError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+
     const bootstrapTimeout = window.setTimeout(() => {
-      if (!mounted) return
+      if (!mounted || !bootstrapGuardsActive) return
       console.error('[startup] bootstrap_app timed out')
+      removeBootstrapGlobalListeners()
       setBootstrapError('bootstrap_app timed out after 5 seconds')
     }, 5000)
 
     const handleWindowError = (event: ErrorEvent) => {
       console.error('[startup] window error', event.error ?? event.message)
-      if (!mounted) return
+      if (!mounted || !bootstrapGuardsActive) return
       setBootstrapError(
         event.error instanceof Error ? event.error.message : String(event.message),
       )
@@ -44,7 +55,7 @@ function App() {
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('[startup] unhandled rejection', event.reason)
-      if (!mounted) return
+      if (!mounted || !bootstrapGuardsActive) return
       const reason =
         event.reason instanceof Error ? event.reason.message : String(event.reason)
       setBootstrapError(reason)
@@ -63,12 +74,12 @@ function App() {
       })
 
     console.info('[startup] bootstrap_app started')
-    setStartupStep('正在请求 bootstrap_app')
     void bootstrapApp()
       .then((payload) => {
         if (!mounted) return
 
         window.clearTimeout(bootstrapTimeout)
+        removeBootstrapGlobalListeners()
         console.info('[startup] bootstrap_app resolved', payload)
         setStartupStep('bootstrap_app 已返回，正在应用状态')
         setBootstrapPayload(payload)
@@ -77,6 +88,7 @@ function App() {
       .catch((cause) => {
         if (!mounted) return
         window.clearTimeout(bootstrapTimeout)
+        removeBootstrapGlobalListeners()
         console.error('[startup] bootstrap_app failed', cause)
         setBootstrapError(cause instanceof Error ? cause.message : String(cause))
       })
@@ -84,8 +96,7 @@ function App() {
     return () => {
       mounted = false
       window.clearTimeout(bootstrapTimeout)
-      window.removeEventListener('error', handleWindowError)
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      removeBootstrapGlobalListeners()
       disposeTasks?.()
     }
   }, [attachTaskListeners, setBootstrapError, setBootstrapPayload, setSettings])
@@ -93,15 +104,19 @@ function App() {
   useEffect(() => {
     if (!bootstrapped || !system) return
 
-    console.info('[startup] post-bootstrap tasks started')
-    setStartupStep('主界面已就绪，正在后台同步主题/语言/扫描')
     const resolvedTheme = resolveThemeMode(settings.themeMode, system.theme)
     applyResolvedTheme(resolvedTheme)
 
     void i18n.changeLanguage(settings.language).catch((cause) => {
       console.error('Failed to change language:', cause)
     })
+  }, [bootstrapped, i18n, settings.language, settings.themeMode, system])
 
+  useEffect(() => {
+    if (!bootstrapped || initialScanStartedRef.current) return
+
+    initialScanStartedRef.current = true
+    console.info('[startup] initial scan started')
     void scanSkills({
       includeSystem: true,
       includeProjects: true,
@@ -110,7 +125,7 @@ function App() {
     }).catch((cause) => {
       console.error('Failed to trigger startup scan:', cause)
     })
-  }, [bootstrapped, i18n, scanSkills, settings, system])
+  }, [bootstrapped, scanSkills, settings.scan.customRoots, settings.scan.projectRoots])
 
   if (bootstrapping) {
     return (
