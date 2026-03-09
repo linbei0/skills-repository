@@ -30,10 +30,10 @@ export interface SystemInfo {
 
 export interface OverviewStats {
   totalSkills: number
-  riskySkills: number
+  riskySkills: number | null
   duplicatePaths: number
-  reclaimableBytes: number
-  templateCount: number
+  reclaimableBytes: number | null
+  templateCount: number | null
 }
 
 export interface BootstrapPayload {
@@ -44,11 +44,18 @@ export interface BootstrapPayload {
   overview: OverviewStats
 }
 
+export interface SkillAgentBinding {
+  primary: string
+  aliases: string[]
+  priority: number
+  compatibleAgents: string[]
+}
+
 export interface SkillRecord {
   id: string
   name: string
   path: string
-  agent: string
+  agent: SkillAgentBinding
   scope: 'system' | 'project' | 'custom'
   source: string
   managed: boolean
@@ -87,6 +94,7 @@ export interface ScanSkillsResult {
   distributions: DistributionRecord[]
   duplicates: DuplicateGroup[]
   projects: ProjectRecord[]
+  overview: OverviewStats
 }
 
 export interface TaskHandle {

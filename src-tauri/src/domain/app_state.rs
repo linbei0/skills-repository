@@ -1,6 +1,10 @@
 use super::agent_registry::AgentRegistry;
 use anyhow::{Context, Result};
-use std::{collections::HashMap, path::PathBuf, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Clone)]

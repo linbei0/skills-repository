@@ -47,13 +47,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => ({
       if (event.taskType === 'scan' && event.payload) {
         const result = event.payload as ScanSkillsResult
         useSkillsStore.getState().applyScanResult(result)
-        useAppStore.getState().setOverview({
-          totalSkills: result.skills.length,
-          riskySkills: 0,
-          duplicatePaths: result.duplicates.length,
-          reclaimableBytes: 0,
-          templateCount: 0,
-        })
+        useAppStore.getState().setOverview(result.overview)
       }
     }
 

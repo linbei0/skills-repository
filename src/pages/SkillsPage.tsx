@@ -21,7 +21,7 @@ export function SkillsPage() {
               <thead>
                 <tr>
                   <th>{t('common.agent')}</th>
-                  <th>Name</th>
+                  <th>{t('common.name')}</th>
                   <th>{t('common.scope')}</th>
                   <th>{t('common.status')}</th>
                   <th>{t('common.path')}</th>
@@ -30,9 +30,28 @@ export function SkillsPage() {
               <tbody>
                 {skills.map((skill) => (
                   <tr key={skill.id}>
-                    <td>{skill.agent}</td>
+                    <td className="min-w-[12rem]">
+                      <p className="font-medium">{skill.agent.primary}</p>
+                      {skill.agent.compatibleAgents.length > 0 ? (
+                        <p className="mt-1 text-xs text-base-content/55">
+                          {t('skills.sharedPath', {
+                            agents: skill.agent.compatibleAgents.join(', '),
+                          })}
+                        </p>
+                      ) : null}
+                      {skill.agent.aliases.length > 0 ? (
+                        <p className="mt-1 text-xs text-base-content/55">
+                          {t('skills.aliases', {
+                            agents: skill.agent.aliases.join(', '),
+                          })}
+                        </p>
+                      ) : null}
+                      <p className="mt-1 text-xs text-base-content/45">
+                        {t('skills.priority', { value: skill.agent.priority })}
+                      </p>
+                    </td>
                     <td>{skill.name}</td>
-                    <td>{skill.scope}</td>
+                    <td>{t(`common.scopeValues.${skill.scope}`)}</td>
                     <td>{skill.managed ? t('common.managed') : t('common.unmanaged')}</td>
                     <td className="max-w-[20rem] truncate font-mono text-xs">{skill.path}</td>
                   </tr>

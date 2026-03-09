@@ -20,6 +20,7 @@
   "overview": {
     "title": "資産概要",
     "description": "ローカル skill 資産、リスク、重複パス、最近のタスクの基礎情報を表示します。",
+    "phaseBadge": "Phase 2",
     "scanNow": "今すぐスキャン",
     "stats": {
       "totalSkills": "検出済み Skills",
@@ -30,12 +31,20 @@
     },
     "recentTasks": "最近のタスク",
     "recentTasksHint": "タスクセンターではスキャン、インストール、配布、テンプレート注入の進行状況を表示します。",
-    "agents": "Agent 能力マトリクス"
+    "agents": "Agent 能力マトリクス",
+    "moduleStatusTitle": "フェーズ2の接続状況",
+    "moduleStatusHint": "スキャン結果とタスクイベントは実データです。それ以外のガバナンス機能は未接続または今後対応です。",
+    "moduleStatusNotice": "マーケット導入、複数配布先への分配、テンプレート注入はまだ実ワークフローに接続されていません。このページは偽の成功状態ではなく、実際のスキャン結果とタスクイベントだけを表示します。",
+    "metricsNotice": "上部カードの「—」は、その指標がまだ未接続であることを示します。0 を実値のように見せることはもうしません。",
+    "projectsEmpty": "まだプロジェクト単位の設定は見つかっていません。先に設定画面でプロジェクトルートを追加してください。"
   },
   "skills": {
     "title": "My Skills",
     "description": "このフェーズでは実際のスキャン結果と管理境界のみを表示します。インストールと配布は次フェーズで対応します。",
-    "empty": "まだ skill が見つかっていません。先にスキャンを実行してください。"
+    "empty": "まだ skill が見つかっていません。先にスキャンを実行してください。",
+    "sharedPath": "互換 Agent: {{agents}}",
+    "aliases": "別名ヒット: {{agents}}",
+    "priority": "パス優先度: {{value}}"
   },
   "market": {
     "title": "マーケット",
@@ -43,7 +52,26 @@
   },
   "security": {
     "title": "セキュリティ",
-    "description": "セキュリティエンジンは次フェーズで有効化されます。現時点ではタスクセンターでスキャン基盤を確認できます。"
+    "description": "セキュリティエンジンは次フェーズで有効化されます。現時点ではタスクセンターでスキャン基盤を確認できます。",
+    "notConnectedTitle": "セキュリティエンジンは未接続です",
+    "notConnectedDescription": "このフェーズでは情報設計と入口だけを維持しています。偽のリスク件数は表示せず、実際の結果はスキャンルール・スコアリング・阻断処理が接続された後に表示されます。",
+    "cards": {
+      "safe": {
+        "label": "Safe / Low",
+        "title": "実際のスキャン結果待ち",
+        "description": "safe / low リスク件数は、セキュリティルールエンジン接続後にのみ表示されます。"
+      },
+      "medium": {
+        "label": "Medium",
+        "title": "リスクスコア待ち",
+        "description": "中リスク件数を 0 で偽装することはやめました。今後は一致ルールと推奨アクションを表示します。"
+      },
+      "blocked": {
+        "label": "Blocked",
+        "title": "阻断ワークフロー待ち",
+        "description": "高リスク阻断はまだ未実装です。今後は阻断理由、ログ、復旧ガイダンスを返します。"
+      }
+    }
   },
   "settings": {
     "title": "設定とガバナンス",
@@ -80,11 +108,17 @@
   },
   "common": {
     "comingSoon": "今後対応",
+    "name": "名前",
     "system": "システム",
     "status": "状態",
     "path": "パス",
     "agent": "Agent",
     "scope": "範囲",
+    "scopeValues": {
+      "system": "システム",
+      "project": "プロジェクト",
+      "custom": "カスタム"
+    },
     "managed": "管理対象",
     "unmanaged": "未管理",
     "footer": "アイコンは HackerNoon Pixel Icon Library（CC BY 4.0）を利用しています。"

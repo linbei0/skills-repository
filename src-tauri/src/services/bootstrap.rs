@@ -5,8 +5,9 @@ use sys_locale::get_locale;
 use crate::domain::{
     agent_registry::AgentCapability,
     app_state::AppState,
-    types::{BootstrapPayload, OverviewStats, SystemInfo},
+    types::{BootstrapPayload, SystemInfo},
 };
+use crate::repositories::scan as scan_repository;
 
 use super::settings::load_or_create_settings;
 
@@ -52,13 +53,7 @@ pub fn bootstrap_payload(state: &AppState, version: String) -> Result<BootstrapP
         system,
         settings,
         agents,
-        overview: OverviewStats {
-            total_skills: 0,
-            risky_skills: 0,
-            duplicate_paths: 0,
-            reclaimable_bytes: 0,
-            template_count: 0,
-        },
+        overview: scan_repository::load_overview_stats(&state.paths.db_file)?,
     })
 }
 

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use rusqlite::Connection;
-use rusqlite_migration::{M, Migrations};
+use rusqlite_migration::{Migrations, M};
 use std::path::Path;
 
 const MIGRATIONS: &[M<'_>] = &[

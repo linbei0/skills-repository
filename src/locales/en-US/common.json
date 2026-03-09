@@ -20,6 +20,7 @@
   "overview": {
     "title": "Asset Overview",
     "description": "This dashboard shows foundational insight into local skill assets, risks, duplicate paths, and recent tasks.",
+    "phaseBadge": "Phase 2",
     "scanNow": "Scan now",
     "stats": {
       "totalSkills": "Discovered Skills",
@@ -30,12 +31,20 @@
     },
     "recentTasks": "Recent tasks",
     "recentTasksHint": "The task center will show scan, install, distribute, and template injection progress.",
-    "agents": "Agent capability matrix"
+    "agents": "Agent capability matrix",
+    "moduleStatusTitle": "Phase 2 connectivity",
+    "moduleStatusHint": "Scan results and task events are real. Other governance capabilities are still unavailable or coming soon.",
+    "moduleStatusNotice": "Marketplace install, multi-target distribution, and template injection are not connected to real workflows yet. This page now shows only real scan results and task events instead of fake success states.",
+    "metricsNotice": "A “—” in the top summary cards means the metric is not connected yet, so the UI no longer pretends that zero is a real result.",
+    "projectsEmpty": "No project-level configuration has been detected yet. Add project roots in Settings first."
   },
   "skills": {
     "title": "My Skills",
     "description": "This phase focuses on real scan results and managed-state boundaries. Install and distribution flows come next.",
-    "empty": "No skills discovered yet. Run a scan first."
+    "empty": "No skills discovered yet. Run a scan first.",
+    "sharedPath": "Compatible agents: {{agents}}",
+    "aliases": "Alias matches: {{agents}}",
+    "priority": "Path priority: {{value}}"
   },
   "market": {
     "title": "Market",
@@ -43,7 +52,26 @@
   },
   "security": {
     "title": "Security",
-    "description": "The security engine will be enabled in the next phase. For now, observe the scan foundation through the task center."
+    "description": "The security engine will be enabled in the next phase. For now, observe the scan foundation through the task center.",
+    "notConnectedTitle": "Security engine not connected",
+    "notConnectedDescription": "This phase keeps the information architecture and entry point only. Fake risk counts are no longer shown; real results will appear after scan rules, scoring, and blocking are fully connected.",
+    "cards": {
+      "safe": {
+        "label": "Safe / Low",
+        "title": "Waiting for real scan results",
+        "description": "Real safe and low-risk counts will appear only after the security rules engine is connected."
+      },
+      "medium": {
+        "label": "Medium",
+        "title": "Waiting for risk scoring",
+        "description": "The UI no longer shows a fake 0 for medium-risk skills. Future work will expose matched rules and recommended actions."
+      },
+      "blocked": {
+        "label": "Blocked",
+        "title": "Waiting for blocking workflow",
+        "description": "High-risk blocking is not implemented yet. Future results will include blocking reasons, logs, and recovery guidance."
+      }
+    }
   },
   "settings": {
     "title": "Settings & Governance",
@@ -80,11 +108,17 @@
   },
   "common": {
     "comingSoon": "Coming soon",
+    "name": "Name",
     "system": "System",
     "status": "Status",
     "path": "Path",
     "agent": "Agent",
     "scope": "Scope",
+    "scopeValues": {
+      "system": "System",
+      "project": "Project",
+      "custom": "Custom"
+    },
     "managed": "Managed",
     "unmanaged": "Unmanaged",
     "footer": "Icons powered by HackerNoon Pixel Icon Library (CC BY 4.0)."

@@ -20,10 +20,10 @@ interface AppStoreState {
 
 const emptyOverview: OverviewStats = {
   totalSkills: 0,
-  riskySkills: 0,
+  riskySkills: null,
   duplicatePaths: 0,
-  reclaimableBytes: 0,
-  templateCount: 0,
+  reclaimableBytes: null,
+  templateCount: null,
 }
 
 export const useAppStore = create<AppStoreState>((set) => ({

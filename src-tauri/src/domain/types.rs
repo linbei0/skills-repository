@@ -32,10 +32,10 @@ pub struct SystemInfo {
 #[serde(rename_all = "camelCase")]
 pub struct OverviewStats {
     pub total_skills: usize,
-    pub risky_skills: usize,
+    pub risky_skills: Option<usize>,
     pub duplicate_paths: usize,
-    pub reclaimable_bytes: u64,
-    pub template_count: usize,
+    pub reclaimable_bytes: Option<u64>,
+    pub template_count: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -77,13 +77,22 @@ pub struct TaskProgressEvent {
     pub payload: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillAgentBinding {
+    pub primary: String,
+    pub aliases: Vec<String>,
+    pub priority: u32,
+    pub compatible_agents: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SkillRecord {
     pub id: String,
     pub name: String,
     pub path: String,
-    pub agent: String,
+    pub agent: SkillAgentBinding,
     pub scope: String,
     pub source: String,
     pub managed: bool,
@@ -123,4 +132,5 @@ pub struct ScanSkillsResult {
     pub distributions: Vec<DistributionRecord>,
     pub duplicates: Vec<DuplicateGroup>,
     pub projects: Vec<ProjectRecord>,
+    pub overview: OverviewStats,
 }

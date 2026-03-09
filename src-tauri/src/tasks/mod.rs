@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use uuid::Uuid;
@@ -23,8 +24,8 @@ pub fn emit_progress(
     current: u32,
     total: u32,
     message: &str,
-) {
-    let _ = app.emit(
+) -> Result<()> {
+    app.emit(
         TASK_PROGRESS_EVENT,
         TaskProgressEvent {
             task_id: task.task_id.clone(),
@@ -36,7 +37,8 @@ pub fn emit_progress(
             message: message.to_string(),
             payload: None,
         },
-    );
+    )
+    .context("failed to emit task progress event")
 }
 
 pub fn emit_completed<T: Serialize>(
@@ -45,8 +47,10 @@ pub fn emit_completed<T: Serialize>(
     step: &str,
     message: &str,
     payload: T,
-) {
-    let _ = app.emit(
+) -> Result<()> {
+    let payload = serde_json::to_value(payload).context("failed to serialize task payload")?;
+
+    app.emit(
         TASK_COMPLETED_EVENT,
         TaskProgressEvent {
             task_id: task.task_id.clone(),
@@ -56,13 +60,14 @@ pub fn emit_completed<T: Serialize>(
             current: 1,
             total: 1,
             message: message.to_string(),
-            payload: serde_json::to_value(payload).ok(),
+            payload: Some(payload),
         },
-    );
+    )
+    .context("failed to emit task completed event")
 }
 
-pub fn emit_failed(app: &AppHandle, task: &TaskHandle, step: &str, message: &str) {
-    let _ = app.emit(
+pub fn emit_failed(app: &AppHandle, task: &TaskHandle, step: &str, message: &str) -> Result<()> {
+    app.emit(
         TASK_FAILED_EVENT,
         TaskProgressEvent {
             task_id: task.task_id.clone(),
@@ -74,5 +79,6 @@ pub fn emit_failed(app: &AppHandle, task: &TaskHandle, step: &str, message: &str
             message: message.to_string(),
             payload: None,
         },
-    );
+    )
+    .context("failed to emit task failed event")
 }

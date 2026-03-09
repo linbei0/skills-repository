@@ -28,6 +28,11 @@ const formatBytes = (value: number) => {
   return `${amount.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }
 
+const formatOptionalCount = (value: number | null) => value ?? '—'
+
+const formatOptionalBytes = (value: number | null) =>
+  value === null ? '—' : formatBytes(value)
+
 export function AppShell() {
   const { t } = useTranslation()
   const [tasksOpen, setTasksOpen] = useState(false)
@@ -166,7 +171,9 @@ export function AppShell() {
                 <p className="text-xs uppercase tracking-wide text-base-content/55">
                   {t('overview.stats.riskySkills')}
                 </p>
-                <p className="mt-2 text-2xl font-semibold">{overview.riskySkills}</p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {formatOptionalCount(overview.riskySkills)}
+                </p>
               </div>
               <div className="rounded-box border border-base-300 bg-base-100 p-4">
                 <p className="text-xs uppercase tracking-wide text-base-content/55">
@@ -178,7 +185,9 @@ export function AppShell() {
                 <p className="text-xs uppercase tracking-wide text-base-content/55">
                   {t('overview.stats.reclaimableBytes')}
                 </p>
-                <p className="mt-2 text-2xl font-semibold">{formatBytes(overview.reclaimableBytes)}</p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {formatOptionalBytes(overview.reclaimableBytes)}
+                </p>
               </div>
             </div>
 
