@@ -46,13 +46,37 @@
   },
   "skills": {
     "title": "我的 Skills",
-    "description": "这里按 AI IDE 的全局 skills 目录查看真实文件，不再混入项目级或自定义扫描结果。",
+    "description": "按 AI IDE 标签查看真实全局 skills 目录。你可以启用更多内置标签，并添加自定义 IDE。",
     "loading": "正在扫描当前 AI IDE 的全局 skills 目录...",
     "empty": "该 AI IDE 的默认全局目录下未发现 skills。",
     "relationshipValues": {
       "linked": "链接",
       "directory": "目录",
       "broken": "断链"
+    },
+    "noVisibleTabs": "当前没有启用任何标签。请先打开“管理标签”并至少启用一个 AI IDE。",
+    "manager": {
+      "open": "管理标签",
+      "title": "管理 AI IDE 标签",
+      "description": "“通用”标签对应 `~/.agents/skills`。其他内置标签默认隐藏，需手动勾选后才会显示。",
+      "supportedTitle": "内置支持标签",
+      "supportedDescription": "勾选后会在“我的 Skills”顶部显示对应标签，并允许实时扫描该默认目录。",
+      "customTitle": "自定义 IDE",
+      "customDescription": "自定义 IDE 只需填写名称和相对用户目录的 skills 路径，例如 `.myide/skills`。",
+      "customEmpty": "还没有自定义 IDE。",
+      "addTitle": "新增自定义 IDE",
+      "name": "名称",
+      "namePlaceholder": "例如 My IDE",
+      "path": "相对路径",
+      "pathPlaceholder": "例如 .myide/skills",
+      "add": "添加",
+      "remove": "删除",
+      "validation": {
+        "nameRequired": "请先填写自定义 IDE 名称。",
+        "pathRequired": "请先填写相对用户目录的 skills 路径。",
+        "relativePathOnly": "只支持相对用户目录的路径，不支持绝对路径或上级目录。",
+        "duplicateName": "同名的自定义 IDE 已存在。"
+      }
     }
   },
   "market": {
@@ -167,6 +191,7 @@
     },
     "managed": "受管",
     "unmanaged": "未受管",
-    "footer": "图标来自 HackerNoon Pixel Icon Library（CC BY 4.0）。"
+    "footer": "图标来自 HackerNoon Pixel Icon Library（CC BY 4.0）。",
+    "close": "关闭"
   }
 }

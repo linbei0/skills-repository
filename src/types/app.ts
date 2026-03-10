@@ -5,6 +5,14 @@ export type AppLocale = 'zh-CN' | 'en-US' | 'ja-JP'
 export interface AppSettings {
   language: AppLocale
   themeMode: ThemeMode
+  visibleSkillsTargetIds: string[]
+  customSkillsTargets: CustomSkillsTarget[]
+}
+
+export interface CustomSkillsTarget {
+  id: string
+  label: string
+  relativePath: string
 }
 
 export interface AgentCapability {
@@ -70,6 +78,12 @@ export interface AgentGlobalScanResult {
   agentLabel: string
   rootPath: string
   entries: AgentGlobalSkillEntry[]
+}
+
+export interface AgentGlobalScanRequest {
+  agentId: string
+  agentLabel: string
+  relativePath: string
 }
 
 export interface MarketSearchRequest {

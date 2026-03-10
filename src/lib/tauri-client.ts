@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import type {
+  AgentGlobalScanRequest,
   AgentGlobalScanResult,
   AppSettings,
   BootstrapPayload,
@@ -32,8 +33,8 @@ export const getRepositorySkillDetail = (skillId: string) =>
 export const uninstallRepositorySkill = (skillId: string) =>
   invoke<RepositoryUninstallResult>('uninstall_repository_skill', { skillId })
 
-export const scanAgentGlobalSkills = (agentId: string) =>
-  invoke<AgentGlobalScanResult>('scan_agent_global_skills', { agentId })
+export const scanAgentGlobalSkills = (request: AgentGlobalScanRequest) =>
+  invoke<AgentGlobalScanResult>('scan_agent_global_skills', { request })
 
 export const searchMarketSkills = (request: MarketSearchRequest) =>
   invoke<MarketSearchResponse>('search_market_skills', { request })

@@ -47,6 +47,18 @@ pub fn default_settings(language: String) -> AppSettings {
     AppSettings {
         language,
         theme_mode: "system".into(),
+        visible_skills_target_ids: vec![
+            "universal".into(),
+            "antigravity".into(),
+            "claude-code".into(),
+            "codebuddy".into(),
+            "kiro-cli".into(),
+            "openclaw".into(),
+            "qoder".into(),
+            "trae".into(),
+            "windsurf".into(),
+        ],
+        custom_skills_targets: Vec::new(),
     }
 }
 
@@ -65,6 +77,12 @@ mod tests {
         let settings = AppSettings {
             language: "zh-CN".into(),
             theme_mode: "dark".into(),
+            visible_skills_target_ids: vec!["universal".into(), "qoder".into()],
+            custom_skills_targets: vec![crate::domain::types::CustomSkillsTarget {
+                id: "custom-demo".into(),
+                label: "Demo IDE".into(),
+                relative_path: ".demo/skills".into(),
+            }],
         };
 
         save_settings(&db_path, &settings).unwrap();
@@ -72,5 +90,7 @@ mod tests {
 
         assert_eq!(loaded.language, "zh-CN");
         assert_eq!(loaded.theme_mode, "dark");
+        assert_eq!(loaded.visible_skills_target_ids.len(), 2);
+        assert_eq!(loaded.custom_skills_targets.len(), 1);
     }
 }

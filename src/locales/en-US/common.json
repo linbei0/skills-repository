@@ -46,13 +46,37 @@
   },
   "skills": {
     "title": "My Skills",
-    "description": "Browse the real global skills directory for the selected AI IDE only. Project and custom scan results are no longer mixed in here.",
+    "description": "Browse real global skills directories by AI IDE tag. You can enable more built-in tags and add custom IDE targets.",
     "loading": "Scanning the selected AI IDE global skills directory...",
     "empty": "No skills were found in this AI IDE's default global directory.",
     "relationshipValues": {
       "linked": "Linked",
       "directory": "Directory",
       "broken": "Broken link"
+    },
+    "noVisibleTabs": "No tag is enabled right now. Open \"Manage Tags\" and enable at least one AI IDE first.",
+    "manager": {
+      "open": "Manage Tags",
+      "title": "Manage AI IDE Tags",
+      "description": "The Universal tag maps to `~/.agents/skills`. Other built-in tags stay hidden until the user explicitly enables them.",
+      "supportedTitle": "Built-in Tags",
+      "supportedDescription": "Checked tags appear at the top of \"My Skills\" and can be scanned in real time.",
+      "customTitle": "Custom IDEs",
+      "customDescription": "A custom IDE only needs a name and a skills path relative to the user home directory, such as `.myide/skills`.",
+      "customEmpty": "No custom IDE has been added yet.",
+      "addTitle": "Add Custom IDE",
+      "name": "Name",
+      "namePlaceholder": "For example, My IDE",
+      "path": "Relative path",
+      "pathPlaceholder": "For example, .myide/skills",
+      "add": "Add",
+      "remove": "Remove",
+      "validation": {
+        "nameRequired": "Enter a custom IDE name first.",
+        "pathRequired": "Enter a skills path relative to the user home directory first.",
+        "relativePathOnly": "Only paths relative to the user home directory are supported. Absolute paths and parent paths are not allowed.",
+        "duplicateName": "A custom IDE with the same name already exists."
+      }
     }
   },
   "market": {
@@ -167,6 +191,7 @@
     },
     "managed": "Managed",
     "unmanaged": "Unmanaged",
-    "footer": "Icons powered by HackerNoon Pixel Icon Library (CC BY 4.0)."
+    "footer": "Icons powered by HackerNoon Pixel Icon Library (CC BY 4.0).",
+    "close": "Close"
   }
 }

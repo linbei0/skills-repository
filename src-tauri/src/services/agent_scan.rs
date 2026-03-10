@@ -1,84 +1,11 @@
 use anyhow::{Context, Result};
 use std::{
     fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
 };
 use uuid::Uuid;
 
-use crate::domain::types::{AgentGlobalScanResult, AgentGlobalSkillEntry};
-
-struct AgentGlobalTarget {
-    id: &'static str,
-    label: &'static str,
-    relative_path: &'static str,
-}
-
-const AGENT_GLOBAL_TARGETS: &[AgentGlobalTarget] = &[
-    AgentGlobalTarget {
-        id: "antigravity",
-        label: "Antigravity",
-        relative_path: ".agent/skills",
-    },
-    AgentGlobalTarget {
-        id: "claude-code",
-        label: "Claude Code",
-        relative_path: ".claude/skills",
-    },
-    AgentGlobalTarget {
-        id: "codebuddy",
-        label: "CodeBuddy",
-        relative_path: ".codebuddy/skills",
-    },
-    AgentGlobalTarget {
-        id: "codex",
-        label: "Codex",
-        relative_path: ".agents/skills",
-    },
-    AgentGlobalTarget {
-        id: "cursor",
-        label: "Cursor",
-        relative_path: ".agents/skills",
-    },
-    AgentGlobalTarget {
-        id: "kiro",
-        label: "Kiro",
-        relative_path: ".kiro/skills",
-    },
-    AgentGlobalTarget {
-        id: "openclaw",
-        label: "OpenClaw",
-        relative_path: "skills",
-    },
-    AgentGlobalTarget {
-        id: "opencode",
-        label: "OpenCode",
-        relative_path: ".agents/skills",
-    },
-    AgentGlobalTarget {
-        id: "qoder",
-        label: "Qoder",
-        relative_path: ".qoder/skills",
-    },
-    AgentGlobalTarget {
-        id: "trae",
-        label: "Trae",
-        relative_path: ".trae/skills",
-    },
-    AgentGlobalTarget {
-        id: "vscode",
-        label: "VSCode",
-        relative_path: ".agents/skills",
-    },
-    AgentGlobalTarget {
-        id: "windsurf",
-        label: "Windsurf",
-        relative_path: ".windsurf/skills",
-    },
-];
-
-fn resolve_target(agent_id: &str) -> Option<&'static AgentGlobalTarget> {
-    AGENT_GLOBAL_TARGETS.iter().find(|target| target.id == agent_id)
-}
+use crate::domain::types::{AgentGlobalScanRequest, AgentGlobalScanResult, AgentGlobalSkillEntry};
 
 fn has_skill_marker(path: &Path) -> bool {
     path.join("SKILL.md").is_file()
@@ -109,11 +36,31 @@ fn entry_is_skill(path: &Path) -> bool {
     }
 }
 
-pub fn scan_agent_global_skills(agent_id: &str) -> Result<AgentGlobalScanResult> {
-    let target = resolve_target(agent_id)
-        .with_context(|| format!("unsupported agent global scan target {}", agent_id))?;
+fn resolve_relative_root_path(relative_path: &str) -> Result<PathBuf> {
+    let normalized = relative_path.replace('\\', "/");
+    let relative = PathBuf::from(&normalized);
+    if relative.as_os_str().is_empty() {
+        anyhow::bail!("relative path must not be empty");
+    }
+    if relative.is_absolute() {
+        anyhow::bail!("relative path must stay under the user home directory");
+    }
+    for component in relative.components() {
+        match component {
+            Component::Normal(_) => {}
+            Component::CurDir => {}
+            Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
+                anyhow::bail!("relative path contains unsupported component");
+            }
+        }
+    }
+
     let home_dir = dirs::home_dir().context("failed to resolve home directory")?;
-    let root_path = home_dir.join(target.relative_path);
+    Ok(home_dir.join(relative))
+}
+
+pub fn scan_agent_global_skills(request: &AgentGlobalScanRequest) -> Result<AgentGlobalScanResult> {
+    let root_path = resolve_relative_root_path(&request.relative_path)?;
 
     let mut entries = Vec::new();
     if root_path.exists() {
@@ -142,8 +89,8 @@ pub fn scan_agent_global_skills(agent_id: &str) -> Result<AgentGlobalScanResult>
     }
 
     Ok(AgentGlobalScanResult {
-        agent_id: target.id.to_string(),
-        agent_label: target.label.to_string(),
+        agent_id: request.agent_id.clone(),
+        agent_label: request.agent_label.clone(),
         root_path: root_path.to_string_lossy().to_string(),
         entries,
     })
@@ -184,5 +131,12 @@ mod tests {
         assert!(entry_is_skill(&real_skill));
         assert!(entry_is_skill(&linked_skill));
         assert!(entry_is_skill(&broken_link));
+    }
+
+    #[test]
+    fn rejects_absolute_or_parent_relative_paths() {
+        assert!(resolve_relative_root_path("/tmp/skills").is_err());
+        assert!(resolve_relative_root_path("../skills").is_err());
+        assert!(resolve_relative_root_path("..\\skills").is_err());
     }
 }

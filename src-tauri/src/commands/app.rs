@@ -4,10 +4,10 @@ use crate::{
     domain::{
         app_state::AppState,
         types::{
-            AgentGlobalScanResult, AppSettings, DistributionRequest, DistributionResult,
-            InstallSkillRequest, InstallSkillResult, MarketSearchRequest, MarketSearchResponse,
-            RepositorySkillDetail, RepositorySkillSummary, RepositoryUninstallResult,
-            SaveTemplateRequest, SecurityReport, TemplateRecord,
+            AgentGlobalScanRequest, AgentGlobalScanResult, AppSettings, DistributionRequest,
+            DistributionResult, InstallSkillRequest, InstallSkillResult, MarketSearchRequest,
+            MarketSearchResponse, RepositorySkillDetail, RepositorySkillSummary,
+            RepositoryUninstallResult, SaveTemplateRequest, SecurityReport, TemplateRecord,
         },
     },
     repositories::security as security_repository,
@@ -171,9 +171,11 @@ pub fn uninstall_repository_skill(
 }
 
 #[tauri::command]
-pub fn scan_agent_global_skills(agent_id: String) -> Result<AgentGlobalScanResult, String> {
+pub fn scan_agent_global_skills(
+    request: AgentGlobalScanRequest,
+) -> Result<AgentGlobalScanResult, String> {
     log::info!("scan_agent_global_skills invoked");
-    agent_scan::scan_agent_global_skills(&agent_id).map_err(|error| error.to_string())
+    agent_scan::scan_agent_global_skills(&request).map_err(|error| error.to_string())
 }
 
 #[tauri::command]

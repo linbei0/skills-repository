@@ -46,13 +46,37 @@
   },
   "skills": {
     "title": "My Skills",
-    "description": "選択した AI IDE のグローバル skills ディレクトリだけを表示します。プロジェクトやカスタムスキャン結果はここに混在しません。",
+    "description": "AI IDE タグごとに実際のグローバル skills ディレクトリを参照します。組み込みタグの追加表示やカスタム IDE の登録もできます。",
     "loading": "選択中の AI IDE グローバル skills ディレクトリをスキャン中...",
     "empty": "この AI IDE の既定グローバルディレクトリには skill が見つかりません。",
     "relationshipValues": {
       "linked": "リンク",
       "directory": "ディレクトリ",
       "broken": "リンク切れ"
+    },
+    "noVisibleTabs": "現在は有効なタグがありません。先に「タグ管理」で少なくとも 1 つの AI IDE を有効にしてください。",
+    "manager": {
+      "open": "タグ管理",
+      "title": "AI IDE タグ管理",
+      "description": "「汎用」タグは `~/.agents/skills` を表します。他の組み込みタグは、明示的に有効化するまで非表示です。",
+      "supportedTitle": "組み込みタグ",
+      "supportedDescription": "チェックしたタグだけが「My Skills」の上部に表示され、リアルタイムでスキャンできます。",
+      "customTitle": "カスタム IDE",
+      "customDescription": "カスタム IDE には、名前とユーザーホーム相対の skills パス（例: `.myide/skills`）だけが必要です。",
+      "customEmpty": "まだカスタム IDE はありません。",
+      "addTitle": "カスタム IDE を追加",
+      "name": "名前",
+      "namePlaceholder": "例: My IDE",
+      "path": "相対パス",
+      "pathPlaceholder": "例: .myide/skills",
+      "add": "追加",
+      "remove": "削除",
+      "validation": {
+        "nameRequired": "先にカスタム IDE 名を入力してください。",
+        "pathRequired": "先にユーザーホーム相対の skills パスを入力してください。",
+        "relativePathOnly": "ユーザーホーム相対パスのみ対応しています。絶対パスや親ディレクトリは使えません。",
+        "duplicateName": "同名のカスタム IDE が既に存在します。"
+      }
     }
   },
   "market": {
@@ -167,6 +191,7 @@
     },
     "managed": "管理対象",
     "unmanaged": "未管理",
-    "footer": "アイコンは HackerNoon Pixel Icon Library（CC BY 4.0）を利用しています。"
+    "footer": "アイコンは HackerNoon Pixel Icon Library（CC BY 4.0）を利用しています。",
+    "close": "閉じる"
   }
 }

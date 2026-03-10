@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { scanAgentGlobalSkills as scanAgentGlobalSkillsCommand } from '../lib/tauri-client'
-import type { AgentGlobalScanResult, AgentGlobalSkillEntry } from '../types/app'
+import type {
+  AgentGlobalScanRequest,
+  AgentGlobalSkillEntry,
+} from '../types/app'
 
 interface SkillsStoreState {
   selectedAgentId: string
@@ -10,24 +13,23 @@ interface SkillsStoreState {
   rootPath: string | null
   entries: AgentGlobalSkillEntry[]
   setSelectedAgentId: (agentId: string) => void
-  scanAgentGlobalSkills: (agentId: string) => Promise<void>
-  applyScanResult: (result: AgentGlobalScanResult) => void
+  scanAgentGlobalSkills: (request: AgentGlobalScanRequest) => Promise<void>
 }
 
 export const useSkillsStore = create<SkillsStoreState>((set) => ({
-  selectedAgentId: 'codex',
+  selectedAgentId: 'universal',
   loading: false,
   loaded: false,
   error: null,
   rootPath: null,
   entries: [],
   setSelectedAgentId: (agentId) => set({ selectedAgentId: agentId }),
-  scanAgentGlobalSkills: async (agentId) => {
-    set({ selectedAgentId: agentId, loading: true, error: null })
+  scanAgentGlobalSkills: async (request) => {
+    set({ selectedAgentId: request.agentId, loading: true, error: null })
     try {
-      const result = await scanAgentGlobalSkillsCommand(agentId)
+      const result = await scanAgentGlobalSkillsCommand(request)
       set({
-        selectedAgentId: agentId,
+        selectedAgentId: request.agentId,
         loading: false,
         loaded: true,
         error: null,
@@ -36,7 +38,7 @@ export const useSkillsStore = create<SkillsStoreState>((set) => ({
       })
     } catch (error) {
       set({
-        selectedAgentId: agentId,
+        selectedAgentId: request.agentId,
         loading: false,
         loaded: true,
         rootPath: null,
@@ -45,13 +47,4 @@ export const useSkillsStore = create<SkillsStoreState>((set) => ({
       })
     }
   },
-  applyScanResult: (result) =>
-    set({
-      selectedAgentId: result.agentId,
-      loading: false,
-      loaded: true,
-      error: null,
-      rootPath: result.rootPath,
-      entries: result.entries,
-    }),
 }))

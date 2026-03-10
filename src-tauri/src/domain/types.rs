@@ -6,6 +6,32 @@ use super::agent_registry::AgentCapability;
 pub struct AppSettings {
     pub language: String,
     pub theme_mode: String,
+    #[serde(default = "default_visible_skill_target_ids")]
+    pub visible_skills_target_ids: Vec<String>,
+    #[serde(default)]
+    pub custom_skills_targets: Vec<CustomSkillsTarget>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomSkillsTarget {
+    pub id: String,
+    pub label: String,
+    pub relative_path: String,
+}
+
+fn default_visible_skill_target_ids() -> Vec<String> {
+    vec![
+        "universal".into(),
+        "antigravity".into(),
+        "claude-code".into(),
+        "codebuddy".into(),
+        "kiro-cli".into(),
+        "openclaw".into(),
+        "qoder".into(),
+        "trae".into(),
+        "windsurf".into(),
+    ]
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -120,6 +146,14 @@ pub struct AgentGlobalScanResult {
     pub agent_label: String,
     pub root_path: String,
     pub entries: Vec<AgentGlobalSkillEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentGlobalScanRequest {
+    pub agent_id: String,
+    pub agent_label: String,
+    pub relative_path: String,
 }
 
 
