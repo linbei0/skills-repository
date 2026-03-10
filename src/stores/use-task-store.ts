@@ -4,10 +4,9 @@ import {
   onTaskFailed,
   onTaskProgress,
 } from '../lib/tauri-client'
-import type { DistributionResult, ScanSkillsResult, TaskProgress } from '../types/app'
-import { useAppStore } from './use-app-store'
+import type { RepositoryUninstallResult, TaskProgress } from '../types/app'
+import { useRepositoryStore } from './use-repository-store'
 import { useSecurityStore } from './use-security-store'
-import { useSkillsStore } from './use-skills-store'
 
 interface TaskStoreState {
   attached: boolean
@@ -45,19 +44,13 @@ export const useTaskStore = create<TaskStoreState>((set, get) => ({
     const handleCompletedLikeEvent = (event: TaskProgress) => {
       get().upsertTask(event)
 
-      if (event.taskType === 'scan' && event.payload) {
-        const result = event.payload as ScanSkillsResult
-        useSkillsStore.getState().applyScanResult(result)
-        useAppStore.getState().setOverview(result.overview)
-      }
-
-      if (event.taskType === 'distribute' && event.payload) {
-        const result = event.payload as DistributionResult
-        useSkillsStore.getState().applyDistributionResult(result)
-      }
-
       if (event.taskType === 'rescan_security') {
         void useSecurityStore.getState().refresh()
+      }
+
+      if (event.taskType === 'delete_skill' && event.payload) {
+        const result = event.payload as RepositoryUninstallResult
+        useRepositoryStore.getState().removeSkill(result.skillId)
       }
     }
 
@@ -67,11 +60,6 @@ export const useTaskStore = create<TaskStoreState>((set, get) => ({
     const unlistenCompleted = await onTaskCompleted(handleCompletedLikeEvent)
     const unlistenFailed = await onTaskFailed((event) => {
       get().upsertTask(event)
-
-      if (event.taskType === 'distribute' && event.payload) {
-        const result = event.payload as DistributionResult
-        useSkillsStore.getState().applyDistributionResult(result)
-      }
 
       if (event.taskType === 'rescan_security') {
         void useSecurityStore.getState().refresh()

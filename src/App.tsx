@@ -7,20 +7,17 @@ import { bootstrapApp } from './lib/tauri-client'
 import { applyResolvedTheme, resolveThemeMode } from './lib/theme'
 import { useAppStore } from './stores/use-app-store'
 import { useSettingsStore } from './stores/use-settings-store'
-import { useSkillsStore } from './stores/use-skills-store'
 import { useTaskStore } from './stores/use-task-store'
 
 function App() {
   const { i18n } = useTranslation()
   const startedRef = useRef(false)
-  const initialScanStartedRef = useRef(false)
   const [startupStep, setStartupStep] = useState('准备附加任务监听')
   const { bootstrapped, bootstrapping, error, setBootstrapPayload, setBootstrapError } =
     useAppStore()
   const attachTaskListeners = useTaskStore((state) => state.attachTaskListeners)
   const setSettings = useSettingsStore((state) => state.setSettings)
   const settings = useSettingsStore((state) => state.settings)
-  const scanSkills = useSkillsStore((state) => state.scanSkills)
   const system = useAppStore((state) => state.system)
 
   useEffect(() => {
@@ -111,21 +108,6 @@ function App() {
       console.error('Failed to change language:', cause)
     })
   }, [bootstrapped, i18n, settings.language, settings.themeMode, system])
-
-  useEffect(() => {
-    if (!bootstrapped || initialScanStartedRef.current) return
-
-    initialScanStartedRef.current = true
-    console.info('[startup] initial scan started')
-    void scanSkills({
-      includeSystem: true,
-      includeProjects: true,
-      projectRoots: settings.scan.projectRoots,
-      customRoots: settings.scan.customRoots,
-    }).catch((cause) => {
-      console.error('Failed to trigger startup scan:', cause)
-    })
-  }, [bootstrapped, scanSkills, settings.scan.customRoots, settings.scan.projectRoots])
 
   if (bootstrapping) {
     return (

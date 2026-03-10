@@ -1,13 +1,15 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import type {
+  AgentGlobalScanResult,
   AppSettings,
   BootstrapPayload,
   DistributionRequest,
   InstallSkillRequest,
   MarketSearchRequest,
   MarketSearchResponse,
-  ScanSkillsRequest,
+  RepositorySkillDetail,
+  RepositorySkillSummary,
   SecurityReport,
   SaveTemplateRequest,
   TaskHandle,
@@ -25,6 +27,18 @@ export const getSettings = () => invoke<AppSettings>('get_settings')
 
 export const saveSettings = (settings: AppSettings) =>
   invoke<AppSettings>('save_settings', { settings })
+
+export const listRepositorySkills = () =>
+  invoke<RepositorySkillSummary[]>('list_repository_skills')
+
+export const getRepositorySkillDetail = (skillId: string) =>
+  invoke<RepositorySkillDetail>('get_repository_skill_detail', { skillId })
+
+export const uninstallRepositorySkill = (skillId: string) =>
+  invoke<TaskHandle>('uninstall_repository_skill', { skillId })
+
+export const scanAgentGlobalSkills = (agentId: string) =>
+  invoke<AgentGlobalScanResult>('scan_agent_global_skills', { agentId })
 
 export const searchMarketSkills = (request: MarketSearchRequest) =>
   invoke<MarketSearchResponse>('search_market_skills', { request })
@@ -51,9 +65,6 @@ export const saveTemplate = (request: SaveTemplateRequest) =>
 
 export const deleteTemplate = (templateId: string) =>
   invoke<void>('delete_template', { templateId })
-
-export const scanSkills = (request: ScanSkillsRequest) =>
-  invoke<TaskHandle>('scan_skills', { request })
 
 export const onTaskProgress = (
   handler: (event: TaskProgress) => void,

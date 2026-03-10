@@ -249,21 +249,17 @@ mod tests {
     use tempfile::tempdir;
 
     fn test_paths(root: &Path) -> AppPaths {
-        let app_data_dir = root.join("app-data");
-        let db_dir = app_data_dir.join("db");
-        let cache_dir = app_data_dir.join("cache");
-        let temp_dir = app_data_dir.join("tmp");
-        let canonical_store_dir = app_data_dir.join("skills");
+        let app_root = root.join("app-data");
+        let db_dir = app_root.join("db");
+        let temp_dir = app_root.join("tmp");
+        let canonical_store_dir = app_root.join("skills");
 
         fs::create_dir_all(&db_dir).unwrap();
-        fs::create_dir_all(&cache_dir).unwrap();
         fs::create_dir_all(&temp_dir).unwrap();
         fs::create_dir_all(&canonical_store_dir).unwrap();
 
         AppPaths {
-            app_data_dir,
             db_file: db_dir.join("skills-manager.db"),
-            cache_dir,
             temp_dir,
             canonical_store_dir,
         }

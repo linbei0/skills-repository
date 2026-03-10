@@ -5,7 +5,7 @@
     "shellHint": "フェーズ1ではアプリ骨格、設定、スキャン基盤、タスクバスを実装しています。"
   },
   "nav": {
-    "overview": "概要",
+    "repository": "Skills リポジトリ",
     "skills": "My Skills",
     "market": "マーケット",
     "security": "セキュリティ",
@@ -18,44 +18,38 @@
     "language": "言語",
     "tasks": "タスク"
   },
-  "overview": {
-    "title": "資産概要",
-    "description": "ローカル skill 資産、リスク、重複パス、最近のタスクの基礎情報を表示します。",
-    "phaseBadge": "Phase 2",
-    "scanNow": "今すぐスキャン",
-    "stats": {
-      "totalSkills": "検出済み Skills",
-      "riskySkills": "リスクあり",
-      "duplicatePaths": "重複パス",
-      "reclaimableBytes": "解放可能容量",
-      "templateCount": "テンプレート数"
-    },
-    "recentTasks": "最近のタスク",
-    "recentTasksHint": "タスクセンターではスキャン、インストール、配布、テンプレート注入の進行状況を表示します。",
-    "agents": "Agent 能力マトリクス",
-    "moduleStatusTitle": "フェーズ2の接続状況",
-    "moduleStatusHint": "スキャン結果とタスクイベントは実データです。それ以外のガバナンス機能は未接続または今後対応です。",
-    "moduleStatusNotice": "マーケット導入、複数配布先への分配、テンプレート注入はまだ実ワークフローに接続されていません。このページは偽の成功状態ではなく、実際のスキャン結果とタスクイベントだけを表示します。",
-    "metricsNotice": "上部カードの「—」は、その指標がまだ未接続であることを示します。0 を実値のように見せることはもうしません。",
-    "projectsEmpty": "まだプロジェクト単位の設定は見つかっていません。先に設定画面でプロジェクトルートを追加してください。"
+  "repository": {
+    "title": "Skills リポジトリ",
+    "description": "ここでは統一リポジトリ内の skills だけを表示します。詳細確認と、配布先を含むアンインストールに対応します。",
+    "source": "ソース",
+    "installedAt": "インストール日時",
+    "actions": "操作",
+    "loading": "リポジトリ内の skills を読み込み中...",
+    "empty": "リポジトリにはまだ skill がありません。",
+    "view": "表示",
+    "uninstall": "アンインストール",
+    "uninstalling": "アンインストール中...",
+    "detailTitle": "Skill 詳細",
+    "detailLoading": "skill 内容を読み込み中...",
+    "sourceLocal": "ローカル導入",
+    "sourceMarket": "{{market}}",
+    "statusValues": {
+      "safe": "安全",
+      "low": "低リスク",
+      "medium": "中リスク",
+      "blocked": "高リスクで阻止",
+      "unknown": "不明"
+    }
   },
   "skills": {
     "title": "My Skills",
-    "description": "このフェーズでは実際のスキャン結果と管理境界のみを表示します。インストールと配布は次フェーズで対応します。",
-    "empty": "まだ skill が見つかっていません。先にスキャンを実行してください。",
-    "sharedPath": "互換 Agent: {{agents}}",
-    "aliases": "別名ヒット: {{agents}}",
-    "priority": "パス優先度: {{value}}",
-    "distributionStatus": "配布状態",
-    "distributionCount": "{{count}} 件の配布先",
-    "distributionEmpty": "まだ配布されていません",
-    "actions": "操作",
-    "distribute": "既定パスへ配布",
-    "distributionUnavailable": "カスタム由来の skill はまだワンクリック配布に対応していません",
-    "statusValues": {
-      "notDistributed": "未配布",
-      "active": "配布済み",
-      "failed": "配布失敗"
+    "description": "選択した AI IDE のグローバル skills ディレクトリだけを表示します。プロジェクトやカスタムスキャン結果はここに混在しません。",
+    "loading": "選択中の AI IDE グローバル skills ディレクトリをスキャン中...",
+    "empty": "この AI IDE の既定グローバルディレクトリには skill が見つかりません。",
+    "relationshipValues": {
+      "linked": "リンク",
+      "directory": "ディレクトリ",
+      "broken": "リンク切れ"
     }
   },
   "market": {
@@ -157,7 +151,7 @@
   },
   "settings": {
     "title": "設定とガバナンス",
-    "description": "言語、テーマ、プロジェクトルート、カスタムスキャンパスを管理します。",
+    "description": "ここでは言語とテーマを管理します。",
     "language": "表示言語",
     "languageOptions": {
       "zhCN": "簡体字中国語",

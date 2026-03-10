@@ -7,8 +7,6 @@ use crate::domain::{
     app_state::AppState,
     types::{BootstrapPayload, SystemInfo},
 };
-use crate::repositories::scan as scan_repository;
-
 use super::settings::load_or_create_settings;
 
 pub fn system_locale() -> String {
@@ -53,7 +51,6 @@ pub fn bootstrap_payload(state: &AppState, version: String) -> Result<BootstrapP
         system,
         settings,
         agents,
-        overview: scan_repository::load_overview_stats(&state.paths.db_file)?,
     })
 }
 

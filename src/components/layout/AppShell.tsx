@@ -9,7 +9,7 @@ import { useSettingsStore } from '../../stores/use-settings-store'
 import { useTaskStore } from '../../stores/use-task-store'
 
 const navItems = [
-  { to: '/', key: 'overview', icon: 'hn-home' },
+  { to: '/', key: 'repository', icon: 'hn-home' },
   { to: '/skills', key: 'skills', icon: 'hn-folder' },
   { to: '/market', key: 'market', icon: 'hn-search' },
   { to: '/security', key: 'security', icon: 'hn-shield' },
@@ -17,27 +17,9 @@ const navItems = [
   { to: '/settings', key: 'settings', icon: 'hn-settings' },
 ] as const
 
-const formatBytes = (value: number) => {
-  if (value <= 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let amount = value
-  let unitIndex = 0
-  while (amount >= 1024 && unitIndex < units.length - 1) {
-    amount /= 1024
-    unitIndex += 1
-  }
-  return `${amount.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
-}
-
-const formatOptionalCount = (value: number | null) => value ?? '—'
-
-const formatOptionalBytes = (value: number | null) =>
-  value === null ? '—' : formatBytes(value)
-
 export function AppShell() {
   const { t } = useTranslation()
   const [tasksOpen, setTasksOpen] = useState(false)
-  const overview = useAppStore((state) => state.overview)
   const system = useAppStore((state) => state.system)
   const settings = useSettingsStore((state) => state.settings)
   const setLanguage = useSettingsStore((state) => state.setLanguage)
@@ -105,93 +87,59 @@ export function AppShell() {
           </ul>
         </nav>
 
-        <div className="border-t border-base-300 px-4 py-4 text-xs text-base-content/55">
-          <p>{t('common.footer')}</p>
+        <div className="border-t border-base-300 px-5 py-4 text-xs text-base-content/50">
+          {t('common.footer')}
         </div>
       </aside>
 
-      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-base-300 bg-base-100/90 px-6 py-4 backdrop-blur">
-          <div className="flex-1">
-            <label className="input input-bordered flex items-center gap-2 bg-base-200">
-              <i className="hn hn-search text-base-content/50" aria-hidden />
-              <input
-                type="text"
-                className="grow"
-                placeholder={t('topbar.searchPlaceholder')}
-                disabled
-              />
-            </label>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex items-center justify-between gap-4 border-b border-base-300 bg-base-100/90 px-6 py-4 backdrop-blur">
+          <div>
+            <p className="text-sm font-medium text-base-content/70">{t('topbar.language')}</p>
+            <p className="text-xs text-base-content/50">
+              {system ? `${system.os.toUpperCase()} · ${system.arch}` : t('app.shellHint')}
+            </p>
           </div>
 
-          <label className="hidden items-center gap-2 rounded-full bg-base-200 px-3 py-2 text-xs font-medium text-base-content/70 md:flex">
-            <span>{t('topbar.language')}:</span>
-            <select
-              className="select select-ghost select-xs min-h-0 h-auto border-0 bg-transparent pr-6 font-medium text-base-content focus:outline-none"
-              value={settings.language}
-              onChange={(event) => void updateLanguageQuickly(event.target.value as AppLocale)}
-              disabled={saving}
-              aria-label={t('topbar.language')}
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 rounded-box border border-base-300 bg-base-100 px-3 py-2 text-sm">
+              <span className="text-base-content/60">{t('topbar.language')}</span>
+              <select
+                className="select select-ghost select-xs min-h-0 h-auto border-0 bg-transparent pr-6 font-medium text-base-content focus:outline-none"
+                value={settings.language}
+                onChange={(event) => void updateLanguageQuickly(event.target.value as AppLocale)}
+                disabled={saving}
+                aria-label={t('topbar.language')}
+              >
+                {languageOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              className="btn btn-ghost btn-circle btn-sm text-xl"
+              onClick={() => void toggleThemeQuickly()}
+              aria-label={t('topbar.theme')}
+              title={t('topbar.theme')}
             >
-              {languageOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              <i className={cn('hn', isDarkTheme ? 'hn-sun' : 'hn-moon')} aria-hidden />
+            </button>
 
-          <button
-            className="btn btn-ghost btn-circle btn-sm text-xl"
-            onClick={() => void toggleThemeQuickly()}
-            aria-label={t('topbar.theme')}
-            title={t('topbar.theme')}
-          >
-            <i className={cn('hn', isDarkTheme ? 'hn-sun' : 'hn-moon')} aria-hidden />
-          </button>
-
-          <button className="btn btn-primary btn-sm" onClick={() => setTasksOpen((open) => !open)}>
-            <i className="hn hn-list" aria-hidden />
-            <span>{t('topbar.tasks')}</span>
-            {activeTasks.length > 0 ? (
-              <span className="badge badge-sm bg-primary-content text-primary">{activeTasks.length}</span>
-            ) : null}
-          </button>
+            <button className="btn btn-primary btn-sm" onClick={() => setTasksOpen((open) => !open)}>
+              <i className="hn hn-list" aria-hidden />
+              <span>{t('topbar.tasks')}</span>
+              {activeTasks.length > 0 ? (
+                <span className="badge badge-sm bg-primary-content text-primary">{activeTasks.length}</span>
+              ) : null}
+            </button>
+          </div>
         </header>
 
         <main className="flex min-h-0 flex-1 gap-6 overflow-hidden px-6 py-6">
           <section className="min-w-0 flex-1 overflow-y-auto pr-1">
-            <div className="mb-6 grid gap-4 md:grid-cols-4">
-              <div className="rounded-box border border-base-300 bg-base-100 p-4">
-                <p className="text-xs uppercase tracking-wide text-base-content/55">
-                  {t('overview.stats.totalSkills')}
-                </p>
-                <p className="mt-2 text-2xl font-semibold">{overview.totalSkills}</p>
-              </div>
-              <div className="rounded-box border border-warning/40 bg-base-100 p-4">
-                <p className="text-xs uppercase tracking-wide text-base-content/55">
-                  {t('overview.stats.riskySkills')}
-                </p>
-                <p className="mt-2 text-2xl font-semibold">
-                  {formatOptionalCount(overview.riskySkills)}
-                </p>
-              </div>
-              <div className="rounded-box border border-base-300 bg-base-100 p-4">
-                <p className="text-xs uppercase tracking-wide text-base-content/55">
-                  {t('overview.stats.duplicatePaths')}
-                </p>
-                <p className="mt-2 text-2xl font-semibold">{overview.duplicatePaths}</p>
-              </div>
-              <div className="rounded-box border border-base-300 bg-base-100 p-4">
-                <p className="text-xs uppercase tracking-wide text-base-content/55">
-                  {t('overview.stats.reclaimableBytes')}
-                </p>
-                <p className="mt-2 text-2xl font-semibold">
-                  {formatOptionalBytes(overview.reclaimableBytes)}
-                </p>
-              </div>
-            </div>
-
             <Outlet />
           </section>
 

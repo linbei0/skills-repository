@@ -28,20 +28,53 @@ export interface SystemInfo {
   theme: 'light' | 'dark'
 }
 
-export interface OverviewStats {
-  totalSkills: number
-  riskySkills: number | null
-  duplicatePaths: number
-  reclaimableBytes: number | null
-  templateCount: number | null
-}
-
 export interface BootstrapPayload {
   appVersion: string
   system: SystemInfo
   settings: AppSettings
   agents: AgentCapability[]
-  overview: OverviewStats
+}
+
+export interface RepositorySkillSummary {
+  id: string
+  name: string
+  sourceType: string
+  sourceMarket?: string | null
+  installedAt: number
+  securityLevel: string
+  blocked: boolean
+}
+
+export interface RepositorySkillDetail {
+  id: string
+  name: string
+  canonicalPath: string
+  sourceType: string
+  sourceMarket?: string | null
+  sourceUrl?: string | null
+  installedAt: number
+  securityLevel: string
+  blocked: boolean
+  skillMarkdown: string
+}
+
+export interface RepositoryUninstallResult {
+  skillId: string
+  removedPaths: string[]
+}
+
+export interface AgentGlobalSkillEntry {
+  id: string
+  name: string
+  path: string
+  relationship: 'linked' | 'directory' | 'broken'
+}
+
+export interface AgentGlobalScanResult {
+  agentId: string
+  agentLabel: string
+  rootPath: string
+  entries: AgentGlobalSkillEntry[]
 }
 
 export interface MarketSearchRequest {
@@ -78,33 +111,6 @@ export interface MarketSearchResponse {
   pageSize: number
   total: number
   cacheHit: boolean
-}
-
-export interface SkillAgentBinding {
-  primary: string
-  aliases: string[]
-  priority: number
-  compatibleAgents: string[]
-}
-
-export interface SkillRecord {
-  id: string
-  name: string
-  path: string
-  agent: SkillAgentBinding
-  scope: 'system' | 'project' | 'custom'
-  source: string
-  managed: boolean
-  projectRoot?: string | null
-  lastSeenAt: number
-}
-
-export interface DistributionRecord {
-  id: string
-  skillId: string
-  targetAgent: string
-  targetPath: string
-  status: 'active' | 'broken' | 'removed' | 'failed'
 }
 
 export interface DistributionRequest {
@@ -174,17 +180,6 @@ export interface SecurityReport {
   scannedAt: number
 }
 
-export interface ProjectRecord {
-  id: string
-  name: string
-  rootPath: string
-}
-
-export interface DuplicateGroup {
-  name: string
-  paths: string[]
-}
-
 export interface TemplateItem {
   id: string
   skillRefType: string
@@ -208,21 +203,6 @@ export interface SaveTemplateRequest {
   name: string
   description?: string | null
   tags: string[]
-}
-
-export interface ScanSkillsRequest {
-  includeSystem: boolean
-  includeProjects: boolean
-  projectRoots: string[]
-  customRoots: string[]
-}
-
-export interface ScanSkillsResult {
-  skills: SkillRecord[]
-  distributions: DistributionRecord[]
-  duplicates: DuplicateGroup[]
-  projects: ProjectRecord[]
-  overview: OverviewStats
 }
 
 export interface TaskHandle {

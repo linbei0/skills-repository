@@ -5,7 +5,7 @@
     "shellHint": "Phase 1 currently includes the app shell, settings, scan foundation, and task bus."
   },
   "nav": {
-    "overview": "Overview",
+    "repository": "Skills Repository",
     "skills": "My Skills",
     "market": "Market",
     "security": "Security",
@@ -18,44 +18,38 @@
     "language": "Language",
     "tasks": "Tasks"
   },
-  "overview": {
-    "title": "Asset Overview",
-    "description": "This dashboard shows foundational insight into local skill assets, risks, duplicate paths, and recent tasks.",
-    "phaseBadge": "Phase 2",
-    "scanNow": "Scan now",
-    "stats": {
-      "totalSkills": "Discovered Skills",
-      "riskySkills": "Risky Skills",
-      "duplicatePaths": "Duplicate Paths",
-      "reclaimableBytes": "Reclaimable Space",
-      "templateCount": "Templates"
-    },
-    "recentTasks": "Recent tasks",
-    "recentTasksHint": "The task center will show scan, install, distribute, and template injection progress.",
-    "agents": "Agent capability matrix",
-    "moduleStatusTitle": "Phase 2 connectivity",
-    "moduleStatusHint": "Scan results and task events are real. Other governance capabilities are still unavailable or coming soon.",
-    "moduleStatusNotice": "Marketplace install, multi-target distribution, and template injection are not connected to real workflows yet. This page now shows only real scan results and task events instead of fake success states.",
-    "metricsNotice": "A “—” in the top summary cards means the metric is not connected yet, so the UI no longer pretends that zero is a real result.",
-    "projectsEmpty": "No project-level configuration has been detected yet. Add project roots in Settings first."
+  "repository": {
+    "title": "Skills Repository",
+    "description": "This page only shows skills stored in the unified repository. You can inspect details or uninstall the repository copy together with all distributed targets.",
+    "source": "Source",
+    "installedAt": "Installed at",
+    "actions": "Actions",
+    "loading": "Loading repository skills...",
+    "empty": "The repository does not contain any skills yet.",
+    "view": "View",
+    "uninstall": "Uninstall",
+    "uninstalling": "Uninstalling...",
+    "detailTitle": "Skill Detail",
+    "detailLoading": "Loading skill content...",
+    "sourceLocal": "Local install",
+    "sourceMarket": "{{market}}",
+    "statusValues": {
+      "safe": "Safe",
+      "low": "Low risk",
+      "medium": "Medium risk",
+      "blocked": "Blocked",
+      "unknown": "Unknown"
+    }
   },
   "skills": {
     "title": "My Skills",
-    "description": "This phase focuses on real scan results and managed-state boundaries. Install and distribution flows come next.",
-    "empty": "No skills discovered yet. Run a scan first.",
-    "sharedPath": "Compatible agents: {{agents}}",
-    "aliases": "Alias matches: {{agents}}",
-    "priority": "Path priority: {{value}}",
-    "distributionStatus": "Distribution status",
-    "distributionCount": "{{count}} distribution targets",
-    "distributionEmpty": "Not distributed yet",
-    "actions": "Actions",
-    "distribute": "Distribute to default path",
-    "distributionUnavailable": "Custom-source skills do not support one-click distribution yet",
-    "statusValues": {
-      "notDistributed": "Not distributed",
-      "active": "Distributed",
-      "failed": "Distribution failed"
+    "description": "Browse the real global skills directory for the selected AI IDE only. Project and custom scan results are no longer mixed in here.",
+    "loading": "Scanning the selected AI IDE global skills directory...",
+    "empty": "No skills were found in this AI IDE's default global directory.",
+    "relationshipValues": {
+      "linked": "Linked",
+      "directory": "Directory",
+      "broken": "Broken link"
     }
   },
   "market": {
@@ -157,7 +151,7 @@
   },
   "settings": {
     "title": "Settings & Governance",
-    "description": "Manage language, theme, project roots, and custom scan roots here.",
+    "description": "Manage language and theme here.",
     "language": "Interface language",
     "languageOptions": {
       "zhCN": "Simplified Chinese",

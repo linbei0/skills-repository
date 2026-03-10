@@ -4,13 +4,17 @@ use crate::{
     domain::{
         app_state::AppState,
         types::{
-            AppSettings, DistributionRequest, InstallSkillRequest, MarketSearchRequest,
-            MarketSearchResponse, SaveTemplateRequest, ScanSkillsRequest, SecurityReport,
-            TaskHandle, TemplateRecord,
+            AgentGlobalScanResult, AppSettings, DistributionRequest, InstallSkillRequest,
+            MarketSearchRequest, MarketSearchResponse, RepositorySkillDetail,
+            RepositorySkillSummary, RepositoryUninstallResult, SaveTemplateRequest,
+            SecurityReport, TaskHandle, TemplateRecord,
         },
     },
     repositories::security as security_repository,
-    services::{bootstrap, distribution, install, market, scan, settings, templates},
+    services::{
+        agent_scan, bootstrap, distribution, install, market, repository, settings,
+        templates,
+    },
     tasks,
 };
 
@@ -189,6 +193,29 @@ pub fn install_skill(
 }
 
 #[tauri::command]
+pub fn list_repository_skills(
+    state: State<'_, AppState>,
+) -> Result<Vec<RepositorySkillSummary>, String> {
+    log::info!("list_repository_skills invoked");
+    repository::list_repository_skills(&state.paths.db_file, &state.paths.canonical_store_dir)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn get_repository_skill_detail(
+    state: State<'_, AppState>,
+    skill_id: String,
+) -> Result<RepositorySkillDetail, String> {
+    log::info!("get_repository_skill_detail invoked");
+    repository::get_repository_skill_detail(
+        &state.paths.db_file,
+        &state.paths.canonical_store_dir,
+        &skill_id,
+    )
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub fn get_security_reports(state: State<'_, AppState>) -> Result<Vec<SecurityReport>, String> {
     log::info!("get_security_reports invoked");
     security_repository::list_security_reports(&state.paths.db_file)
@@ -289,6 +316,90 @@ pub fn rescan_security(app: AppHandle, state: State<'_, AppState>) -> Result<Tas
 }
 
 #[tauri::command]
+pub fn uninstall_repository_skill(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    skill_id: String,
+) -> Result<TaskHandle, String> {
+    log::info!("uninstall_repository_skill invoked");
+    let task = tasks::new_task_handle("delete_skill");
+    let task_handle = task.clone();
+    let app_handle = app.clone();
+    let state = state.inner().clone();
+
+    log_task_emit_error(
+        "delete_skill.queued",
+        tasks::emit_progress(
+            &app,
+            &task,
+            "queued",
+            "prepare",
+            0,
+            3,
+            "Repository uninstall task queued",
+        ),
+    );
+
+    tauri::async_runtime::spawn(async move {
+        log_task_emit_error(
+            "delete_skill.cleanup",
+            tasks::emit_progress(
+                &app_handle,
+                &task_handle,
+                "running",
+                "cleanup",
+                1,
+                3,
+                "Removing repository skill and distributed targets",
+            ),
+        );
+
+        match repository::uninstall_repository_skill(
+            &state.paths.db_file,
+            &state.paths.canonical_store_dir,
+            &skill_id,
+        ) {
+            Ok(result) => {
+                log_task_emit_error(
+                    "delete_skill.completed",
+                    tasks::emit_completed(
+                        &app_handle,
+                        &task_handle,
+                        "cleanup",
+                        "Repository skill uninstalled",
+                        result,
+                    ),
+                );
+            }
+            Err(error) => {
+                let payload = RepositoryUninstallResult {
+                    skill_id: skill_id.clone(),
+                    removed_paths: Vec::new(),
+                };
+                log_task_emit_error(
+                    "delete_skill.failed",
+                    tasks::emit_failed_with_payload(
+                        &app_handle,
+                        &task_handle,
+                        "cleanup",
+                        &error.to_string(),
+                        payload,
+                    ),
+                );
+            }
+        }
+    });
+
+    Ok(task)
+}
+
+#[tauri::command]
+pub fn scan_agent_global_skills(agent_id: String) -> Result<AgentGlobalScanResult, String> {
+    log::info!("scan_agent_global_skills invoked");
+    agent_scan::scan_agent_global_skills(&agent_id).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub fn distribute_skill(
     app: AppHandle,
     state: State<'_, AppState>,
@@ -374,86 +485,3 @@ pub fn distribute_skill(
     Ok(task)
 }
 
-#[tauri::command]
-pub fn scan_skills(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    request: ScanSkillsRequest,
-) -> Result<TaskHandle, String> {
-    log::info!("scan_skills invoked");
-    let task = tasks::new_task_handle("scan");
-    let app_handle = app.clone();
-    let task_handle = task.clone();
-    let state = state.inner().clone();
-
-    log_task_emit_error(
-        "scan.queued",
-        tasks::emit_progress(&app, &task, "queued", "prepare", 0, 3, "Scan task queued"),
-    );
-
-    tauri::async_runtime::spawn(async move {
-        log_task_emit_error(
-            "scan.running",
-            tasks::emit_progress(
-                &app_handle,
-                &task_handle,
-                "running",
-                "scan",
-                1,
-                3,
-                "Scanning configured skill roots",
-            ),
-        );
-
-        match scan::scan_skills(state.agent_registry.as_ref(), &request) {
-            Ok(result) => {
-                log_task_emit_error(
-                    "scan.persist",
-                    tasks::emit_progress(
-                        &app_handle,
-                        &task_handle,
-                        "running",
-                        "persist",
-                        2,
-                        3,
-                        "Persisting scan snapshot to SQLite",
-                    ),
-                );
-
-                match scan::persist_scan_snapshot(&state.paths.db_file, &result) {
-                    Ok(snapshot) => {
-                        log_task_emit_error(
-                            "scan.completed",
-                            tasks::emit_completed(
-                                &app_handle,
-                                &task_handle,
-                                "cleanup",
-                                "Scan completed",
-                                snapshot,
-                            ),
-                        );
-                    }
-                    Err(error) => {
-                        log_task_emit_error(
-                            "scan.persist_failed",
-                            tasks::emit_failed(
-                                &app_handle,
-                                &task_handle,
-                                "persist",
-                                &error.to_string(),
-                            ),
-                        );
-                    }
-                }
-            }
-            Err(error) => {
-                log_task_emit_error(
-                    "scan.failed",
-                    tasks::emit_failed(&app_handle, &task_handle, "scan", &error.to_string()),
-                );
-            }
-        }
-    });
-
-    Ok(task)
-}

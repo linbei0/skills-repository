@@ -1,24 +1,36 @@
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMemo } from 'react'
-import { useAppStore } from '../stores/use-app-store'
 import { useSkillsStore } from '../stores/use-skills-store'
+
+const agentTabs = [
+  { id: 'antigravity', label: 'Antigravity' },
+  { id: 'claude-code', label: 'Claude Code' },
+  { id: 'codebuddy', label: 'CodeBuddy' },
+  { id: 'codex', label: 'Codex' },
+  { id: 'cursor', label: 'Cursor' },
+  { id: 'kiro', label: 'Kiro' },
+  { id: 'openclaw', label: 'OpenClaw' },
+  { id: 'opencode', label: 'OpenCode' },
+  { id: 'qoder', label: 'Qoder' },
+  { id: 'trae', label: 'Trae' },
+  { id: 'vscode', label: 'VSCode' },
+  { id: 'windsurf', label: 'Windsurf' },
+] as const
 
 export function SkillsPage() {
   const { t } = useTranslation()
-  const skills = useSkillsStore((state) => state.skills)
-  const distributions = useSkillsStore((state) => state.distributions)
-  const distributeSkill = useSkillsStore((state) => state.distributeSkill)
-  const agents = useAppStore((state) => state.agents)
+  const selectedAgentId = useSkillsStore((state) => state.selectedAgentId)
+  const loading = useSkillsStore((state) => state.loading)
+  const loaded = useSkillsStore((state) => state.loaded)
+  const error = useSkillsStore((state) => state.error)
+  const rootPath = useSkillsStore((state) => state.rootPath)
+  const entries = useSkillsStore((state) => state.entries)
+  const setSelectedAgentId = useSkillsStore((state) => state.setSelectedAgentId)
+  const scanAgentGlobalSkills = useSkillsStore((state) => state.scanAgentGlobalSkills)
 
-  const distributionsBySkillId = useMemo(
-    () =>
-      distributions.reduce<Record<string, typeof distributions>>((accumulator, distribution) => {
-        accumulator[distribution.skillId] = accumulator[distribution.skillId] ?? []
-        accumulator[distribution.skillId].push(distribution)
-        return accumulator
-      }, {}),
-    [distributions],
-  )
+  useEffect(() => {
+    void scanAgentGlobalSkills(selectedAgentId)
+  }, [scanAgentGlobalSkills, selectedAgentId])
 
   return (
     <div className="space-y-6">
@@ -27,107 +39,51 @@ export function SkillsPage() {
         <p className="mt-3 max-w-3xl text-sm text-base-content/65">{t('skills.description')}</p>
       </section>
 
-      <section className="overflow-hidden rounded-box border border-base-300 bg-base-100">
-        {skills.length === 0 ? (
-          <div className="p-6 text-sm text-base-content/60">{t('skills.empty')}</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>{t('common.agent')}</th>
-                  <th>{t('common.name')}</th>
-                  <th>{t('common.scope')}</th>
-                  <th>{t('skills.distributionStatus')}</th>
-                  <th>{t('common.path')}</th>
-                  <th>{t('skills.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {skills.map((skill) => {
-                  const skillDistributions = distributionsBySkillId[skill.id] ?? []
-                  const distributionStatus = skillDistributions.some(
-                    (distribution) => distribution.status === 'failed',
-                  )
-                    ? 'failed'
-                    : skillDistributions.some((distribution) => distribution.status === 'active')
-                      ? 'active'
-                      : 'notDistributed'
-                  const preferredAgent = agents.find(
-                    (agent) => agent.label === skill.agent.primary,
-                  )
-                  const targetKind = skill.scope === 'project' ? 'project' : 'global'
-                  const installMode =
-                    targetKind === 'project'
-                      ? preferredAgent?.defaultProjectMode ?? 'copy'
-                      : preferredAgent?.defaultGlobalMode ?? 'symlink'
-                  const canDistribute = skill.scope !== 'custom'
+      <section className="rounded-box border border-base-300 bg-base-100 p-6">
+        <div className="flex flex-wrap gap-3">
+          {agentTabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={selectedAgentId === tab.id ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline'}
+              onClick={() => setSelectedAgentId(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-                  return (
-                  <tr key={skill.id}>
-                    <td className="min-w-[12rem]">
-                      <p className="font-medium">{skill.agent.primary}</p>
-                      {skill.agent.compatibleAgents.length > 0 ? (
-                        <p className="mt-1 text-xs text-base-content/55">
-                          {t('skills.sharedPath', {
-                            agents: skill.agent.compatibleAgents.join(', '),
-                          })}
-                        </p>
-                      ) : null}
-                      {skill.agent.aliases.length > 0 ? (
-                        <p className="mt-1 text-xs text-base-content/55">
-                          {t('skills.aliases', {
-                            agents: skill.agent.aliases.join(', '),
-                          })}
-                        </p>
-                      ) : null}
-                      <p className="mt-1 text-xs text-base-content/45">
-                        {t('skills.priority', { value: skill.agent.priority })}
-                      </p>
-                    </td>
-                    <td>{skill.name}</td>
-                    <td>{t(`common.scopeValues.${skill.scope}`)}</td>
-                    <td className="min-w-[12rem]">
-                      <p>{t(`skills.statusValues.${distributionStatus}`)}</p>
-                      <p className="mt-1 text-xs text-base-content/55">
-                        {skillDistributions.length > 0
-                          ? t('skills.distributionCount', { count: skillDistributions.length })
-                          : t('skills.distributionEmpty')}
-                      </p>
-                      {skillDistributions.slice(0, 2).map((distribution) => (
-                        <p key={distribution.id} className="mt-1 text-xs text-base-content/45">
-                          {distribution.targetAgent}: {distribution.targetPath}
-                        </p>
-                      ))}
-                    </td>
-                    <td className="max-w-[20rem] truncate font-mono text-xs">{skill.path}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-outline"
-                        disabled={!canDistribute}
-                        title={
-                          canDistribute ? t('skills.distribute') : t('skills.distributionUnavailable')
-                        }
-                        onClick={() =>
-                          void distributeSkill({
-                            skillId: skill.id,
-                            targetKind,
-                            targetAgent: skill.agent.primary,
-                            installMode,
-                            projectRoot: skill.projectRoot ?? null,
-                            customTargetPath: null,
-                          })
-                        }
-                      >
-                        {t('skills.distribute')}
-                      </button>
-                    </td>
-                  </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        {rootPath ? (
+          <p className="mt-4 break-all text-sm text-base-content/60">{rootPath}</p>
+        ) : null}
+      </section>
+
+      <section className="space-y-4">
+        {loading ? (
+          <div className="rounded-box border border-base-300 bg-base-100 p-6 text-sm text-base-content/60">
+            {t('skills.loading')}
           </div>
+        ) : error ? (
+          <div className="rounded-box border border-error/30 bg-base-100 p-6 text-sm text-error">
+            {error}
+          </div>
+        ) : loaded && entries.length === 0 ? (
+          <div className="rounded-box border border-dashed border-base-300 bg-base-100 p-6 text-sm text-base-content/60">
+            {t('skills.empty')}
+          </div>
+        ) : (
+          entries.map((entry) => (
+            <article key={entry.id} className="rounded-box border border-base-300 bg-base-100 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-xl font-semibold">{entry.name}</h3>
+                  <p className="mt-2 text-sm text-base-content/60">
+                    {agentTabs.find((tab) => tab.id === selectedAgentId)?.label} · {t(`skills.relationshipValues.${entry.relationship}`)}
+                  </p>
+                  <p className="mt-3 break-all text-sm text-base-content/50">{entry.path}</p>
+                </div>
+              </div>
+            </article>
+          ))
         )}
       </section>
     </div>

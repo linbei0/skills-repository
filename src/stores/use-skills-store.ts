@@ -1,63 +1,57 @@
 import { create } from 'zustand'
-import { distributeSkill as distributeSkillCommand, scanSkills as scanSkillsCommand } from '../lib/tauri-client'
-import type {
-  DistributionRecord,
-  DistributionRequest,
-  DistributionResult,
-  ProjectRecord,
-  ScanSkillsRequest,
-  ScanSkillsResult,
-  SkillRecord,
-} from '../types/app'
+import { scanAgentGlobalSkills as scanAgentGlobalSkillsCommand } from '../lib/tauri-client'
+import type { AgentGlobalScanResult, AgentGlobalSkillEntry } from '../types/app'
 
 interface SkillsStoreState {
-  skills: SkillRecord[]
-  projects: ProjectRecord[]
-  duplicates: Array<{ name: string; paths: string[] }>
-  distributions: DistributionRecord[]
-  scanTaskId: string | null
-  scanSkills: (request: ScanSkillsRequest) => Promise<void>
-  distributeSkill: (request: DistributionRequest) => Promise<void>
-  applyScanResult: (result: ScanSkillsResult) => void
-  applyDistributionResult: (result: DistributionResult) => void
+  selectedAgentId: string
+  loading: boolean
+  loaded: boolean
+  error: string | null
+  rootPath: string | null
+  entries: AgentGlobalSkillEntry[]
+  setSelectedAgentId: (agentId: string) => void
+  scanAgentGlobalSkills: (agentId: string) => Promise<void>
+  applyScanResult: (result: AgentGlobalScanResult) => void
 }
 
 export const useSkillsStore = create<SkillsStoreState>((set) => ({
-  skills: [],
-  projects: [],
-  duplicates: [],
-  distributions: [],
-  scanTaskId: null,
-  scanSkills: async (request) => {
-    const handle = await scanSkillsCommand(request)
-    set({ scanTaskId: handle.taskId })
-  },
-  distributeSkill: async (request) => {
-    await distributeSkillCommand(request)
+  selectedAgentId: 'codex',
+  loading: false,
+  loaded: false,
+  error: null,
+  rootPath: null,
+  entries: [],
+  setSelectedAgentId: (agentId) => set({ selectedAgentId: agentId }),
+  scanAgentGlobalSkills: async (agentId) => {
+    set({ selectedAgentId: agentId, loading: true, error: null })
+    try {
+      const result = await scanAgentGlobalSkillsCommand(agentId)
+      set({
+        selectedAgentId: agentId,
+        loading: false,
+        loaded: true,
+        error: null,
+        rootPath: result.rootPath,
+        entries: result.entries,
+      })
+    } catch (error) {
+      set({
+        selectedAgentId: agentId,
+        loading: false,
+        loaded: true,
+        rootPath: null,
+        entries: [],
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
   },
   applyScanResult: (result) =>
     set({
-      skills: result.skills,
-      projects: result.projects,
-      duplicates: result.duplicates,
-      distributions: result.distributions,
-      scanTaskId: null,
+      selectedAgentId: result.agentId,
+      loading: false,
+      loaded: true,
+      error: null,
+      rootPath: result.rootPath,
+      entries: result.entries,
     }),
-  applyDistributionResult: (result) =>
-    set((state) => ({
-      distributions: [
-        {
-          id: result.distributionId || `failed:${result.skillId}:${result.targetAgent}`,
-          skillId: result.skillId,
-          targetAgent: result.targetAgent,
-          targetPath: result.targetPath,
-          status: result.status as DistributionRecord['status'],
-        },
-        ...state.distributions.filter(
-          (item) =>
-            item.id !== result.distributionId &&
-            !(item.skillId === result.skillId && item.targetAgent === result.targetAgent),
-        ),
-      ],
-    })),
 }))
