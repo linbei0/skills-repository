@@ -10,8 +10,8 @@ const navItems = [
   { to: '/', key: 'repository', icon: 'hn-home' },
   { to: '/skills', key: 'skills', icon: 'hn-folder' },
   { to: '/market', key: 'market', icon: 'hn-search' },
-  { to: '/security', key: 'security', icon: 'hn-shield' },
-  { to: '/templates', key: 'templates', icon: 'hn-list' },
+  { to: '/security', key: 'security', icon: 'hn-lock-alt' },
+  { to: '/templates', key: 'templates', icon: 'hn-grid' },
 ] as const
 
 export function AppShell() {
