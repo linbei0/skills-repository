@@ -25,6 +25,7 @@ interface TemplatesStoreState {
   error: string | null
   lastInjectResult: InjectTemplateResult | null
   refresh: () => Promise<void>
+  refreshRepositorySkills: () => Promise<void>
   saveTemplate: (request: SaveTemplateRequest) => Promise<TemplateRecord>
   deleteTemplate: (templateId: string) => Promise<void>
   injectTemplate: (request: InjectTemplateRequest) => Promise<InjectTemplateResult>
@@ -64,6 +65,20 @@ export const useTemplatesStore = create<TemplatesStoreState>((set) => ({
         loaded: true,
         error: toErrorMessage(error),
       })
+    }
+  },
+  refreshRepositorySkills: async () => {
+    try {
+      const repositorySkills = await listRepositorySkillsCommand()
+      set({
+        repositorySkills,
+        error: null,
+      })
+    } catch (error) {
+      set({
+        error: toErrorMessage(error),
+      })
+      throw error
     }
   },
   saveTemplate: async (request) => {

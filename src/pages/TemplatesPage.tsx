@@ -34,6 +34,7 @@ export function TemplatesPage() {
   const error = useTemplatesStore((state) => state.error)
   const lastInjectResult = useTemplatesStore((state) => state.lastInjectResult)
   const refresh = useTemplatesStore((state) => state.refresh)
+  const refreshRepositorySkills = useTemplatesStore((state) => state.refreshRepositorySkills)
   const saveTemplate = useTemplatesStore((state) => state.saveTemplate)
   const deleteTemplate = useTemplatesStore((state) => state.deleteTemplate)
   const injectTemplate = useTemplatesStore((state) => state.injectTemplate)
@@ -66,12 +67,16 @@ export function TemplatesPage() {
       ),
     [settings],
   )
+  const syncRepositorySkills = () => {
+    void refreshRepositorySkills().catch(() => undefined)
+  }
 
   const openCreateModal = () => {
     setActiveTemplateId(null)
     setDraft(createEmptyDraft())
     setTagsInput('')
     setEditorOpen(true)
+    syncRepositorySkills()
   }
 
   const openEditModal = (template: TemplateRecord) => {
@@ -90,6 +95,7 @@ export function TemplatesPage() {
     })
     setTagsInput(template.tags.join(', '))
     setEditorOpen(true)
+    syncRepositorySkills()
   }
 
   const closeEditorModal = () => {
@@ -164,57 +170,88 @@ export function TemplatesPage() {
             {loading ? t('templates.loading') : t('templates.empty')}
           </div>
         ) : (
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {templates.map((template) => {
               const missingCount = template.items.filter(
                 (item) => !repositorySkillMap.has(item.skillRef),
               ).length
 
               return (
-                <article
+                <div
                   key={template.id}
-                  className="rounded-box border border-base-300 bg-base-200/60 p-5"
+                  className="group relative flex cursor-pointer flex-col justify-between rounded-xl border border-base-200 bg-base-100 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg"
+                  onClick={() => openEditModal(template)}
                 >
-                  <button className="w-full text-left" onClick={() => openEditModal(template)}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-lg font-semibold">{template.name}</p>
-                        <p className="mt-2 text-sm text-base-content/60">
-                          {template.description ?? t('templates.noDescription')}
-                        </p>
-                      </div>
-                      {missingCount > 0 ? (
-                        <span className="badge badge-warning">
-                          {t('templates.card.missingCount', { count: missingCount })}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-lg font-bold text-base-content transition-colors group-hover:text-primary">
+                        {template.name}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="badge badge-ghost badge-sm gap-1 font-mono text-xs text-base-content/60">
+                          <i className="hn hn-code-block text-[10px]" />
+                          {template.items.length}
                         </span>
-                      ) : null}
-                    </div>
-                  </button>
-
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-base-content/60">
-                    <span>{t('templates.card.skillCount', { count: template.items.length })}</span>
-                    {template.tags.length > 0
-                      ? template.tags.map((tag) => (
-                          <span key={tag} className="badge badge-outline">
-                            {tag}
+                        {missingCount > 0 ? (
+                          <span className="badge badge-warning badge-sm gap-1 text-xs">
+                            <i className="hn hn-exclaimation text-[10px]" />
+                            {missingCount}
                           </span>
-                        ))
-                      : <span>{t('templates.noTags')}</span>}
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div
+                      className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        className="btn btn-square btn-ghost btn-sm text-base-content/70 hover:bg-primary hover:text-primary-content"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openInjectModal(template)
+                        }}
+                        title={t('templates.inject.open')}
+                      >
+                        <i className="hn hn-upload-alt" />
+                      </button>
+                      <button
+                        className="btn btn-square btn-ghost btn-sm text-error/70 hover:bg-error hover:text-error-content"
+                        disabled={deleting}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void deleteTemplate(template.id)
+                        }}
+                        title={t('templates.delete')}
+                      >
+                        <i className="hn hn-trash" />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="mt-5 flex flex-wrap justify-end gap-3">
-                    <button className="btn btn-sm btn-outline" onClick={() => openInjectModal(template)}>
-                      {t('templates.inject.open')}
-                    </button>
-                    <button
-                      className="btn btn-sm btn-ghost text-error"
-                      disabled={deleting}
-                      onClick={() => void deleteTemplate(template.id)}
-                    >
-                      {deleting ? t('templates.deleting') : t('templates.delete')}
-                    </button>
+                  <div className="mt-3 mb-4 flex-1">
+                    <p className="line-clamp-2 min-h-[2.5em] text-sm text-base-content/60">
+                      {template.description ?? t('templates.noDescription')}
+                    </p>
                   </div>
-                </article>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {template.tags.length > 0 ? (
+                      template.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="badge badge-outline badge-xs border-base-300 text-base-content/50 transition-colors group-hover:border-primary/30 group-hover:text-primary/70"
+                        >
+                          #{tag}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs italic text-base-content/30">
+                        {t('templates.noTags')}
+                      </span>
+                    )}
+                  </div>
+                </div>
               )
             })}
           </div>

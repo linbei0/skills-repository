@@ -49,11 +49,13 @@ export function TemplateInjectModal({
 
   const resolvedTargetPath = useMemo(() => {
     if (!projectRoot.trim()) return ''
+
     if (targetType === 'custom') {
       return customRelativePath.trim()
-        ? `${projectRoot.replace(/[\\/]+$/, '')}/${customRelativePath.replace(/^[/\\]+/, '')}`
+        ? `${projectRoot.replace(/[\\/]+$/, '')}/${customRelativePath.replace(/^[\\/]+/, '')}`
         : ''
     }
+
     const target = targets.find((item) => item.id === targetAgentId)
     return target ? `${projectRoot.replace(/[\\/]+$/, '')}/${target.relativePath}` : ''
   }, [customRelativePath, projectRoot, targetAgentId, targetType, targets])
@@ -72,13 +74,14 @@ export function TemplateInjectModal({
       directory: true,
       multiple: false,
     })
+
     if (typeof selected === 'string') {
       setProjectRoot(selected)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-content/45 p-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-content/45 p-4 backdrop-blur-sm md:p-6">
       <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-base-300 px-6 py-5">
           <div>
@@ -87,8 +90,8 @@ export function TemplateInjectModal({
               {t('templates.inject.subtitle', { name: template.name })}
             </p>
           </div>
-          <button className="btn btn-ghost btn-circle" onClick={onClose}>
-            <span className="text-2xl leading-none">×</span>
+          <button className="btn btn-ghost btn-circle" aria-label={t('common.close')} onClick={onClose}>
+            <span className="text-xl font-semibold leading-none">x</span>
           </button>
         </div>
 
