@@ -78,11 +78,18 @@ pub struct MarketSkillSummary {
     pub name: String,
     pub description: Option<String>,
     pub provider: String,
+    pub source_type: String,
     pub source_url: String,
+    pub repo_url: Option<String>,
     pub download_url: Option<String>,
+    pub package_ref: Option<String>,
+    pub manifest_path: Option<String>,
+    pub skill_root: Option<String>,
     pub version: Option<String>,
     pub author: Option<String>,
     pub tags: Vec<String>,
+    pub installable: bool,
+    pub resolver_status: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,8 +191,13 @@ pub struct DistributionResult {
 pub struct InstallSkillRequest {
     pub provider: String,
     pub market_skill_id: String,
+    pub source_type: String,
     pub source_url: String,
+    pub repo_url: Option<String>,
     pub download_url: Option<String>,
+    pub package_ref: Option<String>,
+    pub manifest_path: Option<String>,
+    pub skill_root: Option<String>,
     pub name: String,
     pub slug: String,
     pub version: Option<String>,

@@ -102,8 +102,13 @@ mod tests {
             &InstallSkillRequest {
                 provider: "github".into(),
                 market_skill_id: "demo".into(),
+                source_type: "github-resolved-skill".into(),
                 source_url: "https://example.com/demo".into(),
+                repo_url: Some("https://example.com/demo".into()),
                 download_url: None,
+                package_ref: Some("example/demo@skills/demo-skill".into()),
+                manifest_path: Some("skills/demo-skill/SKILL.md".into()),
+                skill_root: Some("skills/demo-skill".into()),
                 name: "Demo".into(),
                 slug: "demo-skill".into(),
                 version: None,

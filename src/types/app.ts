@@ -106,11 +106,18 @@ export interface MarketSkillSummary {
   name: string
   description: string | null
   provider: string
+  sourceType: string
   sourceUrl: string
+  repoUrl: string | null
   downloadUrl: string | null
+  packageRef: string | null
+  manifestPath: string | null
+  skillRoot: string | null
   version: string | null
   author: string | null
   tags: string[]
+  installable: boolean
+  resolverStatus: string
 }
 
 export interface MarketSearchResponse {
@@ -143,8 +150,13 @@ export interface DistributionResult {
 export interface InstallSkillRequest {
   provider: string
   marketSkillId: string
+  sourceType: string
   sourceUrl: string
+  repoUrl?: string | null
   downloadUrl?: string | null
+  packageRef?: string | null
+  manifestPath?: string | null
+  skillRoot?: string | null
   name: string
   slug: string
   version?: string | null

@@ -62,7 +62,12 @@ pub fn save_installed_skill(
             now,
             now,
             json!({
+                "sourceType": request.source_type,
+                "repoUrl": request.repo_url,
                 "downloadUrl": request.download_url,
+                "packageRef": request.package_ref,
+                "manifestPath": request.manifest_path,
+                "skillRoot": request.skill_root,
                 "requestedTargets": request.requested_targets,
             })
             .to_string(),
@@ -442,8 +447,13 @@ mod tests {
         let request = InstallSkillRequest {
             provider: source_market.unwrap_or("local").to_string(),
             market_skill_id: "demo".into(),
+            source_type: "catalog".into(),
             source_url: "https://example.com/demo".into(),
+            repo_url: Some("https://example.com/demo".into()),
             download_url: None,
+            package_ref: Some("example/demo@skills/demo-skill".into()),
+            manifest_path: Some("skills/demo-skill/SKILL.md".into()),
+            skill_root: Some("skills/demo-skill".into()),
             name: "Demo Skill".into(),
             slug: "demo-skill".into(),
             version: Some("main".into()),

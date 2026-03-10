@@ -81,17 +81,19 @@
   },
   "market": {
     "title": "マーケット",
-    "description": "このページは実際の provider 検索と SQLite キャッシュに接続されています。インストールとリスク表示は後続タスクで接続します。",
+    "description": "このページは実際の provider 検索、統一リポジトリへの既定インストール、阻断/失敗の明示表示まで接続されています。",
     "searchPlaceholder": "skills、リポジトリ名、用途を検索",
     "search": "検索",
     "searching": "検索中...",
     "helper": "このビルドでは GitHub provider を既定で有効化しています。キャッシュ命中や provider 失敗は明示的に表示します。",
+    "defaultInstallHint": "既定のインストール先: 統一リポジトリ（canonical store）",
     "providersTitle": "Provider 状態",
     "providersEmpty": "まだ検索は実行されていません。検索後に provider 状態、キャッシュ命中、失敗理由がここに表示されます。",
     "providerReady": "provider はリアルタイム結果を正常に返しました。",
     "providerStatuses": {
       "ok": "ライブ結果",
       "cached": "キャッシュ命中",
+      "partial": "一部成功",
       "error": "失敗",
       "unavailable": "このビルドでは未対応"
     },
@@ -101,9 +103,18 @@
     "idle": "キーワードを入力すると実際の provider を検索します。空のままなら既定の skills 関連クエリを使います。",
     "empty": "一致する結果は見つかりませんでした。より広いキーワードで再検索するか、時間をおいて試してください。",
     "noDescription": "このリポジトリには説明がありません。",
+    "install": "統一リポジトリへインストール",
+    "installing": "インストール中...",
+    "installed": "インストール済み",
+    "installHint": "まず統一リポジトリへ保存し、その後必要に応じて Agent へ配布します。",
+    "installSuccess": "統一リポジトリへインストールしました。",
+    "installBlocked": "セキュリティスキャンによりインストールが阻止されました（{{level}}）。",
+    "installFailed": "インストール失敗: {{message}}",
     "openSource": "リポジトリを開く",
     "author": "作者: {{author}}",
-    "version": "既定ブランチ: {{version}}"
+    "version": "既定ブランチ: {{version}}",
+    "skillRoot": "skill ルート: {{path}}",
+    "packageRef": "ソース参照: {{ref}}"
   },
   "security": {
     "title": "セキュリティ",

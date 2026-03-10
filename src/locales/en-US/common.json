@@ -81,17 +81,19 @@
   },
   "market": {
     "title": "Market",
-    "description": "The market page now searches a real provider with SQLite-backed cache. Install flow and risk prompts will be connected in later tasks.",
+    "description": "The market page now supports live provider search, default installation into the unified repository, and explicit blocked/failed feedback.",
     "searchPlaceholder": "Search skills, repository names, or use cases",
     "search": "Search",
     "searching": "Searching...",
     "helper": "GitHub is enabled by default in this build. Cache hits and provider failures are shown explicitly.",
+    "defaultInstallHint": "Default install target: unified repository (canonical store)",
     "providersTitle": "Provider status",
     "providersEmpty": "No search has been run yet. Provider status, cache hits, and failure reasons will appear here after searching.",
     "providerReady": "The provider returned live results successfully.",
     "providerStatuses": {
       "ok": "Live",
       "cached": "Cached",
+      "partial": "Partial",
       "error": "Error",
       "unavailable": "Unavailable in this build"
     },
@@ -101,9 +103,18 @@
     "idle": "Enter a keyword to search a real provider. Leaving it empty returns the default skills-related query.",
     "empty": "No matching results were found. Try a broader keyword or search again later.",
     "noDescription": "This repository does not provide a description yet.",
+    "install": "Install to repository",
+    "installing": "Installing...",
+    "installed": "Installed",
+    "installHint": "The skill is stored in the unified repository first, then can be distributed later.",
+    "installSuccess": "Installed into the unified repository.",
+    "installBlocked": "Installation was blocked by the security scan ({{level}}).",
+    "installFailed": "Installation failed: {{message}}",
     "openSource": "Open repository",
     "author": "Author: {{author}}",
-    "version": "Default branch: {{version}}"
+    "version": "Default branch: {{version}}",
+    "skillRoot": "Skill root: {{path}}",
+    "packageRef": "Source ref: {{ref}}"
   },
   "security": {
     "title": "Security",

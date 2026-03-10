@@ -1,6 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { useMarketStore } from '../stores/use-market-store'
 
+const resolveInstallStateTone = (status: 'installed' | 'blocked' | 'failed') => {
+  if (status === 'installed') return 'border-success/30 bg-success/5 text-success'
+  if (status === 'blocked') return 'border-error/30 bg-error/5 text-error'
+  return 'border-warning/30 bg-warning/5 text-warning'
+}
+
 export function MarketPage() {
   const { t } = useTranslation()
   const query = useMarketStore((state) => state.query)
@@ -11,8 +17,10 @@ export function MarketPage() {
   const providers = useMarketStore((state) => state.providers)
   const cacheHit = useMarketStore((state) => state.cacheHit)
   const total = useMarketStore((state) => state.total)
+  const installStates = useMarketStore((state) => state.installStates)
   const setQuery = useMarketStore((state) => state.setQuery)
   const search = useMarketStore((state) => state.search)
+  const install = useMarketStore((state) => state.install)
 
   return (
     <div className="space-y-6">
@@ -46,6 +54,7 @@ export function MarketPage() {
         </form>
 
         <p className="mt-3 text-sm text-base-content/60">{t('market.helper')}</p>
+        <p className="mt-2 text-xs text-base-content/50">{t('market.defaultInstallHint')}</p>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.1fr_1.9fr]">
@@ -104,35 +113,90 @@ export function MarketPage() {
           ) : null}
 
           <div className="mt-4 space-y-4">
-            {results.map((item) => (
-              <article key={item.id} className="rounded-box border border-base-300 bg-base-200/60 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-lg font-semibold">{item.name}</p>
-                      <span className="badge badge-outline">{item.provider}</span>
-                      <span className="badge badge-ghost">{t('common.comingSoon')}</span>
-                    </div>
-                    <p className="mt-2 text-sm text-base-content/60">
-                      {item.description ?? t('market.noDescription')}
-                    </p>
-                  </div>
-                  <a
-                    className="btn btn-sm btn-outline"
-                    href={item.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t('market.openSource')}
-                  </a>
-                </div>
+            {results.map((item) => {
+              const installState = installStates[item.id]
+              const isInstalling = installState?.status === 'installing'
+              const isInstalled = installState?.status === 'installed'
+              const installDisabled = isInstalling || isInstalled || !item.installable
 
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-base-content/55">
-                  {item.author ? <span>{t('market.author', { author: item.author })}</span> : null}
-                  {item.version ? <span>{t('market.version', { version: item.version })}</span> : null}
-                </div>
-              </article>
-            ))}
+              return (
+                <article key={item.id} className="rounded-box border border-base-300 bg-base-200/60 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-lg font-semibold">{item.name}</p>
+                        <span className="badge badge-outline">{item.provider}</span>
+                      </div>
+                      <p className="mt-2 text-sm text-base-content/60">
+                        {item.description ?? t('market.noDescription')}
+                      </p>
+                    </div>
+                    <a
+                      className="btn btn-sm btn-outline"
+                      href={item.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t('market.openSource')}
+                    </a>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-base-content/55">
+                    {item.author ? <span>{t('market.author', { author: item.author })}</span> : null}
+                    {item.version ? <span>{t('market.version', { version: item.version })}</span> : null}
+                    {item.skillRoot ? <span>{t('market.skillRoot', { path: item.skillRoot })}</span> : null}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      className="btn btn-sm btn-primary"
+                      disabled={installDisabled}
+                      onClick={() => void install(item)}
+                    >
+                      {isInstalling
+                        ? t('market.installing')
+                        : isInstalled
+                          ? t('market.installed')
+                          : t('market.install')}
+                    </button>
+                    <span className="text-xs text-base-content/55">{t('market.installHint')}</span>
+                  </div>
+
+                  {item.packageRef ? (
+                    <p className="mt-3 break-all text-xs text-base-content/55">
+                      {t('market.packageRef', { ref: item.packageRef })}
+                    </p>
+                  ) : null}
+
+                  {installState && installState.status !== 'installing' ? (
+                    <div
+                      className={`mt-4 rounded-box border p-3 text-sm ${resolveInstallStateTone(
+                        installState.status,
+                      )}`}
+                    >
+                      {installState.status === 'installed' ? (
+                        <div className="space-y-1">
+                          <p>{t('market.installSuccess')}</p>
+                          {installState.canonicalPath ? (
+                            <p className="break-all text-xs opacity-80">{installState.canonicalPath}</p>
+                          ) : null}
+                        </div>
+                      ) : installState.status === 'blocked' ? (
+                        <p>
+                          {t('market.installBlocked', {
+                            level: installState.securityLevel
+                              ? t(`security.levels.${installState.securityLevel}`)
+                              : installState.message,
+                          })}
+                        </p>
+                      ) : (
+                        <p>{t('market.installFailed', { message: installState.message })}</p>
+                      )}
+                    </div>
+                  ) : null}
+                </article>
+              )
+            })}
           </div>
         </div>
       </section>

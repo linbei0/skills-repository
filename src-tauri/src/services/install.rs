@@ -125,18 +125,98 @@ fn stage_source(temp_dir: &Path, request: &InstallSkillRequest) -> Result<PathBu
 }
 
 fn find_skill_root(root: &Path) -> Result<PathBuf> {
+    collect_skill_roots(root)?
+        .into_iter()
+        .next()
+        .ok_or_else(|| anyhow!("no SKILL.md found in downloaded source"))
+}
+
+fn collect_skill_roots(root: &Path) -> Result<Vec<PathBuf>> {
+    let mut roots = Vec::new();
     for entry in WalkDir::new(root) {
         let entry = entry?;
         if entry.file_type().is_file() && entry.file_name() == "SKILL.md" {
-            return entry
+            let parent = entry
                 .path()
                 .parent()
                 .map(PathBuf::from)
-                .ok_or_else(|| anyhow!("skill root has no parent"));
+                .ok_or_else(|| anyhow!("skill root has no parent"))?;
+            roots.push(parent);
         }
     }
 
-    Err(anyhow!("no SKILL.md found in downloaded source"))
+    roots.sort();
+    roots.dedup();
+    Ok(roots)
+}
+
+fn normalize_relative_path(value: &str) -> String {
+    value
+        .trim()
+        .trim_matches('/')
+        .replace('\\', "/")
+        .trim_end_matches('/')
+        .to_string()
+}
+
+fn path_suffix_matches(candidate: &str, expected: &str) -> bool {
+    let expected = normalize_relative_path(expected);
+    let candidate = normalize_relative_path(candidate);
+    candidate == expected || candidate.ends_with(&format!("/{}", expected))
+}
+
+fn resolve_requested_skill_root(root: &Path, request: &InstallSkillRequest) -> Result<PathBuf> {
+    let roots = collect_skill_roots(root)?;
+    if roots.is_empty() {
+        return Err(anyhow!("no SKILL.md found in downloaded source"));
+    }
+
+    if let Some(manifest_path) = request
+        .manifest_path
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        if let Some(found) = roots.iter().find(|candidate| {
+            let manifest_candidate = candidate.join("SKILL.md");
+            let relative = manifest_candidate
+                .strip_prefix(root)
+                .unwrap_or(&manifest_candidate)
+                .to_string_lossy()
+                .to_string();
+            path_suffix_matches(&relative, manifest_path)
+        }) {
+            return Ok(found.clone());
+        }
+
+        return Err(anyhow!(
+            "requested manifest path was not found in downloaded source: {}",
+            manifest_path
+        ));
+    }
+
+    if let Some(skill_root) = request
+        .skill_root
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+    {
+        if let Some(found) = roots.iter().find(|candidate| {
+            let relative = candidate
+                .strip_prefix(root)
+                .unwrap_or(candidate)
+                .to_string_lossy()
+                .to_string();
+            path_suffix_matches(&relative, skill_root)
+        }) {
+            return Ok(found.clone());
+        }
+
+        return Err(anyhow!(
+            "requested skill root was not found in downloaded source: {}",
+            skill_root
+        ));
+    }
+
+    find_skill_root(root)
 }
 
 pub fn install_skill(
@@ -148,7 +228,7 @@ pub fn install_skill(
 
     let install_result = (|| -> Result<InstallSkillResult> {
         let staged_dir = stage_source(&install_temp_dir, request)?;
-        let skill_root = find_skill_root(&staged_dir)?;
+        let skill_root = resolve_requested_skill_root(&staged_dir, request)?;
         let security_report = security::scan_skill_directory(&skill_root, None, "temp_install")?;
         security_repository::save_security_report(&paths.db_file, &security_report)?;
 
@@ -279,8 +359,13 @@ mod tests {
         InstallSkillRequest {
             provider: "github".into(),
             market_skill_id: "demo".into(),
+            source_type: "github-resolved-skill".into(),
             source_url: download_url.clone(),
+            repo_url: Some("https://github.com/demo/demo-skill".into()),
             download_url: Some(download_url),
+            package_ref: Some("demo/demo-skill".into()),
+            manifest_path: None,
+            skill_root: None,
             name: "Demo Skill".into(),
             slug: "demo-skill".into(),
             version: Some("main".into()),
@@ -360,5 +445,44 @@ mod tests {
 
         assert!(result.is_err());
         assert!(!paths.canonical_store_dir.join("demo-skill").exists());
+    }
+
+    #[test]
+    fn installs_exact_skill_root_when_repository_contains_multiple_skills() {
+        let dir = tempdir().unwrap();
+        let paths = test_paths(dir.path());
+        run_migrations(&paths.db_file).unwrap();
+
+        let zip_path = dir.path().join("multi-skill.zip");
+        write_zip(
+            &zip_path,
+            &[
+                ("repo-main/skills/demo-skill/SKILL.md", "# demo"),
+                ("repo-main/skills/demo-skill/README.md", "demo"),
+                ("repo-main/skills/other-skill/SKILL.md", "# other"),
+                ("repo-main/skills/other-skill/README.md", "other"),
+            ],
+        );
+
+        let result = install_skill(
+            &paths,
+            &InstallSkillRequest {
+                manifest_path: Some("skills/demo-skill/SKILL.md".into()),
+                skill_root: Some("skills/demo-skill".into()),
+                package_ref: Some("demo/demo-skill@skills/demo-skill".into()),
+                ..request(zip_path.to_string_lossy().to_string())
+            },
+        )
+        .unwrap();
+
+        assert!(!result.blocked);
+        assert!(PathBuf::from(&result.canonical_path).join("README.md").exists());
+        assert_eq!(
+            fs::read_to_string(PathBuf::from(&result.canonical_path).join("README.md")).unwrap(),
+            "demo"
+        );
+        assert!(!PathBuf::from(&result.canonical_path)
+            .join("../other-skill")
+            .exists());
     }
 }
