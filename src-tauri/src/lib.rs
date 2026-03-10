@@ -8,7 +8,7 @@ mod tasks;
 
 use commands::app::{
     bootstrap_app, delete_template, distribute_skill, get_repository_skill_detail,
-    get_security_reports, get_settings, get_template, install_skill, list_repository_skills,
+    get_security_reports, get_template, install_skill, list_repository_skills,
     list_templates, rescan_security, save_settings, save_template, scan_agent_global_skills,
     search_market_skills, uninstall_repository_skill,
 };
@@ -40,7 +40,6 @@ pub fn run() {
             distribute_skill,
             delete_template,
             get_repository_skill_detail,
-            get_settings,
             get_security_reports,
             get_template,
             install_skill,

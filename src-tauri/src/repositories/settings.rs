@@ -3,7 +3,7 @@ use rusqlite::{params, OptionalExtension};
 use std::path::Path;
 use time::OffsetDateTime;
 
-use crate::domain::types::{AppSettings, ScanSettings};
+use crate::domain::types::AppSettings;
 
 use super::db::open_connection;
 
@@ -47,11 +47,6 @@ pub fn default_settings(language: String) -> AppSettings {
     AppSettings {
         language,
         theme_mode: "system".into(),
-        scan: ScanSettings {
-            project_roots: Vec::new(),
-            custom_roots: Vec::new(),
-        },
-        agent_preferences: Default::default(),
     }
 }
 
@@ -70,11 +65,6 @@ mod tests {
         let settings = AppSettings {
             language: "zh-CN".into(),
             theme_mode: "dark".into(),
-            scan: ScanSettings {
-                project_roots: vec!["E:/workspace/demo".into()],
-                custom_roots: vec!["E:/shared/skills".into()],
-            },
-            agent_preferences: Default::default(),
         };
 
         save_settings(&db_path, &settings).unwrap();
@@ -82,7 +72,5 @@ mod tests {
 
         assert_eq!(loaded.language, "zh-CN");
         assert_eq!(loaded.theme_mode, "dark");
-        assert_eq!(loaded.scan.project_roots.len(), 1);
-        assert_eq!(loaded.scan.custom_roots.len(), 1);
     }
 }

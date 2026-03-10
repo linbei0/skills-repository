@@ -5,11 +5,6 @@ export type AppLocale = 'zh-CN' | 'en-US' | 'ja-JP'
 export interface AppSettings {
   language: AppLocale
   themeMode: ThemeMode
-  scan: {
-    projectRoots: string[]
-    customRoots: string[]
-  }
-  agentPreferences: Record<string, string>
 }
 
 export interface AgentCapability {

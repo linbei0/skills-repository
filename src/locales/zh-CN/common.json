@@ -1,4 +1,4 @@
-{
+﻿{
   "app": {
     "title": "skills管理器",
     "subtitle": "跨 Agent 的 skills 资产控制台",
@@ -9,14 +9,18 @@
     "skills": "我的 Skills",
     "market": "市场",
     "security": "安全",
-    "templates": "模板",
-    "settings": "设置"
+    "templates": "模板"
   },
   "topbar": {
-    "searchPlaceholder": "搜索页面、技能或设置（即将完善）",
+    "searchPlaceholder": "搜索页面或技能（即将完善）",
     "theme": "主题",
     "language": "语言",
-    "tasks": "任务"
+    "tasks": "任务",
+    "languageOptions": {
+      "zhCN": "简体中文",
+      "enUS": "English",
+      "jaJP": "日本語"
+    }
   },
   "repository": {
     "title": "Skills 仓库",
@@ -148,30 +152,6 @@
     "saving": "保存中...",
     "delete": "删除模板",
     "deleting": "删除中..."
-  },
-  "settings": {
-    "title": "设置与治理",
-    "description": "这里可以管理语言与主题。",
-    "language": "界面语言",
-    "languageOptions": {
-      "zhCN": "简体中文",
-      "enUS": "English",
-      "jaJP": "日本語"
-    },
-    "themeMode": "主题模式",
-    "sections": {
-      "basic": "基础设置",
-      "scan": "扫描配置"
-    },
-    "themeModes": {
-      "system": "跟随系统",
-      "light": "浅色",
-      "dark": "深色"
-    },
-    "projectRoots": "项目根路径",
-    "customRoots": "自定义扫描路径",
-    "save": "保存设置",
-    "saving": "保存中..."
   },
   "tasks": {
     "title": "任务中心",

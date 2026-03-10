@@ -23,7 +23,6 @@ export const EVENT_TASK_FAILED = 'task:failed'
 
 export const bootstrapApp = () => invoke<BootstrapPayload>('bootstrap_app')
 
-export const getSettings = () => invoke<AppSettings>('get_settings')
 
 export const saveSettings = (settings: AppSettings) =>
   invoke<AppSettings>('save_settings', { settings })

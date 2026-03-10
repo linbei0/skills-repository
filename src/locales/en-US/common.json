@@ -1,22 +1,26 @@
-{
+﻿{
   "app": {
     "title": "skills manager",
     "subtitle": "Skill asset control center across agents",
-    "shellHint": "Phase 1 currently includes the app shell, settings, scan foundation, and task bus."
+    "shellHint": "The current build includes the app shell, repository browsing, global skill scanning, and the task bus."
   },
   "nav": {
     "repository": "Skills Repository",
     "skills": "My Skills",
     "market": "Market",
     "security": "Security",
-    "templates": "Templates",
-    "settings": "Settings"
+    "templates": "Templates"
   },
   "topbar": {
-    "searchPlaceholder": "Search pages, skills, or settings (coming soon)",
+    "searchPlaceholder": "Search pages or skills (coming soon)",
     "theme": "Theme",
     "language": "Language",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "languageOptions": {
+      "zhCN": "Simplified Chinese",
+      "enUS": "English",
+      "jaJP": "Japanese"
+    }
   },
   "repository": {
     "title": "Skills Repository",
@@ -148,30 +152,6 @@
     "saving": "Saving...",
     "delete": "Delete template",
     "deleting": "Deleting..."
-  },
-  "settings": {
-    "title": "Settings & Governance",
-    "description": "Manage language and theme here.",
-    "language": "Interface language",
-    "languageOptions": {
-      "zhCN": "Simplified Chinese",
-      "enUS": "English",
-      "jaJP": "Japanese"
-    },
-    "themeMode": "Theme mode",
-    "sections": {
-      "basic": "Basic settings",
-      "scan": "Scan configuration"
-    },
-    "themeModes": {
-      "system": "Follow system",
-      "light": "Light",
-      "dark": "Dark"
-    },
-    "projectRoots": "Project roots",
-    "customRoots": "Custom scan roots",
-    "save": "Save settings",
-    "saving": "Saving..."
   },
   "tasks": {
     "title": "Task Center",

@@ -14,7 +14,6 @@ const navItems = [
   { to: '/market', key: 'market', icon: 'hn-search' },
   { to: '/security', key: 'security', icon: 'hn-shield' },
   { to: '/templates', key: 'templates', icon: 'hn-list' },
-  { to: '/settings', key: 'settings', icon: 'hn-settings' },
 ] as const
 
 export function AppShell() {
@@ -38,9 +37,9 @@ export function AppShell() {
   const isDarkTheme = resolvedTheme === 'skills-dark'
 
   const languageOptions: Array<{ value: AppLocale; label: string }> = [
-    { value: 'zh-CN', label: t('settings.languageOptions.zhCN') },
-    { value: 'en-US', label: t('settings.languageOptions.enUS') },
-    { value: 'ja-JP', label: t('settings.languageOptions.jaJP') },
+    { value: 'zh-CN', label: t('topbar.languageOptions.zhCN') },
+    { value: 'en-US', label: t('topbar.languageOptions.enUS') },
+    { value: 'ja-JP', label: t('topbar.languageOptions.jaJP') },
   ]
 
   const updateLanguageQuickly = async (language: AppLocale) => {

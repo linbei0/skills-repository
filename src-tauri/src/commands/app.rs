@@ -40,15 +40,6 @@ pub fn bootstrap_app(
         })
 }
 
-#[tauri::command]
-pub fn get_settings(state: State<'_, AppState>) -> Result<AppSettings, String> {
-    log::info!("get_settings invoked");
-    settings::get_settings(
-        &state,
-        bootstrap::normalize_language(&bootstrap::system_locale()),
-    )
-    .map_err(|error| error.to_string())
-}
 
 #[tauri::command]
 pub fn save_settings(

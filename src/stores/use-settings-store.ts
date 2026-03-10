@@ -11,25 +11,13 @@ interface SettingsStoreState {
   setSettings: (settings: AppSettings) => void
   setLanguage: (language: AppLocale) => void
   setThemeMode: (themeMode: ThemeMode) => void
-  setRootsText: (kind: 'projectRoots' | 'customRoots', value: string) => void
   save: () => Promise<void>
 }
 
 const defaultSettings: AppSettings = {
   language: 'en-US',
   themeMode: 'system',
-  scan: {
-    projectRoots: [],
-    customRoots: [],
-  },
-  agentPreferences: {},
 }
-
-const parseLines = (value: string) =>
-  value
-    .split('\n')
-    .map((item) => item.trim())
-    .filter(Boolean)
 
 export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   settings: defaultSettings,
@@ -42,16 +30,6 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   setThemeMode: (themeMode) =>
     set((state) => ({
       settings: { ...state.settings, themeMode },
-    })),
-  setRootsText: (kind, value) =>
-    set((state) => ({
-      settings: {
-        ...state.settings,
-        scan: {
-          ...state.settings.scan,
-          [kind]: parseLines(value),
-        },
-      },
     })),
   save: async () => {
     set({ saving: true })

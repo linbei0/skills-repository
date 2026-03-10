@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-
 use super::agent_registry::AgentCapability;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -8,15 +6,6 @@ use super::agent_registry::AgentCapability;
 pub struct AppSettings {
     pub language: String,
     pub theme_mode: String,
-    pub scan: ScanSettings,
-    pub agent_preferences: HashMap<String, String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ScanSettings {
-    pub project_roots: Vec<String>,
-    pub custom_roots: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
