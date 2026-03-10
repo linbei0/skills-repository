@@ -78,7 +78,6 @@ const INITIAL_SCHEMA_MIGRATION: &str = "
 
         CREATE TABLE IF NOT EXISTS operation_logs (
             id TEXT PRIMARY KEY,
-            task_id TEXT,
             operation_type TEXT NOT NULL,
             entity_type TEXT NOT NULL,
             entity_id TEXT,
@@ -124,9 +123,51 @@ const PHASE_TWO_SCHEMA_MIGRATION: &str = "
         CREATE INDEX IF NOT EXISTS idx_market_cache_expires_at ON market_cache(expires_at);
 ";
 
+const PHASE_THREE_SCHEMA_MIGRATION: &str = "
+        PRAGMA foreign_keys = OFF;
+
+        CREATE TABLE IF NOT EXISTS operation_logs_v3 (
+            id TEXT PRIMARY KEY,
+            operation_type TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT,
+            status TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            detail_json TEXT,
+            created_at INTEGER NOT NULL
+        );
+
+        INSERT INTO operation_logs_v3 (
+            id,
+            operation_type,
+            entity_type,
+            entity_id,
+            status,
+            summary,
+            detail_json,
+            created_at
+        )
+        SELECT
+            id,
+            operation_type,
+            entity_type,
+            entity_id,
+            status,
+            summary,
+            detail_json,
+            created_at
+        FROM operation_logs;
+
+        DROP TABLE operation_logs;
+        ALTER TABLE operation_logs_v3 RENAME TO operation_logs;
+
+        PRAGMA foreign_keys = ON;
+";
+
 const MIGRATIONS: &[M<'_>] = &[
     M::up(INITIAL_SCHEMA_MIGRATION),
     M::up(PHASE_TWO_SCHEMA_MIGRATION),
+    M::up(PHASE_THREE_SCHEMA_MIGRATION),
 ];
 
 pub fn open_connection(path: &Path) -> Result<Connection> {
@@ -195,6 +236,6 @@ mod tests {
         let user_version: i64 = upgraded
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(user_version, 2);
+        assert_eq!(user_version, 3);
     }
 }

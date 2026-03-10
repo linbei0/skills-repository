@@ -1,4 +1,4 @@
-﻿{
+{
   "app": {
     "title": "skills管理器",
     "subtitle": "跨 Agent 的 skills 资产控制台",
@@ -15,7 +15,6 @@
     "searchPlaceholder": "搜索页面或技能（即将完善）",
     "theme": "主题",
     "language": "语言",
-    "tasks": "任务",
     "languageOptions": {
       "zhCN": "简体中文",
       "enUS": "English",
@@ -152,15 +151,6 @@
     "saving": "保存中...",
     "delete": "删除模板",
     "deleting": "删除中..."
-  },
-  "tasks": {
-    "title": "任务中心",
-    "empty": "当前没有活动任务。",
-    "queued": "排队中",
-    "running": "执行中",
-    "partial": "部分完成",
-    "completed": "已完成",
-    "failed": "失败"
   },
   "common": {
     "comingSoon": "即将开发",

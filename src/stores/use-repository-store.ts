@@ -19,7 +19,6 @@ interface RepositoryStoreState {
   loadDetail: (skillId: string) => Promise<void>
   closeDetail: () => void
   uninstall: (skillId: string) => Promise<void>
-  removeSkill: (skillId: string) => void
 }
 
 export const useRepositoryStore = create<RepositoryStoreState>((set) => ({
@@ -60,14 +59,13 @@ export const useRepositoryStore = create<RepositoryStoreState>((set) => ({
   uninstall: async (skillId) => {
     set({ uninstallingSkillId: skillId })
     try {
-      await uninstallRepositorySkillCommand(skillId)
+      const result = await uninstallRepositorySkillCommand(skillId)
+      set((state) => ({
+        items: state.items.filter((item) => item.id !== result.skillId),
+        selectedDetail: state.selectedDetail?.id === result.skillId ? null : state.selectedDetail,
+      }))
     } finally {
       set({ uninstallingSkillId: null })
     }
   },
-  removeSkill: (skillId) =>
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== skillId),
-      selectedDetail: state.selectedDetail?.id === skillId ? null : state.selectedDetail,
-    })),
 }))

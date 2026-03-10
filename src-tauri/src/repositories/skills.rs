@@ -74,7 +74,6 @@ pub fn save_installed_skill(
 
 pub fn save_operation_log(
     path: &Path,
-    task_id: Option<&str>,
     operation_type: &str,
     entity_type: &str,
     entity_id: Option<&str>,
@@ -90,7 +89,6 @@ pub fn save_operation_log(
         "
         INSERT INTO operation_logs (
             id,
-            task_id,
             operation_type,
             entity_type,
             entity_id,
@@ -99,11 +97,10 @@ pub fn save_operation_log(
             detail_json,
             created_at
         )
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
         ",
         params![
             log_id,
-            task_id,
             operation_type,
             entity_type,
             entity_id,

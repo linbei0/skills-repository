@@ -4,7 +4,6 @@ mod domain;
 mod repositories;
 mod security;
 mod services;
-mod tasks;
 
 use commands::app::{
     bootstrap_app, delete_template, distribute_skill, get_repository_skill_detail,

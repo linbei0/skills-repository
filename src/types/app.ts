@@ -200,34 +200,3 @@ export interface SaveTemplateRequest {
   tags: string[]
 }
 
-export interface TaskHandle {
-  taskId: string
-  taskType: string
-}
-
-export type TaskType =
-  | 'scan'
-  | 'install'
-  | 'distribute'
-  | 'remove_distribution'
-  | 'delete_skill'
-  | 'update_skill'
-  | 'rescan_security'
-
-export interface TaskProgress {
-  taskId: string
-  taskType: TaskType
-  status: 'queued' | 'running' | 'partial' | 'completed' | 'failed'
-  step:
-    | 'prepare'
-    | 'scan'
-    | 'download'
-    | 'security_check'
-    | 'persist'
-    | 'distribute'
-    | 'cleanup'
-  current: number
-  total: number
-  message: string
-  payload?: unknown
-}

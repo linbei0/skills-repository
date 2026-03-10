@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+﻿use anyhow::{anyhow, Context, Result};
 use serde_json::json;
 use std::{
     fs,
@@ -141,7 +141,6 @@ fn find_skill_root(root: &Path) -> Result<PathBuf> {
 
 pub fn install_skill(
     paths: &AppPaths,
-    task_id: &str,
     request: &InstallSkillRequest,
 ) -> Result<InstallSkillResult> {
     let install_temp_dir = paths.temp_dir.join(format!("install-{}", Uuid::new_v4()));
@@ -156,7 +155,6 @@ pub fn install_skill(
         if security_report.blocked {
             let operation_log_id = skills_repository::save_operation_log(
                 &paths.db_file,
-                Some(task_id),
                 "install",
                 "skill",
                 None,
@@ -202,7 +200,6 @@ pub fn install_skill(
 
         let operation_log_id = skills_repository::save_operation_log(
             &paths.db_file,
-            Some(task_id),
             "install",
             "skill",
             Some(&skill_id),
@@ -309,7 +306,6 @@ mod tests {
 
         let result = install_skill(
             &paths,
-            "task-install-success",
             &request(zip_path.to_string_lossy().to_string()),
         )
         .unwrap();
@@ -338,7 +334,6 @@ mod tests {
 
         let result = install_skill(
             &paths,
-            "task-install-blocked",
             &request(zip_path.to_string_lossy().to_string()),
         )
         .unwrap();
@@ -360,7 +355,6 @@ mod tests {
 
         let result = install_skill(
             &paths,
-            "task-install-failed",
             &request(zip_path.to_string_lossy().to_string()),
         );
 

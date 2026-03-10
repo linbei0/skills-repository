@@ -1,13 +1,13 @@
-use tauri::{AppHandle, State};
+use tauri::State;
 
 use crate::{
     domain::{
         app_state::AppState,
         types::{
-            AgentGlobalScanResult, AppSettings, DistributionRequest, InstallSkillRequest,
-            MarketSearchRequest, MarketSearchResponse, RepositorySkillDetail,
-            RepositorySkillSummary, RepositoryUninstallResult, SaveTemplateRequest,
-            SecurityReport, TaskHandle, TemplateRecord,
+            AgentGlobalScanResult, AppSettings, DistributionRequest, DistributionResult,
+            InstallSkillRequest, InstallSkillResult, MarketSearchRequest, MarketSearchResponse,
+            RepositorySkillDetail, RepositorySkillSummary, RepositoryUninstallResult,
+            SaveTemplateRequest, SecurityReport, TemplateRecord,
         },
     },
     repositories::security as security_repository,
@@ -15,14 +15,7 @@ use crate::{
         agent_scan, bootstrap, distribution, install, market, repository, settings,
         templates,
     },
-    tasks,
 };
-
-fn log_task_emit_error(stage: &str, result: anyhow::Result<()>) {
-    if let Err(error) = result {
-        log::error!("task event emit failed at {}: {}", stage, error);
-    }
-}
 
 #[tauri::command]
 pub fn bootstrap_app(
@@ -92,95 +85,11 @@ pub fn delete_template(state: State<'_, AppState>, template_id: String) -> Resul
 
 #[tauri::command]
 pub fn install_skill(
-    app: AppHandle,
     state: State<'_, AppState>,
     request: InstallSkillRequest,
-) -> Result<TaskHandle, String> {
+) -> Result<InstallSkillResult, String> {
     log::info!("install_skill invoked");
-    let task = tasks::new_task_handle("install");
-    let task_handle = task.clone();
-    let app_handle = app.clone();
-    let state = state.inner().clone();
-
-    log_task_emit_error(
-        "install.queued",
-        tasks::emit_progress(
-            &app,
-            &task,
-            "queued",
-            "prepare",
-            0,
-            4,
-            "Install task queued",
-        ),
-    );
-
-    tauri::async_runtime::spawn(async move {
-        log_task_emit_error(
-            "install.download",
-            tasks::emit_progress(
-                &app_handle,
-                &task_handle,
-                "running",
-                "download",
-                1,
-                4,
-                "Downloading market skill source",
-            ),
-        );
-        log_task_emit_error(
-            "install.security_check",
-            tasks::emit_progress(
-                &app_handle,
-                &task_handle,
-                "running",
-                "security_check",
-                2,
-                4,
-                "Running security pre-scan before canonical store",
-            ),
-        );
-        log_task_emit_error(
-            "install.persist",
-            tasks::emit_progress(
-                &app_handle,
-                &task_handle,
-                "running",
-                "persist",
-                3,
-                4,
-                "Persisting installed skill into canonical store and SQLite",
-            ),
-        );
-
-        match install::install_skill(&state.paths, &task_handle.task_id, &request) {
-            Ok(result) => {
-                let step = if result.blocked {
-                    "security_check"
-                } else {
-                    "cleanup"
-                };
-                let message = if result.blocked {
-                    "Install blocked by security pre-scan"
-                } else {
-                    "Install completed"
-                };
-
-                log_task_emit_error(
-                    "install.completed",
-                    tasks::emit_completed(&app_handle, &task_handle, step, message, result),
-                );
-            }
-            Err(error) => {
-                log_task_emit_error(
-                    "install.failed",
-                    tasks::emit_failed(&app_handle, &task_handle, "cleanup", &error.to_string()),
-                );
-            }
-        }
-    });
-
-    Ok(task)
+    install::install_skill(&state.paths, &request).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -214,174 +123,51 @@ pub fn get_security_reports(state: State<'_, AppState>) -> Result<Vec<SecurityRe
 }
 
 #[tauri::command]
-pub fn rescan_security(app: AppHandle, state: State<'_, AppState>) -> Result<TaskHandle, String> {
+pub fn rescan_security(state: State<'_, AppState>) -> Result<Vec<SecurityReport>, String> {
     log::info!("rescan_security invoked");
-    let task = tasks::new_task_handle("rescan_security");
-    let task_handle = task.clone();
-    let app_handle = app.clone();
-    let state = state.inner().clone();
 
-    log_task_emit_error(
-        "security.rescan.queued",
-        tasks::emit_progress(
-            &app,
-            &task,
-            "queued",
-            "prepare",
-            0,
-            3,
-            "Security rescan task queued",
-        ),
-    );
+    let result = (|| -> anyhow::Result<Vec<SecurityReport>> {
+        let installed = crate::repositories::skills::list_installed_skills(&state.paths.db_file)?;
+        let mut reports = Vec::new();
 
-    tauri::async_runtime::spawn(async move {
-        log_task_emit_error(
-            "security.rescan.running",
-            tasks::emit_progress(
-                &app_handle,
-                &task_handle,
-                "running",
-                "security_check",
-                1,
-                3,
-                "Rescanning installed skills for security issues",
-            ),
-        );
-
-        let result = (|| -> anyhow::Result<Vec<SecurityReport>> {
-            let installed =
-                crate::repositories::skills::list_installed_skills(&state.paths.db_file)?;
-            let mut reports = Vec::new();
-
-            for skill in installed {
-                let report = crate::security::scan_skill_directory(
-                    std::path::Path::new(&skill.canonical_path),
-                    Some(skill.skill_id.clone()),
-                    "rescan",
-                )?;
-                let mut persisted = report.clone();
-                persisted.skill_name = Some(skill.name.clone());
-                persisted.source_path = Some(skill.canonical_path.clone());
-                security_repository::save_security_report(&state.paths.db_file, &persisted)?;
-                crate::repositories::skills::update_skill_security_status(
-                    &state.paths.db_file,
-                    &skill.skill_id,
-                    &persisted.level,
-                    persisted.blocked,
-                    persisted.scanned_at,
-                )?;
-                reports.push(persisted);
-            }
-
-            Ok(reports)
-        })();
-
-        match result {
-            Ok(reports) => {
-                log_task_emit_error(
-                    "security.rescan.completed",
-                    tasks::emit_completed(
-                        &app_handle,
-                        &task_handle,
-                        "cleanup",
-                        "Security rescan completed",
-                        reports,
-                    ),
-                );
-            }
-            Err(error) => {
-                log_task_emit_error(
-                    "security.rescan.failed",
-                    tasks::emit_failed(
-                        &app_handle,
-                        &task_handle,
-                        "security_check",
-                        &error.to_string(),
-                    ),
-                );
-            }
+        for skill in installed {
+            let report = crate::security::scan_skill_directory(
+                std::path::Path::new(&skill.canonical_path),
+                Some(skill.skill_id.clone()),
+                "rescan",
+            )?;
+            let mut persisted = report.clone();
+            persisted.skill_name = Some(skill.name.clone());
+            persisted.source_path = Some(skill.canonical_path.clone());
+            security_repository::save_security_report(&state.paths.db_file, &persisted)?;
+            crate::repositories::skills::update_skill_security_status(
+                &state.paths.db_file,
+                &skill.skill_id,
+                &persisted.level,
+                persisted.blocked,
+                persisted.scanned_at,
+            )?;
+            reports.push(persisted);
         }
-    });
 
-    Ok(task)
+        Ok(reports)
+    })();
+
+    result.map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub fn uninstall_repository_skill(
-    app: AppHandle,
     state: State<'_, AppState>,
     skill_id: String,
-) -> Result<TaskHandle, String> {
+) -> Result<RepositoryUninstallResult, String> {
     log::info!("uninstall_repository_skill invoked");
-    let task = tasks::new_task_handle("delete_skill");
-    let task_handle = task.clone();
-    let app_handle = app.clone();
-    let state = state.inner().clone();
-
-    log_task_emit_error(
-        "delete_skill.queued",
-        tasks::emit_progress(
-            &app,
-            &task,
-            "queued",
-            "prepare",
-            0,
-            3,
-            "Repository uninstall task queued",
-        ),
-    );
-
-    tauri::async_runtime::spawn(async move {
-        log_task_emit_error(
-            "delete_skill.cleanup",
-            tasks::emit_progress(
-                &app_handle,
-                &task_handle,
-                "running",
-                "cleanup",
-                1,
-                3,
-                "Removing repository skill and distributed targets",
-            ),
-        );
-
-        match repository::uninstall_repository_skill(
-            &state.paths.db_file,
-            &state.paths.canonical_store_dir,
-            &skill_id,
-        ) {
-            Ok(result) => {
-                log_task_emit_error(
-                    "delete_skill.completed",
-                    tasks::emit_completed(
-                        &app_handle,
-                        &task_handle,
-                        "cleanup",
-                        "Repository skill uninstalled",
-                        result,
-                    ),
-                );
-            }
-            Err(error) => {
-                let payload = RepositoryUninstallResult {
-                    skill_id: skill_id.clone(),
-                    removed_paths: Vec::new(),
-                };
-                log_task_emit_error(
-                    "delete_skill.failed",
-                    tasks::emit_failed_with_payload(
-                        &app_handle,
-                        &task_handle,
-                        "cleanup",
-                        &error.to_string(),
-                        payload,
-                    ),
-                );
-            }
-        }
-    });
-
-    Ok(task)
+    repository::uninstall_repository_skill(
+        &state.paths.db_file,
+        &state.paths.canonical_store_dir,
+        &skill_id,
+    )
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -392,87 +178,10 @@ pub fn scan_agent_global_skills(agent_id: String) -> Result<AgentGlobalScanResul
 
 #[tauri::command]
 pub fn distribute_skill(
-    app: AppHandle,
     state: State<'_, AppState>,
     request: DistributionRequest,
-) -> Result<TaskHandle, String> {
+) -> Result<DistributionResult, String> {
     log::info!("distribute_skill invoked");
-    let task = tasks::new_task_handle("distribute");
-    let task_handle = task.clone();
-    let app_handle = app.clone();
-    let state = state.inner().clone();
-
-    log_task_emit_error(
-        "distribute.queued",
-        tasks::emit_progress(
-            &app,
-            &task,
-            "queued",
-            "prepare",
-            0,
-            3,
-            "Distribution task queued",
-        ),
-    );
-
-    tauri::async_runtime::spawn(async move {
-        log_task_emit_error(
-            "distribute.running",
-            tasks::emit_progress(
-                &app_handle,
-                &task_handle,
-                "running",
-                "distribute",
-                1,
-                3,
-                "Distributing skill to target agent path",
-            ),
-        );
-
-        match distribution::distribute_skill(
-            state.agent_registry.as_ref(),
-            &state.paths.db_file,
-            &request,
-        ) {
-            Ok(result) => {
-                log_task_emit_error(
-                    "distribute.completed",
-                    tasks::emit_completed(
-                        &app_handle,
-                        &task_handle,
-                        "cleanup",
-                        "Distribution completed",
-                        result,
-                    ),
-                );
-            }
-            Err(error) => {
-                let failed_payload = crate::domain::types::DistributionResult {
-                    distribution_id: String::new(),
-                    skill_id: request.skill_id.clone(),
-                    target_agent: request.target_agent.clone(),
-                    target_path: request
-                        .custom_target_path
-                        .clone()
-                        .or(request.project_root.clone())
-                        .unwrap_or_default(),
-                    status: "failed".to_string(),
-                    message: Some(error.to_string()),
-                };
-                log_task_emit_error(
-                    "distribute.failed",
-                    tasks::emit_failed_with_payload(
-                        &app_handle,
-                        &task_handle,
-                        "distribute",
-                        &error.to_string(),
-                        failed_payload,
-                    ),
-                );
-            }
-        }
-    });
-
-    Ok(task)
+    distribution::distribute_skill(state.agent_registry.as_ref(), &state.paths.db_file, &request)
+        .map_err(|error| error.to_string())
 }
-

@@ -1,4 +1,4 @@
-﻿{
+{
   "app": {
     "title": "skills manager",
     "subtitle": "Skill asset control center across agents",
@@ -15,7 +15,6 @@
     "searchPlaceholder": "Search pages or skills (coming soon)",
     "theme": "Theme",
     "language": "Language",
-    "tasks": "Tasks",
     "languageOptions": {
       "zhCN": "Simplified Chinese",
       "enUS": "English",
@@ -152,15 +151,6 @@
     "saving": "Saving...",
     "delete": "Delete template",
     "deleting": "Deleting..."
-  },
-  "tasks": {
-    "title": "Task Center",
-    "empty": "There are no active tasks right now.",
-    "queued": "Queued",
-    "running": "Running",
-    "partial": "Partial",
-    "completed": "Completed",
-    "failed": "Failed"
   },
   "common": {
     "comingSoon": "Coming soon",

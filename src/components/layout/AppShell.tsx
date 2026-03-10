@@ -1,12 +1,10 @@
-import { useMemo, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+﻿import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
 import { resolveThemeMode } from '../../lib/theme'
 import type { AppLocale } from '../../types/app'
 import { useAppStore } from '../../stores/use-app-store'
 import { useSettingsStore } from '../../stores/use-settings-store'
-import { useTaskStore } from '../../stores/use-task-store'
 
 const navItems = [
   { to: '/', key: 'repository', icon: 'hn-home' },
@@ -18,19 +16,12 @@ const navItems = [
 
 export function AppShell() {
   const { t } = useTranslation()
-  const [tasksOpen, setTasksOpen] = useState(false)
   const system = useAppStore((state) => state.system)
   const settings = useSettingsStore((state) => state.settings)
   const setLanguage = useSettingsStore((state) => state.setLanguage)
   const setThemeMode = useSettingsStore((state) => state.setThemeMode)
   const saveSettings = useSettingsStore((state) => state.save)
   const saving = useSettingsStore((state) => state.saving)
-  const tasks = useTaskStore((state) => state.tasks)
-
-  const activeTasks = useMemo(
-    () => tasks.filter((task) => task.status === 'queued' || task.status === 'running'),
-    [tasks],
-  )
   const resolvedTheme = system
     ? resolveThemeMode(settings.themeMode, system.theme)
     : 'skills-light'
@@ -124,72 +115,16 @@ export function AppShell() {
               aria-label={t('topbar.theme')}
               title={t('topbar.theme')}
             >
-              <i className={cn('hn', isDarkTheme ? 'hn-sun' : 'hn-moon')} aria-hidden />
-            </button>
-
-            <button className="btn btn-primary btn-sm" onClick={() => setTasksOpen((open) => !open)}>
-              <i className="hn hn-list" aria-hidden />
-              <span>{t('topbar.tasks')}</span>
-              {activeTasks.length > 0 ? (
-                <span className="badge badge-sm bg-primary-content text-primary">{activeTasks.length}</span>
-              ) : null}
+              <i className={isDarkTheme ? 'hn hn-sun' : 'hn hn-moon'} aria-hidden />
             </button>
           </div>
         </header>
 
-        <main className="flex min-h-0 flex-1 gap-6 overflow-hidden px-6 py-6">
-          <section className="min-w-0 flex-1 overflow-y-auto pr-1">
-            <Outlet />
-          </section>
-
-          <aside
-            className={cn(
-              'w-full max-w-[420px] shrink-0 self-start rounded-box border border-base-300 bg-base-100 transition-all duration-200',
-              tasksOpen
-                ? 'translate-x-0 opacity-100'
-                : 'pointer-events-none hidden opacity-0 xl:block xl:translate-x-4',
-            )}
-          >
-            <div className="border-b border-base-300 px-5 py-4">
-              <p className="text-lg font-semibold">{t('tasks.title')}</p>
-              <p className="mt-1 text-sm text-base-content/60">
-                {system ? `${system.os.toUpperCase()} · ${system.arch}` : t('app.shellHint')}
-              </p>
-            </div>
-
-            <div className="max-h-[calc(100vh-12rem)] space-y-3 overflow-y-auto p-4">
-              {tasks.length === 0 ? (
-                <div className="rounded-box border border-dashed border-base-300 bg-base-200/70 p-4 text-sm text-base-content/60">
-                  {t('tasks.empty')}
-                </div>
-              ) : (
-                tasks.map((task) => (
-                  <article key={task.taskId} className="rounded-box border border-base-300 bg-base-200/60 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">{task.taskType}</p>
-                        <p className="mt-1 text-xs text-base-content/55">{task.message}</p>
-                      </div>
-                      <span className="badge badge-outline">{t(`tasks.${task.status}`)}</span>
-                    </div>
-                    <progress
-                      className="progress progress-primary mt-3 w-full"
-                      value={task.current}
-                      max={task.total || 1}
-                    />
-                    <div className="mt-2 flex items-center justify-between text-xs text-base-content/55">
-                      <span>{task.step}</span>
-                      <span>
-                        {task.current}/{task.total}
-                      </span>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </aside>
+        <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+          <Outlet />
         </main>
       </div>
     </div>
   )
 }
+

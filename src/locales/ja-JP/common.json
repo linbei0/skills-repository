@@ -1,4 +1,4 @@
-﻿{
+{
   "app": {
     "title": "skills管理器",
     "subtitle": "複数 Agent 向け skills 資産コントロールセンター",
@@ -15,7 +15,6 @@
     "searchPlaceholder": "ページや skill を検索（今後対応）",
     "theme": "テーマ",
     "language": "言語",
-    "tasks": "タスク",
     "languageOptions": {
       "zhCN": "簡体字中国語",
       "enUS": "英語",
@@ -152,15 +151,6 @@
     "saving": "保存中...",
     "delete": "テンプレート削除",
     "deleting": "削除中..."
-  },
-  "tasks": {
-    "title": "タスクセンター",
-    "empty": "現在アクティブなタスクはありません。",
-    "queued": "待機中",
-    "running": "実行中",
-    "partial": "一部完了",
-    "completed": "完了",
-    "failed": "失敗"
   },
   "common": {
     "comingSoon": "今後対応",

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { router } from './app/router'
@@ -7,15 +7,13 @@ import { bootstrapApp } from './lib/tauri-client'
 import { applyResolvedTheme, resolveThemeMode } from './lib/theme'
 import { useAppStore } from './stores/use-app-store'
 import { useSettingsStore } from './stores/use-settings-store'
-import { useTaskStore } from './stores/use-task-store'
 
 function App() {
   const { i18n } = useTranslation()
   const startedRef = useRef(false)
-  const [startupStep, setStartupStep] = useState('准备附加任务监听')
+  const [startupStep, setStartupStep] = useState('准备加载应用状态')
   const { bootstrapped, bootstrapping, error, setBootstrapPayload, setBootstrapError } =
     useAppStore()
-  const attachTaskListeners = useTaskStore((state) => state.attachTaskListeners)
   const setSettings = useSettingsStore((state) => state.setSettings)
   const settings = useSettingsStore((state) => state.settings)
   const system = useAppStore((state) => state.system)
@@ -25,7 +23,6 @@ function App() {
     startedRef.current = true
 
     let mounted = true
-    let disposeTasks: VoidFunction | undefined
     let bootstrapGuardsActive = true
 
     const removeBootstrapGlobalListeners = () => {
@@ -61,14 +58,6 @@ function App() {
     window.addEventListener('error', handleWindowError)
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
 
-    void attachTaskListeners()
-      .then((cleanup: VoidFunction) => {
-        disposeTasks = cleanup
-        setStartupStep('任务监听已附加')
-      })
-      .catch((cause) => {
-        console.error('Failed to attach task listeners:', cause)
-      })
 
     console.info('[startup] bootstrap_app started')
     void bootstrapApp()
@@ -94,9 +83,8 @@ function App() {
       mounted = false
       window.clearTimeout(bootstrapTimeout)
       removeBootstrapGlobalListeners()
-      disposeTasks?.()
     }
-  }, [attachTaskListeners, setBootstrapError, setBootstrapPayload, setSettings])
+  }, [setBootstrapError, setBootstrapPayload, setSettings])
 
   useEffect(() => {
     if (!bootstrapped || !system) return
@@ -147,3 +135,4 @@ function App() {
 }
 
 export default App
+

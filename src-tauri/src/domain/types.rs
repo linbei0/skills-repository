@@ -122,25 +122,6 @@ pub struct AgentGlobalScanResult {
     pub entries: Vec<AgentGlobalSkillEntry>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TaskHandle {
-    pub task_id: String,
-    pub task_type: String,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TaskProgressEvent {
-    pub task_id: String,
-    pub task_type: String,
-    pub status: String,
-    pub step: String,
-    pub current: u32,
-    pub total: u32,
-    pub message: String,
-    pub payload: Option<serde_json::Value>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

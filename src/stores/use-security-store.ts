@@ -33,6 +33,16 @@ export const useSecurityStore = create<SecurityStoreState>((set) => ({
     }
   },
   rescan: async () => {
-    await rescanSecurityCommand()
+    set({ loading: true, error: null })
+    try {
+      const reports = await rescanSecurityCommand()
+      set({ reports, loading: false, loaded: true, error: null })
+    } catch (error) {
+      set({
+        loading: false,
+        loaded: true,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
   },
 }))
