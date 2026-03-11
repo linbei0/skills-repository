@@ -62,6 +62,17 @@ fn slugify_name(value: &str) -> String {
     slug.trim_matches('-').to_string()
 }
 
+fn display_local_path(path: &Path) -> String {
+    let value = path.to_string_lossy().to_string();
+    if let Some(stripped) = value.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{}", stripped)
+    } else if let Some(stripped) = value.strip_prefix(r"\\?\") {
+        stripped.to_string()
+    } else {
+        value
+    }
+}
+
 fn parse_github_input(input: &str) -> Result<ParsedGithubInput> {
     let url = Url::parse(input.trim()).context("invalid GitHub URL")?;
     let host = url
@@ -352,8 +363,8 @@ fn resolve_local_directory_import_source(request: &ResolveRepositoryImportReques
 
     Ok(ResolveRepositoryImportResult {
         source_kind: request.source_kind.clone(),
-        normalized_input: input_path.to_string_lossy().to_string(),
-        candidates: build_local_candidates(&input_path, &input_path.to_string_lossy(), roots)?,
+        normalized_input: display_local_path(&input_path),
+        candidates: build_local_candidates(&input_path, &display_local_path(&input_path), roots)?,
         warnings: Vec::new(),
     })
 }
@@ -398,8 +409,8 @@ fn resolve_local_zip_import_source(
 
         Ok(ResolveRepositoryImportResult {
             source_kind: request.source_kind.clone(),
-            normalized_input: zip_path.to_string_lossy().to_string(),
-            candidates: build_local_candidates(&extract_dir, &zip_path.to_string_lossy(), roots)?,
+            normalized_input: display_local_path(&zip_path),
+            candidates: build_local_candidates(&extract_dir, &display_local_path(&zip_path), roots)?,
             warnings: Vec::new(),
         })
     })();
@@ -467,13 +478,36 @@ fn build_install_request_for_import(request: &ImportRepositorySkillRequest) -> R
                 requested_targets: Vec::new(),
             })
         }
-        "local_directory" | "local_zip" => Ok(InstallSkillRequest {
+        "local_directory" => {
+            let input_root = canonicalize_existing_path(Path::new(request.input.trim()))?;
+            let selected_root = if request.selected_skill_root.trim().is_empty() {
+                input_root.clone()
+            } else {
+                canonicalize_existing_path(&input_root.join(&request.selected_skill_root))?
+            };
+
+            Ok(InstallSkillRequest {
+                provider: "local".to_string(),
+                market_skill_id: request.slug.clone(),
+                source_type: "local".to_string(),
+                source_url: display_local_path(&input_root),
+                repo_url: None,
+                download_url: Some(selected_root.to_string_lossy().to_string()),
+                package_ref: Some(format!("local:{}", request.slug)),
+                manifest_path: None,
+                skill_root: None,
+                name: request.name.clone(),
+                slug: request.slug.clone(),
+                version: None,
+                author: request.author.clone(),
+                requested_targets: Vec::new(),
+            })
+        }
+        "local_zip" => Ok(InstallSkillRequest {
             provider: "local".to_string(),
             market_skill_id: request.slug.clone(),
             source_type: "local".to_string(),
-            source_url: canonicalize_existing_path(Path::new(request.input.trim()))?
-                .to_string_lossy()
-                .to_string(),
+            source_url: display_local_path(&canonicalize_existing_path(Path::new(request.input.trim()))?),
             repo_url: None,
             download_url: None,
             package_ref: Some(format!("local:{}", request.slug)),
@@ -725,6 +759,45 @@ mod tests {
 
         assert!(!result.blocked);
         assert!(PathBuf::from(result.canonical_path).join("SKILL.md").exists());
+    }
+
+    #[test]
+    fn imports_selected_skill_from_multi_skill_local_directory() {
+        let dir = tempdir().unwrap();
+        let paths = test_paths(dir.path());
+        run_migrations(&paths.db_file).unwrap();
+
+        let source_root = dir.path().join("source");
+        let adapt_root = source_root.join("adapt");
+        let animate_root = source_root.join("animate");
+        fs::create_dir_all(&adapt_root).unwrap();
+        fs::create_dir_all(&animate_root).unwrap();
+        fs::write(adapt_root.join("SKILL.md"), "# adapt").unwrap();
+        fs::write(adapt_root.join("README.md"), "adapt").unwrap();
+        fs::write(animate_root.join("SKILL.md"), "# animate").unwrap();
+        fs::write(animate_root.join("README.md"), "animate").unwrap();
+
+        let result = import_repository_skill(
+            &paths,
+            &ImportRepositorySkillRequest {
+                source_kind: "local_directory".into(),
+                input: source_root.to_string_lossy().to_string(),
+                selected_manifest_path: "adapt/SKILL.md".into(),
+                selected_skill_root: "adapt".into(),
+                name: "adapt".into(),
+                slug: "adapt".into(),
+                source_url: source_root.to_string_lossy().to_string(),
+                repo_url: None,
+                version: None,
+                author: None,
+            },
+        )
+        .unwrap();
+
+        let canonical_root = PathBuf::from(result.canonical_path);
+        assert!(canonical_root.join("SKILL.md").exists());
+        assert_eq!(fs::read_to_string(canonical_root.join("README.md")).unwrap(), "adapt");
+        assert!(!canonical_root.join("animate").exists());
     }
 
     #[test]

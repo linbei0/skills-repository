@@ -51,6 +51,9 @@
       "resolving": "解析中...",
       "candidatesTitle": "候補 Skills",
       "candidatesCount": "{{count}} 件の候補",
+      "selectAll": "全選択",
+      "clearSelection": "クリア",
+      "existingBadge": "既存",
       "previewTitle": "導入プレビュー",
       "noCandidateSelected": "先にソースを解析し、候補 skill を 1 つ選択してください。",
       "blocked": "セキュリティスキャンにより今回の導入は阻止されました（{{level}}）。",
@@ -67,10 +70,26 @@
         "local_zip": "例: E:\\downloads\\skills.zip"
       },
       "preview": {
+        "selectedCount": "選択数: {{count}}",
         "slug": "Slug: {{slug}}",
         "sourceType": "ソース種別: {{type}}",
         "sourceUrl": "ソース URL: {{sourceUrl}}",
         "canonicalPath": "統一リポジトリのパス: <canonical store>/{{path}}"
+      },
+      "result": {
+        "title": "導入結果",
+        "installed": "導入に成功しました。",
+        "existing": "同じ slug の skill が既にリポジトリに存在するためスキップしました。",
+        "blocked": "セキュリティスキャンで阻止されました（{{level}}）",
+        "installedCount": "成功 {{count}}",
+        "existingCount": "既存 {{count}}",
+        "failedCount": "失敗 {{count}}",
+        "statuses": {
+          "installed": "成功",
+          "blocked": "阻止",
+          "existing": "既存",
+          "failed": "失敗"
+        }
       }
     },
     "statusValues": {

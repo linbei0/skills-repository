@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RepositoryImportModal } from '../components/RepositoryImportModal'
 import { useRepositoryStore } from '../stores/use-repository-store'
-import type { ImportRepositorySkillRequest, RepositoryImportSourceKind } from '../types/app'
+import type {
+  ImportRepositorySkillRequest,
+  RepositoryImportSourceKind,
+} from '../types/app'
 
 const formatInstalledAt = (value: number, locale: string) =>
   new Intl.DateTimeFormat(locale, {
@@ -79,10 +82,7 @@ export function RepositoryPage() {
   }
 
   const handleImportSkill = async (request: ImportRepositorySkillRequest) => {
-    const result = await importSkill(request)
-    if (!result.blocked) {
-      closeImportModal()
-    }
+    return importSkill(request)
   }
 
   return (
@@ -225,6 +225,7 @@ export function RepositoryPage() {
         importError={importError}
         importBlockedLevel={importBlockedLevel}
         resolvedImport={resolvedImport}
+        existingSlugs={items.map((item) => item.slug)}
         onReset={resetImportState}
         onClose={closeImportModal}
         onResolve={handleResolveImport}

@@ -107,6 +107,7 @@ pub struct MarketSearchResponse {
 #[serde(rename_all = "camelCase")]
 pub struct RepositorySkillSummary {
     pub id: String,
+    pub slug: String,
     pub name: String,
     pub source_type: String,
     pub source_market: Option<String>,
@@ -119,6 +120,7 @@ pub struct RepositorySkillSummary {
 #[serde(rename_all = "camelCase")]
 pub struct RepositorySkillDetail {
     pub id: String,
+    pub slug: String,
     pub name: String,
     pub canonical_path: String,
     pub source_type: String,

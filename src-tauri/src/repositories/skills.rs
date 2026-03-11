@@ -27,6 +27,23 @@ fn normalize_persisted_source_market(request: &InstallSkillRequest, persisted_so
     }
 }
 
+fn normalize_windows_path_for_display(value: &str) -> String {
+    if let Some(stripped) = value.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{}", stripped)
+    } else if let Some(stripped) = value.strip_prefix(r"\\?\") {
+        stripped.to_string()
+    } else {
+        value.to_string()
+    }
+}
+
+fn display_source_url(source_type: &str, source_url: Option<String>) -> Option<String> {
+    match (source_type, source_url) {
+        ("local", Some(value)) => Some(normalize_windows_path_for_display(&value)),
+        (_, value) => value,
+    }
+}
+
 pub fn save_installed_skill(
     path: &Path,
     request: &InstallSkillRequest,
@@ -259,6 +276,7 @@ pub fn list_repository_skills(
         "
         SELECT
             id,
+            slug,
             name,
             source_type,
             source_market,
@@ -277,17 +295,18 @@ pub fn list_repository_skills(
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,
             row.get::<_, String>(2)?,
-            row.get::<_, Option<String>>(3)?,
-            row.get::<_, i64>(4)?,
-            row.get::<_, String>(5)?,
-            row.get::<_, i64>(6)? != 0,
-            row.get::<_, String>(7)?,
+            row.get::<_, String>(3)?,
+            row.get::<_, Option<String>>(4)?,
+            row.get::<_, i64>(5)?,
+            row.get::<_, String>(6)?,
+            row.get::<_, i64>(7)? != 0,
+            row.get::<_, String>(8)?,
         ))
     })?;
 
     let mut skills = Vec::new();
     for row in rows {
-        let (id, name, source_type, source_market, installed_at, security_level, blocked, raw_path) =
+        let (id, slug, name, source_type, source_market, installed_at, security_level, blocked, raw_path) =
             row?;
         let skill_path = PathBuf::from(&raw_path);
         if !skill_path.exists() {
@@ -303,6 +322,7 @@ pub fn list_repository_skills(
 
         skills.push(RepositorySkillSummary {
             id,
+            slug,
             name,
             source_type,
             source_market,
@@ -326,6 +346,7 @@ pub fn get_repository_skill_detail(
         "
         SELECT
             id,
+            slug,
             name,
             canonical_path,
             source_type,
@@ -344,17 +365,19 @@ pub fn get_repository_skill_detail(
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
                 row.get::<_, String>(3)?,
-                row.get::<_, Option<String>>(4)?,
+                row.get::<_, String>(4)?,
                 row.get::<_, Option<String>>(5)?,
-                row.get::<_, i64>(6)?,
-                row.get::<_, String>(7)?,
-                row.get::<_, i64>(8)? != 0,
+                row.get::<_, Option<String>>(6)?,
+                row.get::<_, i64>(7)?,
+                row.get::<_, String>(8)?,
+                row.get::<_, i64>(9)? != 0,
             ))
         },
     )?;
 
     let (
         id,
+        slug,
         name,
         canonical_path,
         source_type,
@@ -382,14 +405,16 @@ pub fn get_repository_skill_detail(
             skill_markdown_path.display()
         )
     })?;
+    let display_source_url = display_source_url(&source_type, source_url);
 
     Ok(RepositorySkillDetail {
         id,
+        slug,
         name,
         canonical_path: canonical_skill_dir.to_string_lossy().to_string(),
         source_type,
         source_market,
-        source_url,
+        source_url: display_source_url,
         installed_at,
         security_level,
         blocked,

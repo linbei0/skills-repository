@@ -51,6 +51,9 @@
       "resolving": "Resolving...",
       "candidatesTitle": "Resolved skills",
       "candidatesCount": "{{count}} candidate(s)",
+      "selectAll": "Select all",
+      "clearSelection": "Clear",
+      "existingBadge": "Exists",
       "previewTitle": "Import preview",
       "noCandidateSelected": "Resolve a source and select one skill candidate before importing.",
       "blocked": "The security scan blocked this import ({{level}}).",
@@ -67,10 +70,26 @@
         "local_zip": "For example, E:\\downloads\\skills.zip"
       },
       "preview": {
+        "selectedCount": "Selected: {{count}}",
         "slug": "Slug: {{slug}}",
         "sourceType": "Source type: {{type}}",
         "sourceUrl": "Source URL: {{sourceUrl}}",
         "canonicalPath": "Canonical path: <canonical store>/{{path}}"
+      },
+      "result": {
+        "title": "Import results",
+        "installed": "Imported successfully.",
+        "existing": "A skill with the same slug already exists in the repository and was skipped.",
+        "blocked": "Blocked by security scan ({{level}})",
+        "installedCount": "Installed {{count}}",
+        "existingCount": "Existing {{count}}",
+        "failedCount": "Failed {{count}}",
+        "statuses": {
+          "installed": "Installed",
+          "blocked": "Blocked",
+          "existing": "Existing",
+          "failed": "Failed"
+        }
       }
     },
     "statusValues": {

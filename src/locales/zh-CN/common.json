@@ -51,6 +51,9 @@
       "resolving": "解析中...",
       "candidatesTitle": "候选 Skills",
       "candidatesCount": "共 {{count}} 个候选",
+      "selectAll": "全选",
+      "clearSelection": "清空",
+      "existingBadge": "已存在",
       "previewTitle": "导入预览",
       "noCandidateSelected": "请先解析来源并选择一个候选 skill。",
       "blocked": "安全扫描已阻断本次导入（{{level}}）。",
@@ -67,10 +70,26 @@
         "local_zip": "例如 E:\\downloads\\skills.zip"
       },
       "preview": {
+        "selectedCount": "已选择：{{count}} 个",
         "slug": "Slug：{{slug}}",
         "sourceType": "来源类型：{{type}}",
         "sourceUrl": "来源地址：{{sourceUrl}}",
         "canonicalPath": "统一仓库路径：<canonical store>/{{path}}"
+      },
+      "result": {
+        "title": "导入结果",
+        "installed": "导入成功",
+        "existing": "仓库中已存在同 slug skill，已跳过。",
+        "blocked": "安全扫描阻断（{{level}}）",
+        "installedCount": "成功 {{count}}",
+        "existingCount": "已存在 {{count}}",
+        "failedCount": "失败 {{count}}",
+        "statuses": {
+          "installed": "成功",
+          "blocked": "已阻断",
+          "existing": "已存在",
+          "failed": "失败"
+        }
       }
     },
     "statusValues": {

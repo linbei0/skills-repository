@@ -40,6 +40,7 @@ export interface BootstrapPayload {
 
 export interface RepositorySkillSummary {
   id: string
+  slug: string
   name: string
   sourceType: string
   sourceMarket?: string | null
@@ -50,6 +51,7 @@ export interface RepositorySkillSummary {
 
 export interface RepositorySkillDetail {
   id: string
+  slug: string
   name: string
   canonicalPath: string
   sourceType: string
