@@ -3285,16 +3285,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusqlite_migration"
-version = "2.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fc9767ae49274bafd3e55be9d30405a033b7a59548327d87fd4971fbb58e264"
-dependencies = [
- "log",
- "rusqlite",
-]
-
-[[package]]
 name = "rust_decimal"
 version = "1.40.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3691,7 +3681,6 @@ dependencies = [
  "dirs",
  "log",
  "rusqlite",
- "rusqlite_migration",
  "serde",
  "serde_json",
  "sys-locale",

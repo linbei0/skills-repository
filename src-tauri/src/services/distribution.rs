@@ -142,19 +142,11 @@ pub fn distribute_skill(
         other => return Err(anyhow!("unsupported install mode {}", other)),
     }
 
-    let project_id = request
-        .project_root
-        .as_deref()
-        .map(|root| distributions_repository::find_project_id_by_root(db_path, root))
-        .transpose()?
-        .flatten();
-
     distributions_repository::save_distribution(
         db_path,
         &request.skill_id,
         &request.target_kind,
         &request.target_agent,
-        project_id.as_deref(),
         &target_path.to_string_lossy(),
         &request.install_mode,
         "active",

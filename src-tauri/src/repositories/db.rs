@@ -1,21 +1,11 @@
 use anyhow::Result;
 use rusqlite::Connection;
-use rusqlite_migration::{Migrations, M};
 use std::path::Path;
 
-const INITIAL_SCHEMA_MIGRATION: &str = "
+const CURRENT_SCHEMA: &str = "
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value_json TEXT NOT NULL,
-            updated_at INTEGER NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS projects (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            root_path TEXT NOT NULL UNIQUE,
-            labels_json TEXT,
-            created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL
         );
 
@@ -46,7 +36,6 @@ const INITIAL_SCHEMA_MIGRATION: &str = "
             skill_id TEXT NOT NULL,
             target_kind TEXT NOT NULL,
             target_agent TEXT NOT NULL,
-            project_id TEXT,
             target_path TEXT NOT NULL,
             install_mode TEXT NOT NULL,
             status TEXT NOT NULL,
@@ -87,12 +76,6 @@ const INITIAL_SCHEMA_MIGRATION: &str = "
             created_at INTEGER NOT NULL
         );
 
-        CREATE INDEX IF NOT EXISTS idx_projects_root_path ON projects(root_path);
-        CREATE INDEX IF NOT EXISTS idx_skills_slug ON skills(slug);
-        CREATE INDEX IF NOT EXISTS idx_skill_distributions_target_path ON skill_distributions(target_path);
-";
-
-const PHASE_TWO_SCHEMA_MIGRATION: &str = "
         CREATE TABLE IF NOT EXISTS security_reports (
             id TEXT PRIMARY KEY,
             skill_id TEXT,
@@ -117,160 +100,13 @@ const PHASE_TWO_SCHEMA_MIGRATION: &str = "
             updated_at INTEGER NOT NULL
         );
 
+        CREATE INDEX IF NOT EXISTS idx_skills_slug ON skills(slug);
+        CREATE INDEX IF NOT EXISTS idx_skill_distributions_target_path ON skill_distributions(target_path);
         CREATE INDEX IF NOT EXISTS idx_security_reports_skill_id ON security_reports(skill_id);
         CREATE INDEX IF NOT EXISTS idx_security_reports_scanned_at ON security_reports(scanned_at);
         CREATE INDEX IF NOT EXISTS idx_market_cache_source_market ON market_cache(source_market);
         CREATE INDEX IF NOT EXISTS idx_market_cache_expires_at ON market_cache(expires_at);
 ";
-
-const PHASE_THREE_SCHEMA_MIGRATION: &str = "
-        PRAGMA foreign_keys = OFF;
-
-        CREATE TABLE IF NOT EXISTS operation_logs_v3 (
-            id TEXT PRIMARY KEY,
-            operation_type TEXT NOT NULL,
-            entity_type TEXT NOT NULL,
-            entity_id TEXT,
-            status TEXT NOT NULL,
-            summary TEXT NOT NULL,
-            detail_json TEXT,
-            created_at INTEGER NOT NULL
-        );
-
-        INSERT INTO operation_logs_v3 (
-            id,
-            operation_type,
-            entity_type,
-            entity_id,
-            status,
-            summary,
-            detail_json,
-            created_at
-        )
-        SELECT
-            id,
-            operation_type,
-            entity_type,
-            entity_id,
-            status,
-            summary,
-            detail_json,
-            created_at
-        FROM operation_logs;
-
-        DROP TABLE operation_logs;
-        ALTER TABLE operation_logs_v3 RENAME TO operation_logs;
-
-        PRAGMA foreign_keys = ON;
-";
-
-const PHASE_FOUR_SCHEMA_MIGRATION: &str = "
-        PRAGMA foreign_keys = OFF;
-
-        CREATE TABLE IF NOT EXISTS security_reports_v4 (
-            id TEXT PRIMARY KEY,
-            skill_id TEXT,
-            scan_scope TEXT NOT NULL,
-            level TEXT NOT NULL,
-            score INTEGER NOT NULL,
-            blocked INTEGER NOT NULL DEFAULT 0,
-            issues_json TEXT NOT NULL,
-            recommendations_json TEXT NOT NULL,
-            scanned_files_json TEXT NOT NULL,
-            engine_version TEXT NOT NULL,
-            scanned_at INTEGER NOT NULL
-        );
-
-        INSERT INTO security_reports_v4 (
-            id,
-            skill_id,
-            scan_scope,
-            level,
-            score,
-            blocked,
-            issues_json,
-            recommendations_json,
-            scanned_files_json,
-            engine_version,
-            scanned_at
-        )
-        SELECT
-            sr.id,
-            sr.skill_id,
-            sr.scan_scope,
-            sr.level,
-            sr.score,
-            sr.blocked,
-            sr.issues_json,
-            sr.recommendations_json,
-            sr.scanned_files_json,
-            sr.engine_version,
-            sr.scanned_at
-        FROM security_reports sr
-        WHERE sr.skill_id IS NULL;
-
-        INSERT INTO security_reports_v4 (
-            id,
-            skill_id,
-            scan_scope,
-            level,
-            score,
-            blocked,
-            issues_json,
-            recommendations_json,
-            scanned_files_json,
-            engine_version,
-            scanned_at
-        )
-        SELECT
-            sr.id,
-            sr.skill_id,
-            sr.scan_scope,
-            sr.level,
-            sr.score,
-            sr.blocked,
-            sr.issues_json,
-            sr.recommendations_json,
-            sr.scanned_files_json,
-            sr.engine_version,
-            sr.scanned_at
-        FROM security_reports sr
-        WHERE sr.skill_id IS NOT NULL
-          AND NOT EXISTS (
-              SELECT 1
-              FROM security_reports newer
-              WHERE newer.skill_id = sr.skill_id
-                AND (
-                    newer.scanned_at > sr.scanned_at
-                    OR (
-                        newer.scanned_at = sr.scanned_at
-                        AND newer.rowid > sr.rowid
-                    )
-                )
-          );
-
-        DROP TABLE security_reports;
-        ALTER TABLE security_reports_v4 RENAME TO security_reports;
-        CREATE INDEX IF NOT EXISTS idx_security_reports_skill_id ON security_reports(skill_id);
-        CREATE INDEX IF NOT EXISTS idx_security_reports_scanned_at ON security_reports(scanned_at);
-
-        PRAGMA foreign_keys = ON;
-";
-
-const PHASE_FIVE_SCHEMA_MIGRATION: &str = "
-        DELETE FROM security_reports
-        WHERE skill_id IS NULL
-          AND scan_scope = 'temp_install'
-          AND blocked = 0;
-";
-
-const MIGRATIONS: &[M<'_>] = &[
-    M::up(INITIAL_SCHEMA_MIGRATION),
-    M::up(PHASE_TWO_SCHEMA_MIGRATION),
-    M::up(PHASE_THREE_SCHEMA_MIGRATION),
-    M::up(PHASE_FOUR_SCHEMA_MIGRATION),
-    M::up(PHASE_FIVE_SCHEMA_MIGRATION),
-];
 
 pub fn open_connection(path: &Path) -> Result<Connection> {
     let conn = Connection::open(path)?;
@@ -285,9 +121,8 @@ pub fn open_connection(path: &Path) -> Result<Connection> {
 }
 
 pub fn run_migrations(path: &Path) -> Result<()> {
-    let mut conn = open_connection(path)?;
-    let migrations = Migrations::new(MIGRATIONS.to_vec());
-    migrations.to_latest(&mut conn)?;
+    let conn = open_connection(path)?;
+    conn.execute_batch(CURRENT_SCHEMA)?;
     Ok(())
 }
 
@@ -308,282 +143,59 @@ mod tests {
         .is_some()
     }
 
+    fn column_exists(conn: &Connection, table_name: &str, column_name: &str) -> bool {
+        let mut stmt = conn
+            .prepare(&format!("PRAGMA table_info({table_name})"))
+            .unwrap();
+
+        stmt.query_map([], |row| row.get::<_, String>(1))
+            .unwrap()
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .unwrap()
+            .into_iter()
+            .any(|column| column == column_name)
+    }
+
     #[test]
-    fn creates_phase_two_tables_on_fresh_database() {
+    fn creates_current_schema_on_fresh_database() {
         let dir = tempdir().unwrap();
         let db_path = dir.path().join("fresh.db");
 
         run_migrations(&db_path).unwrap();
         let conn = open_connection(&db_path).unwrap();
 
-        assert!(table_exists(&conn, "market_cache"));
+        assert!(table_exists(&conn, "settings"));
+        assert!(table_exists(&conn, "skills"));
+        assert!(table_exists(&conn, "skill_distributions"));
+        assert!(table_exists(&conn, "templates"));
+        assert!(table_exists(&conn, "template_items"));
+        assert!(table_exists(&conn, "operation_logs"));
         assert!(table_exists(&conn, "security_reports"));
+        assert!(table_exists(&conn, "market_cache"));
+        assert!(!table_exists(&conn, "projects"));
     }
 
     #[test]
-    fn upgrades_existing_phase_one_database_to_phase_two_schema() {
+    fn current_distribution_schema_has_no_project_id_column() {
         let dir = tempdir().unwrap();
-        let db_path = dir.path().join("upgraded.db");
-        let conn = open_connection(&db_path).unwrap();
-
-        conn.execute_batch(INITIAL_SCHEMA_MIGRATION).unwrap();
-        conn.pragma_update(None, "user_version", 1).unwrap();
+        let db_path = dir.path().join("distribution.db");
 
         run_migrations(&db_path).unwrap();
-        let upgraded = open_connection(&db_path).unwrap();
+        let conn = open_connection(&db_path).unwrap();
 
-        assert!(table_exists(&upgraded, "market_cache"));
-        assert!(table_exists(&upgraded, "security_reports"));
-
-        let user_version: i64 = upgraded
-            .query_row("PRAGMA user_version", [], |row| row.get(0))
-            .unwrap();
-        assert_eq!(user_version, 5);
+        assert!(!column_exists(&conn, "skill_distributions", "project_id"));
     }
 
     #[test]
-    fn upgrades_existing_security_reports_to_single_latest_row_per_skill() {
+    fn run_migrations_is_idempotent() {
         let dir = tempdir().unwrap();
-        let db_path = dir.path().join("dedupe.db");
-        let conn = open_connection(&db_path).unwrap();
-
-        conn.execute_batch(INITIAL_SCHEMA_MIGRATION).unwrap();
-        conn.execute_batch(PHASE_TWO_SCHEMA_MIGRATION).unwrap();
-
-        conn.execute(
-            "
-            INSERT INTO skills (
-                id,
-                slug,
-                name,
-                description,
-                source_type,
-                source_market,
-                source_url,
-                version,
-                author,
-                canonical_path,
-                file_hash,
-                size_bytes,
-                management_mode,
-                security_level,
-                blocked,
-                installed_at,
-                updated_at,
-                last_scanned_at,
-                metadata_json
-            )
-            VALUES (
-                'skill-1',
-                'demo',
-                'Demo Skill',
-                NULL,
-                'github',
-                'github',
-                'https://github.com/demo/demo',
-                'main',
-                'tester',
-                'E:/skills/demo',
-                NULL,
-                0,
-                'managed',
-                'safe',
-                0,
-                100,
-                100,
-                100,
-                '{}'
-            )
-            ",
-            [],
-        )
-        .unwrap();
-
-        conn.execute(
-            "
-            INSERT INTO security_reports (
-                id,
-                skill_id,
-                scan_scope,
-                level,
-                score,
-                blocked,
-                issues_json,
-                recommendations_json,
-                scanned_files_json,
-                engine_version,
-                scanned_at
-            )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
-            ",
-            (
-                "report-old",
-                Some("skill-1"),
-                "canonical",
-                "safe",
-                0,
-                0,
-                "[]",
-                "[]",
-                "[]",
-                "phase2-rules-v1",
-                100_i64,
-            ),
-        )
-        .unwrap();
-        conn.execute(
-            "
-            INSERT INTO security_reports (
-                id,
-                skill_id,
-                scan_scope,
-                level,
-                score,
-                blocked,
-                issues_json,
-                recommendations_json,
-                scanned_files_json,
-                engine_version,
-                scanned_at
-            )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
-            ",
-            (
-                "report-new",
-                Some("skill-1"),
-                "rescan",
-                "medium",
-                30,
-                0,
-                "[]",
-                "[]",
-                "[]",
-                "phase2-rules-v1",
-                200_i64,
-            ),
-        )
-        .unwrap();
-
-        conn.pragma_update(None, "user_version", 3).unwrap();
-        drop(conn);
+        let db_path = dir.path().join("idempotent.db");
 
         run_migrations(&db_path).unwrap();
-        let upgraded = open_connection(&db_path).unwrap();
-
-        let rows: Vec<(String, String)> = upgraded
-            .prepare("SELECT id, scan_scope FROM security_reports WHERE skill_id = 'skill-1'") 
-            .unwrap()
-            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-            .unwrap()
-            .collect::<rusqlite::Result<Vec<_>>>()
-            .unwrap();
-
-        let user_version: i64 = upgraded
-            .query_row("PRAGMA user_version", [], |row| row.get(0))
-            .unwrap();
-
-        assert_eq!(user_version, 5);
-        assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0], ("report-new".to_string(), "rescan".to_string()));
-    }
-
-    #[test]
-    fn removes_non_blocked_temp_install_reports_during_upgrade() {
-        let dir = tempdir().unwrap();
-        let db_path = dir.path().join("cleanup-temp-install.db");
-        let conn = open_connection(&db_path).unwrap();
-
-        conn.execute_batch(INITIAL_SCHEMA_MIGRATION).unwrap();
-        conn.execute_batch(PHASE_TWO_SCHEMA_MIGRATION).unwrap();
-        conn.execute_batch(PHASE_THREE_SCHEMA_MIGRATION).unwrap();
-        conn.execute_batch(PHASE_FOUR_SCHEMA_MIGRATION).unwrap();
-
-        conn.execute(
-            "
-            INSERT INTO security_reports (
-                id,
-                skill_id,
-                scan_scope,
-                level,
-                score,
-                blocked,
-                issues_json,
-                recommendations_json,
-                scanned_files_json,
-                engine_version,
-                scanned_at
-            )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
-            ",
-            (
-                "temp-safe",
-                Option::<String>::None,
-                "temp_install",
-                "safe",
-                0,
-                0,
-                "[]",
-                "[]",
-                "[]",
-                "phase2-rules-v1",
-                100_i64,
-            ),
-        )
-        .unwrap();
-        conn.execute(
-            "
-            INSERT INTO security_reports (
-                id,
-                skill_id,
-                scan_scope,
-                level,
-                score,
-                blocked,
-                issues_json,
-                recommendations_json,
-                scanned_files_json,
-                engine_version,
-                scanned_at
-            )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
-            ",
-            (
-                "temp-blocked",
-                Option::<String>::None,
-                "temp_install",
-                "high",
-                90,
-                1,
-                "[]",
-                "[]",
-                "[]",
-                "phase2-rules-v1",
-                200_i64,
-            ),
-        )
-        .unwrap();
-
-        conn.pragma_update(None, "user_version", 4).unwrap();
-        drop(conn);
-
         run_migrations(&db_path).unwrap();
-        let upgraded = open_connection(&db_path).unwrap();
 
-        let rows: Vec<(String, i64)> = upgraded
-            .prepare(
-                "SELECT id, blocked FROM security_reports WHERE scan_scope = 'temp_install' ORDER BY id ASC",
-            )
-            .unwrap()
-            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
-            .unwrap()
-            .collect::<rusqlite::Result<Vec<_>>>()
-            .unwrap();
-
-        let user_version: i64 = upgraded
-            .query_row("PRAGMA user_version", [], |row| row.get(0))
-            .unwrap();
-
-        assert_eq!(user_version, 5);
-        assert_eq!(rows, vec![("temp-blocked".to_string(), 1)]);
+        let conn = open_connection(&db_path).unwrap();
+        assert!(table_exists(&conn, "security_reports"));
+        assert!(table_exists(&conn, "market_cache"));
     }
 }

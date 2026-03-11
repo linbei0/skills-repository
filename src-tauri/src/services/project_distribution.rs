@@ -305,21 +305,11 @@ pub(crate) fn distribute_repository_skills_to_project(
 
         match install_result {
             Ok(()) => {
-                let project_id = if request.target_scope == "project" {
-                    distributions_repository::find_project_id_by_root(
-                        &state.paths.db_file,
-                        &request.project_root,
-                    )?
-                } else {
-                    None
-                };
-
                 distributions_repository::save_distribution(
                     &state.paths.db_file,
                     &skill.skill_id,
                     &request.target_scope,
                     request.target_agent_id.as_deref().unwrap_or("custom"),
-                    project_id.as_deref(),
                     &target_path.to_string_lossy(),
                     &request.install_mode,
                     "active",

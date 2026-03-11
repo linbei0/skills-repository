@@ -266,10 +266,21 @@ pub struct ImportRepositorySkillRequest {
 #[serde(rename_all = "camelCase")]
 pub struct SecurityIssue {
     pub rule_id: String,
+    #[serde(default)]
+    pub category: String,
     pub severity: String,
     pub title: String,
     pub description: String,
+    #[serde(default)]
     pub file_path: Option<String>,
+    #[serde(default)]
+    pub file_kind: Option<String>,
+    #[serde(default)]
+    pub line: Option<u32>,
+    #[serde(default)]
+    pub evidence: Option<String>,
+    #[serde(default)]
+    pub blocking: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -277,6 +288,14 @@ pub struct SecurityIssue {
 pub struct SecurityRecommendation {
     pub action: String,
     pub description: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecurityCategoryBreakdown {
+    pub category: String,
+    pub count: u32,
+    pub score: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -293,6 +312,10 @@ pub struct SecurityReport {
     pub issues: Vec<SecurityIssue>,
     pub recommendations: Vec<SecurityRecommendation>,
     pub scanned_files: Vec<String>,
+    #[serde(default)]
+    pub category_breakdown: Vec<SecurityCategoryBreakdown>,
+    #[serde(default)]
+    pub blocking_reasons: Vec<String>,
     pub engine_version: String,
     pub scanned_at: i64,
 }

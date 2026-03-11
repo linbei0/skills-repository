@@ -229,6 +229,9 @@
     "issuesTitle": "Issues",
     "issuesEmpty": "No risk rules were triggered.",
     "recommendationsTitle": "Recommended actions",
+    "blockingReasonsTitle": "Blocking reasons",
+    "line": "Line: {{line}}",
+    "evidence": "Evidence: {{evidence}}",
     "levels": {
       "safe": "Safe",
       "low": "Low",
@@ -236,14 +239,29 @@
       "high": "High",
       "critical": "Critical"
     },
+    "categories": {
+      "system": "System",
+      "prompt": "Prompt",
+      "source": "Source"
+    },
+    "fileKinds": {
+      "markdown": "Markdown",
+      "shell": "Shell",
+      "powershell": "PowerShell",
+      "cmd": "Command",
+      "script": "Script",
+      "archive": "Archive",
+      "binary": "Binary",
+      "unknown": "Text"
+    },
     "cards": {
       "safe": {
         "label": "Safe / Low",
         "title": "Safe to continue",
         "description": "Safe and low-risk skills now come from real scan results and can move through the next governance steps."
       },
-      "medium": {
-        "label": "Medium",
+      "review": {
+        "label": "Review",
         "title": "Needs review",
         "description": "Medium-risk results keep matched rules and recommended actions so the user can decide whether to continue."
       },

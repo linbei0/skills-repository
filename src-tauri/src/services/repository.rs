@@ -131,7 +131,6 @@ mod tests {
             &skill_id,
             "global",
             "Codex",
-            None,
             &distributed_path.to_string_lossy(),
             "copy",
             "active",

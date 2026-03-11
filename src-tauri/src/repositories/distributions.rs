@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::params;
 use std::path::Path;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -13,7 +13,6 @@ pub fn save_distribution(
     skill_id: &str,
     target_kind: &str,
     target_agent: &str,
-    project_id: Option<&str>,
     target_path: &str,
     install_mode: &str,
     status: &str,
@@ -29,21 +28,19 @@ pub fn save_distribution(
             skill_id,
             target_kind,
             target_agent,
-            project_id,
             target_path,
             install_mode,
             status,
             created_at,
             updated_at
         )
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
         ",
         params![
             distribution_id,
             skill_id,
             target_kind,
             target_agent,
-            project_id,
             target_path,
             install_mode,
             status,
@@ -60,15 +57,4 @@ pub fn save_distribution(
         status: status.to_string(),
         message: None,
     })
-}
-
-pub fn find_project_id_by_root(path: &Path, project_root: &str) -> Result<Option<String>> {
-    let conn = open_connection(path)?;
-    conn.query_row(
-        "SELECT id FROM projects WHERE root_path = ?1",
-        params![project_root],
-        |row| row.get::<_, String>(0),
-    )
-    .optional()
-    .map_err(Into::into)
 }

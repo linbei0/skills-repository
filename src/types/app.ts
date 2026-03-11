@@ -215,15 +215,26 @@ export interface ImportRepositorySkillRequest {
 
 export interface SecurityIssue {
   ruleId: string
+  category: string
   severity: string
   title: string
   description: string
   filePath?: string | null
+  fileKind?: string | null
+  line?: number | null
+  evidence?: string | null
+  blocking?: boolean
 }
 
 export interface SecurityRecommendation {
   action: string
   description: string
+}
+
+export interface SecurityCategoryBreakdown {
+  category: string
+  count: number
+  score: number
 }
 
 export interface SecurityReport {
@@ -238,6 +249,8 @@ export interface SecurityReport {
   issues: SecurityIssue[]
   recommendations: SecurityRecommendation[]
   scannedFiles: string[]
+  categoryBreakdown?: SecurityCategoryBreakdown[]
+  blockingReasons?: string[]
   engineVersion: string
   scannedAt: number
 }

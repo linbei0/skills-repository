@@ -25,9 +25,9 @@ export function SecurityPage() {
         count: reports.filter((report) => report.level === 'safe' || report.level === 'low').length,
       },
       {
-        key: 'medium',
+        key: 'review',
         accent: 'border-warning/30 bg-warning/5 text-warning',
-        count: reports.filter((report) => report.level === 'medium').length,
+        count: reports.filter((report) => !report.blocked && !['safe', 'low'].includes(report.level)).length,
       },
       {
         key: 'blocked',
@@ -119,6 +119,27 @@ export function SecurityPage() {
                   </div>
                 </div>
 
+                {report.blockingReasons && report.blockingReasons.length > 0 ? (
+                  <div className="mt-4 rounded-box border border-error/20 bg-error/5 p-3">
+                    <p className="text-sm font-medium text-error">{t('security.blockingReasonsTitle')}</p>
+                    <ul className="mt-2 space-y-2 text-sm text-error/80">
+                      {report.blockingReasons.map((reason, index) => (
+                        <li key={`${report.id}-reason-${index}`}>{reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {report.categoryBreakdown && report.categoryBreakdown.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {report.categoryBreakdown.map((entry) => (
+                      <span key={`${report.id}-${entry.category}`} className="badge badge-outline">
+                        {t(`security.categories.${entry.category}`)} · {entry.count} · {entry.score}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
                 <div className="mt-4 grid gap-3 lg:grid-cols-2">
                   <div className="rounded-box border border-base-300 bg-base-100 p-3">
                     <p className="text-sm font-medium">{t('security.issuesTitle')}</p>
@@ -127,8 +148,24 @@ export function SecurityPage() {
                     ) : (
                       <ul className="mt-2 space-y-2 text-sm text-base-content/70">
                         {report.issues.map((issue) => (
-                          <li key={`${report.id}-${issue.ruleId}`}>
-                            {issue.title} · {issue.description}
+                          <li key={`${report.id}-${issue.ruleId}`} className="rounded-box border border-base-300 bg-base-200/50 p-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{issue.title}</span>
+                              <span className="badge badge-outline">{t(`security.categories.${issue.category || 'system'}`)}</span>
+                              <span className="badge badge-outline">{t(`security.levels.${issue.severity}`)}</span>
+                              {issue.fileKind ? (
+                                <span className="badge badge-ghost">{t(`security.fileKinds.${issue.fileKind || 'unknown'}`)}</span>
+                              ) : null}
+                              {issue.blocking ? (
+                                <span className="badge badge-error">{t('security.blockedBadge')}</span>
+                              ) : null}
+                            </div>
+                            <p className="mt-2">{issue.description}</p>
+                            <div className="mt-2 space-y-1 text-xs text-base-content/60">
+                              {issue.filePath ? <p>{issue.filePath}</p> : null}
+                              {issue.line ? <p>{t('security.line', { line: issue.line })}</p> : null}
+                              {issue.evidence ? <p>{t('security.evidence', { evidence: issue.evidence })}</p> : null}
+                            </div>
                           </li>
                         ))}
                       </ul>

@@ -242,16 +242,34 @@
         "title": "可继续使用",
         "description": "safe / low 风险技能来自真实扫描结果，可继续后续治理动作。"
       },
-      "medium": {
-        "label": "中风险",
-        "title": "需要人工复核",
-        "description": "中风险结果会保留命中规则和建议动作，允许继续但需要人工确认。"
-      },
       "blocked": {
         "label": "已阻断",
         "title": "已被策略阻断",
         "description": "高风险结果会在进入 canonical store 前被阻断，并留下可解释报告。"
+      },
+      "review": {
+        "label": "待复核",
+        "title": "需要人工复核",
+        "description": "中风险结果会保留命中规则和建议动作，允许继续但需要人工确认。"
       }
+    },
+    "blockingReasonsTitle": "阻断原因",
+    "line": "行号：{{line}}",
+    "evidence": "证据：{{evidence}}",
+    "categories": {
+      "system": "系统",
+      "prompt": "提示",
+      "source": "来源"
+    },
+    "fileKinds": {
+      "markdown": "Markdown",
+      "shell": "Shell",
+      "powershell": "PowerShell",
+      "cmd": "命令",
+      "script": "脚本",
+      "archive": "归档",
+      "binary": "二进制",
+      "unknown": "文本"
     }
   },
   "templates": {

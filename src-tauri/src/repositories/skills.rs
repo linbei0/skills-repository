@@ -191,6 +191,9 @@ pub struct InstalledSkillSummary {
     pub skill_id: String,
     pub name: String,
     pub canonical_path: String,
+    pub source_url: Option<String>,
+    pub repo_url: Option<String>,
+    pub version: Option<String>,
 }
 
 pub struct RepositorySkillRemovalPlan {
@@ -252,7 +255,7 @@ pub fn list_installed_skills(path: &Path) -> Result<Vec<InstalledSkillSummary>> 
     let conn = open_connection(path)?;
     let mut stmt = conn.prepare(
         "
-        SELECT id, name, canonical_path
+        SELECT id, name, canonical_path, source_url, version
         FROM skills
         WHERE canonical_path IS NOT NULL
         ORDER BY updated_at DESC
@@ -264,6 +267,9 @@ pub fn list_installed_skills(path: &Path) -> Result<Vec<InstalledSkillSummary>> 
             skill_id: row.get(0)?,
             name: row.get(1)?,
             canonical_path: row.get(2)?,
+            source_url: row.get(3)?,
+            repo_url: None,
+            version: row.get(4)?,
         })
     })?;
 
@@ -590,7 +596,6 @@ mod tests {
             &skill_id,
             "global",
             "Codex",
-            None,
             &target_path.to_string_lossy(),
             "copy",
             "active",
@@ -611,6 +616,8 @@ mod tests {
                 issues: Vec::new(),
                 recommendations: Vec::new(),
                 scanned_files: vec![target_path.join("SKILL.md").to_string_lossy().to_string()],
+                category_breakdown: Vec::new(),
+                blocking_reasons: Vec::new(),
                 engine_version: "phase2-rules-v1".into(),
                 scanned_at: 100,
             },

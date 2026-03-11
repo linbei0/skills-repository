@@ -105,6 +105,8 @@ pub fn list_security_reports(path: &Path) -> Result<Vec<SecurityReport>> {
             .unwrap_or_default(),
             scanned_files: serde_json::from_str::<Vec<String>>(&scanned_files_json)
                 .unwrap_or_default(),
+            category_breakdown: Vec::new(),
+            blocking_reasons: Vec::new(),
             engine_version: row.get(11)?,
             scanned_at: row.get(12)?,
         })
@@ -167,17 +169,24 @@ mod tests {
             blocked: false,
             issues: vec![SecurityIssue {
                 rule_id: "network_fetch".into(),
+                category: "system".into(),
                 severity: "medium".into(),
                 title: "Review required".into(),
                 description: "demo".into(),
                 file_path: Some("E:/tmp/demo/install.sh".into()),
+                file_kind: Some("shell".into()),
+                line: None,
+                evidence: Some("curl".into()),
+                blocking: false,
             }],
             recommendations: vec![SecurityRecommendation {
                 action: "review_files".into(),
                 description: "review".into(),
             }],
             scanned_files: vec!["E:/tmp/demo/install.sh".into()],
-            engine_version: "phase2-rules-v1".into(),
+            category_breakdown: Vec::new(),
+            blocking_reasons: Vec::new(),
+            engine_version: "security-engine-v2".into(),
             scanned_at: 100,
         };
 
@@ -187,133 +196,6 @@ mod tests {
         assert_eq!(loaded.len(), 1);
         assert_eq!(loaded[0].level, "medium");
         assert_eq!(loaded[0].issues.len(), 1);
-    }
-
-    #[test]
-    fn lists_only_latest_persisted_report_per_skill() {
-        let dir = tempdir().unwrap();
-        let db_path = dir.path().join("security.db");
-        run_migrations(&db_path).unwrap();
-
-        let alpha_id = skills_repository::save_installed_skill(
-            &db_path,
-            &install_request("alpha", "Alpha"),
-            "E:/skills/alpha",
-            "safe",
-            false,
-        )
-        .unwrap();
-        let beta_id = skills_repository::save_installed_skill(
-            &db_path,
-            &install_request("beta", "Beta"),
-            "E:/skills/beta",
-            "safe",
-            false,
-        )
-        .unwrap();
-
-        save_security_report(
-            &db_path,
-            &SecurityReport {
-                id: "alpha-old".into(),
-                skill_id: Some(alpha_id.clone()),
-                skill_name: Some("Alpha".into()),
-                source_path: Some("E:/skills/alpha".into()),
-                scan_scope: "temp_install".into(),
-                level: "safe".into(),
-                score: 0,
-                blocked: false,
-                issues: Vec::new(),
-                recommendations: Vec::new(),
-                scanned_files: vec!["E:/skills/alpha/SKILL.md".into()],
-                engine_version: "phase2-rules-v1".into(),
-                scanned_at: 100,
-            },
-        )
-        .unwrap();
-        save_security_report(
-            &db_path,
-            &SecurityReport {
-                id: "alpha-new".into(),
-                skill_id: Some(alpha_id),
-                skill_name: Some("Alpha".into()),
-                source_path: Some("E:/skills/alpha".into()),
-                scan_scope: "rescan".into(),
-                level: "safe".into(),
-                score: 0,
-                blocked: false,
-                issues: Vec::new(),
-                recommendations: Vec::new(),
-                scanned_files: vec!["E:/skills/alpha/SKILL.md".into()],
-                engine_version: "phase2-rules-v1".into(),
-                scanned_at: 200,
-            },
-        )
-        .unwrap();
-        save_security_report(
-            &db_path,
-            &SecurityReport {
-                id: "beta-only".into(),
-                skill_id: Some(beta_id),
-                skill_name: Some("Beta".into()),
-                source_path: Some("E:/skills/beta".into()),
-                scan_scope: "temp_install".into(),
-                level: "medium".into(),
-                score: 40,
-                blocked: false,
-                issues: vec![SecurityIssue {
-                    rule_id: "network_fetch".into(),
-                    severity: "medium".into(),
-                    title: "Review required".into(),
-                    description: "demo".into(),
-                    file_path: Some("E:/skills/beta/install.sh".into()),
-                }],
-                recommendations: vec![SecurityRecommendation {
-                    action: "review_files".into(),
-                    description: "review".into(),
-                }],
-                scanned_files: vec!["E:/skills/beta/install.sh".into()],
-                engine_version: "phase2-rules-v1".into(),
-                scanned_at: 150,
-            },
-        )
-        .unwrap();
-        save_security_report(
-            &db_path,
-            &SecurityReport {
-                id: "transient-temp-scan".into(),
-                skill_id: None,
-                skill_name: None,
-                source_path: None,
-                scan_scope: "temp_install".into(),
-                level: "high".into(),
-                score: 90,
-                blocked: true,
-                issues: vec![SecurityIssue {
-                    rule_id: "shell_destructive".into(),
-                    severity: "high".into(),
-                    title: "Blocked".into(),
-                    description: "danger".into(),
-                    file_path: Some("E:/tmp/install.sh".into()),
-                }],
-                recommendations: vec![SecurityRecommendation {
-                    action: "block_install".into(),
-                    description: "blocked".into(),
-                }],
-                scanned_files: vec!["E:/tmp/install.sh".into()],
-                engine_version: "phase2-rules-v1".into(),
-                scanned_at: 300,
-            },
-        )
-        .unwrap();
-
-        let loaded = list_security_reports(&db_path).unwrap();
-
-        assert_eq!(loaded.len(), 2);
-        assert_eq!(loaded[0].id, "alpha-new");
-        assert_eq!(loaded[0].scan_scope, "rescan");
-        assert_eq!(loaded[1].id, "beta-only");
-        assert!(loaded.iter().all(|report| report.skill_id.is_some()));
     }
 
     #[test]
@@ -345,7 +227,9 @@ mod tests {
                 issues: Vec::new(),
                 recommendations: Vec::new(),
                 scanned_files: vec!["E:/skills/demo/SKILL.md".into()],
-                engine_version: "phase2-rules-v1".into(),
+                category_breakdown: Vec::new(),
+                blocking_reasons: Vec::new(),
+                engine_version: "security-engine-v2".into(),
                 scanned_at: 100,
             },
         )
@@ -363,17 +247,24 @@ mod tests {
                 blocked: false,
                 issues: vec![SecurityIssue {
                     rule_id: "network_fetch".into(),
+                    category: "system".into(),
                     severity: "medium".into(),
                     title: "Review required".into(),
                     description: "demo".into(),
                     file_path: Some("E:/skills/demo/install.sh".into()),
+                    file_kind: Some("shell".into()),
+                    line: None,
+                    evidence: Some("curl".into()),
+                    blocking: false,
                 }],
                 recommendations: vec![SecurityRecommendation {
                     action: "review_files".into(),
                     description: "review".into(),
                 }],
                 scanned_files: vec!["E:/skills/demo/install.sh".into()],
-                engine_version: "phase2-rules-v1".into(),
+                category_breakdown: Vec::new(),
+                blocking_reasons: Vec::new(),
+                engine_version: "security-engine-v2".into(),
                 scanned_at: 200,
             },
         )

@@ -229,7 +229,19 @@ pub fn install_skill(
     let install_result = (|| -> Result<InstallSkillResult> {
         let staged_dir = stage_source(&install_temp_dir, request)?;
         let skill_root = resolve_requested_skill_root(&staged_dir, request)?;
-        let security_report = security::scan_skill_directory(&skill_root, None, "temp_install")?;
+        let security_report = security::scan_skill_directory_with_context(
+            &skill_root,
+            None,
+            "temp_install",
+            &security::SecurityScanSourceContext {
+                source_url: Some(request.source_url.clone()),
+                repo_url: request.repo_url.clone(),
+                download_url: request.download_url.clone(),
+                version: request.version.clone(),
+                manifest_path: request.manifest_path.clone(),
+                skill_root: request.skill_root.clone(),
+            },
+        )?;
 
         if security_report.blocked {
             security_repository::save_security_report(&paths.db_file, &security_report)?;
@@ -469,6 +481,37 @@ mod tests {
         assert_eq!(result.security_level, "high");
         assert!(result.skill_id.is_empty());
         assert!(!paths.canonical_store_dir.join("demo-skill").exists());
+        assert_eq!(temp_install_report_count(&paths.db_file), 1);
+    }
+
+    #[test]
+    fn blocks_insecure_http_source_before_persisting() {
+        let dir = tempdir().unwrap();
+        let paths = test_paths(dir.path());
+        run_migrations(&paths.db_file).unwrap();
+
+        let zip_path = dir.path().join("http-source.zip");
+        write_zip(
+            &zip_path,
+            &[
+                ("http-source-skill/SKILL.md", "# insecure"),
+                ("http-source-skill/README.md", "content"),
+            ],
+        );
+
+        let mut install_request = request(zip_path.to_string_lossy().to_string());
+        install_request.source_url = "http://example.com/http-source-skill.zip".into();
+        install_request.download_url = Some(zip_path.to_string_lossy().to_string());
+        install_request.slug = "http-source-skill".into();
+
+        let result = install_skill(&paths, &install_request).unwrap();
+
+        assert!(result.blocked);
+        assert!(result.skill_id.is_empty());
+        assert!(!paths
+            .canonical_store_dir
+            .join("http-source-skill")
+            .exists());
         assert_eq!(temp_install_report_count(&paths.db_file), 1);
     }
 

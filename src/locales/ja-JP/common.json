@@ -242,16 +242,34 @@
         "title": "継続可能",
         "description": "safe / low リスクの skill は実スキャン結果に基づき、次のガバナンス操作へ進めます。"
       },
-      "medium": {
-        "label": "Medium",
-        "title": "要確認",
-        "description": "中リスク結果には一致ルールと推奨アクションを残し、継続可否をユーザーが判断できます。"
-      },
       "blocked": {
         "label": "Blocked",
         "title": "ポリシーにより阻断",
         "description": "高リスク skill は canonical store に入る前に阻断され、説明可能なレポートが残ります。"
+      },
+      "review": {
+        "label": "要確認",
+        "title": "要確認",
+        "description": "中リスク結果には一致ルールと推奨アクションを残し、継続可否をユーザーが判断できます。"
       }
+    },
+    "blockingReasonsTitle": "ブロック理由",
+    "line": "行: {{line}}",
+    "evidence": "証拠: {{evidence}}",
+    "categories": {
+      "system": "システム",
+      "prompt": "プロンプト",
+      "source": "ソース"
+    },
+    "fileKinds": {
+      "markdown": "Markdown",
+      "shell": "Shell",
+      "powershell": "PowerShell",
+      "cmd": "コマンド",
+      "script": "スクリプト",
+      "archive": "アーカイブ",
+      "binary": "バイナリ",
+      "unknown": "テキスト"
     }
   },
   "templates": {

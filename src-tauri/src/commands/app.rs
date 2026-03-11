@@ -164,10 +164,18 @@ pub fn rescan_security(state: State<'_, AppState>) -> Result<Vec<SecurityReport>
         let mut reports = Vec::new();
 
         for skill in installed {
-            let report = crate::security::scan_skill_directory(
+            let report = crate::security::scan_skill_directory_with_context(
                 std::path::Path::new(&skill.canonical_path),
                 Some(skill.skill_id.clone()),
                 "rescan",
+                &crate::security::SecurityScanSourceContext {
+                    source_url: skill.source_url.clone(),
+                    repo_url: skill.repo_url.clone(),
+                    download_url: None,
+                    version: skill.version.clone(),
+                    manifest_path: None,
+                    skill_root: None,
+                },
             )?;
             let mut persisted = report.clone();
             persisted.skill_name = Some(skill.name.clone());
