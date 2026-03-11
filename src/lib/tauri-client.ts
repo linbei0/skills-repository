@@ -3,6 +3,8 @@ import type {
   AgentGlobalScanRequest,
   AgentGlobalScanResult,
   AppSettings,
+  BatchDistributeRepositorySkillsRequest,
+  BatchDistributeResult,
   BootstrapPayload,
   DistributionRequest,
   InstallSkillRequest,
@@ -55,6 +57,10 @@ export const importRepositorySkill = (request: ImportRepositorySkillRequest) =>
 
 export const distributeSkill = (request: DistributionRequest) =>
   invoke<DistributionResult>('distribute_skill', { request })
+
+export const batchDistributeRepositorySkills = (
+  request: BatchDistributeRepositorySkillsRequest,
+) => invoke<BatchDistributeResult>('batch_distribute_repository_skills', { request })
 
 export const getSecurityReports = () =>
   invoke<SecurityReport[]>('get_security_reports')

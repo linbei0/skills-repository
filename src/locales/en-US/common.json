@@ -23,7 +23,7 @@
   },
   "repository": {
     "title": "Skills Repository",
-    "description": "This page shows skills stored in the unified repository. You can inspect details, import a skill from GitHub or local files, or uninstall the repository copy together with all distributed targets.",
+    "description": "This page shows skills stored in the unified repository. You can inspect details, import a skill from GitHub or local files, freely distribute repository skills into a project target, or uninstall the repository copy together with all distributed targets.",
     "source": "Source",
     "installedAt": "Installed at",
     "actions": "Actions",
@@ -90,6 +90,45 @@
           "existing": "Existing",
           "failed": "Failed"
         }
+      }
+    },
+    "distribute": {
+      "open": "Distribute Skills",
+      "title": "Distribute Skills",
+      "subtitle": "Freely choose installed skills from the unified repository and distribute them to one project target in bulk.",
+      "skillsTitle": "Select skills",
+      "selectedCount": "{{count}} selected",
+      "selectAll": "Select visible",
+      "clearSelection": "Clear selection",
+      "searchPlaceholder": "Search installed skills",
+      "emptySearch": "No installed skills match the current query.",
+      "projectRoot": "Project root",
+      "projectRootPlaceholder": "For example, E:\\project\\my-app",
+      "projectPicker": "Directory picker",
+      "chooseDirectory": "Choose directory",
+      "scopeTitle": "Distribution scope",
+      "scopeProject": "Project",
+      "scopeGlobal": "Global",
+      "targetTitle": "Target directory",
+      "targetTag": "Use tag directory",
+      "targetCustom": "Use custom relative directory",
+      "customRelativePath": "Custom relative directory",
+      "customRelativePathPlaceholder": "For example, .company/skills/vue",
+      "modeTitle": "Distribution mode",
+      "modes": {
+        "symlink": "Symlink",
+        "copy": "Copy"
+      },
+      "previewTitle": "Distribution preview",
+      "noTargetPreview": "Choose a project path and target directory to preview the final distribution path.",
+      "previewListTitle": "Skills to distribute",
+      "noSkillsSelected": "Select at least one repository skill first.",
+      "distributing": "Distributing...",
+      "confirm": "Start distribution",
+      "result": {
+        "installed": "Installed: {{count}}",
+        "skipped": "Skipped: {{count}}",
+        "failed": "Failed: {{count}}"
       }
     },
     "statusValues": {

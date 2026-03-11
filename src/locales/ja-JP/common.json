@@ -23,7 +23,7 @@
   },
   "repository": {
     "title": "Skills リポジトリ",
-    "description": "ここでは統一リポジトリ内の skills を表示します。詳細確認、GitHub / ローカルからの導入、配布先を含むアンインストールに対応します。",
+    "description": "ここでは統一リポジトリ内の skills を表示します。詳細確認、GitHub / ローカルからの導入、倉庫内 skill の自由なプロジェクト分配、配布先を含むアンインストールに対応します。",
     "source": "ソース",
     "installedAt": "インストール日時",
     "actions": "操作",
@@ -90,6 +90,45 @@
           "existing": "既存",
           "failed": "失敗"
         }
+      }
+    },
+    "distribute": {
+      "open": "Skills を分配",
+      "title": "Skills を分配",
+      "subtitle": "統一リポジトリ内のインストール済み skills を自由に選び、1 つのプロジェクト対象へ一括分配します。",
+      "skillsTitle": "Skills を選択",
+      "selectedCount": "{{count}} 件を選択",
+      "selectAll": "表示中を全選択",
+      "clearSelection": "選択をクリア",
+      "searchPlaceholder": "インストール済み skills を検索",
+      "emptySearch": "現在の検索条件に一致する skill はありません。",
+      "projectRoot": "プロジェクトルート",
+      "projectRootPlaceholder": "例: E:\\project\\my-app",
+      "projectPicker": "ディレクトリ選択",
+      "chooseDirectory": "ディレクトリを選択",
+      "scopeTitle": "分配範囲",
+      "scopeProject": "プロジェクト",
+      "scopeGlobal": "グローバル",
+      "targetTitle": "対象ディレクトリ",
+      "targetTag": "タグディレクトリを使用",
+      "targetCustom": "カスタム相対ディレクトリを使用",
+      "customRelativePath": "カスタム相対ディレクトリ",
+      "customRelativePathPlaceholder": "例: .company/skills/vue",
+      "modeTitle": "分配モード",
+      "modes": {
+        "symlink": "シンボリックリンク",
+        "copy": "コピー"
+      },
+      "previewTitle": "分配プレビュー",
+      "noTargetPreview": "プロジェクトパスと対象ディレクトリを選択すると最終的な分配先を表示します。",
+      "previewListTitle": "分配対象 Skills",
+      "noSkillsSelected": "先に少なくとも 1 つのリポジトリ skill を選択してください。",
+      "distributing": "分配中...",
+      "confirm": "分配を開始",
+      "result": {
+        "installed": "分配済み: {{count}}",
+        "skipped": "スキップ: {{count}}",
+        "failed": "失敗: {{count}}"
       }
     },
     "statusValues": {

@@ -3,6 +3,7 @@ pub mod bootstrap;
 pub mod distribution;
 pub mod install;
 pub mod market;
+pub mod project_distribution;
 pub mod repository;
 pub mod repository_import;
 pub mod settings;

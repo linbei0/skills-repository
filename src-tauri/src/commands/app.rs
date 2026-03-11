@@ -4,7 +4,8 @@ use crate::{
     domain::{
         app_state::AppState,
         types::{
-            AgentGlobalScanRequest, AgentGlobalScanResult, AppSettings, DistributionRequest,
+            AgentGlobalScanRequest, AgentGlobalScanResult, AppSettings,
+            BatchDistributeRepositorySkillsRequest, BatchDistributeResult, DistributionRequest,
             DistributionResult, ImportRepositorySkillRequest, InjectTemplateRequest,
             InjectTemplateResult, InstallSkillRequest, InstallSkillResult,
             MarketSearchRequest, MarketSearchResponse, RepositorySkillDetail,
@@ -12,10 +13,11 @@ use crate::{
             ResolveRepositoryImportResult, SaveTemplateRequest, SecurityReport, TemplateRecord,
         },
     },
+    repositories::skills as skills_repository,
     repositories::security as security_repository,
     services::{
-        agent_scan, bootstrap, distribution, install, market, repository, settings,
-        repository_import, templates,
+        agent_scan, bootstrap, distribution, install, market, project_distribution,
+        repository, repository_import, settings, templates,
     },
 };
 
@@ -217,4 +219,36 @@ pub fn distribute_skill(
     log::info!("distribute_skill invoked");
     distribution::distribute_skill(state.agent_registry.as_ref(), &state.paths.db_file, &request)
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn batch_distribute_repository_skills(
+    state: State<'_, AppState>,
+    request: BatchDistributeRepositorySkillsRequest,
+) -> Result<BatchDistributeResult, String> {
+    log::info!("batch_distribute_repository_skills invoked");
+
+    let selections = request
+        .skill_ids
+        .iter()
+        .map(|skill_id| project_distribution::ProjectDistributionSelection {
+            skill_id: skill_id.clone(),
+            skill_name: skills_repository::load_skill_name(&state.paths.db_file, skill_id)
+                .unwrap_or_else(|_| skill_id.clone()),
+        })
+        .collect::<Vec<_>>();
+
+    project_distribution::distribute_repository_skills_to_project(
+        &state,
+        &selections,
+        &project_distribution::ProjectDistributionRequest {
+            target_scope: request.target_scope,
+            project_root: request.project_root.unwrap_or_default(),
+            target_type: request.target_type,
+            target_agent_id: request.target_agent_id,
+            custom_relative_path: request.custom_relative_path,
+            install_mode: request.install_mode,
+        },
+    )
+    .map_err(|error| error.to_string())
 }

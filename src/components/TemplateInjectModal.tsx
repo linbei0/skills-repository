@@ -2,6 +2,8 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SkillsTargetOption } from '../lib/skills-targets'
+import { ProjectDistributionFields } from './ProjectDistributionFields'
+import { ProjectDistributionResultPanel } from './ProjectDistributionResultPanel'
 import type {
   InjectTemplateRequest,
   InjectTemplateResult,
@@ -96,118 +98,47 @@ export function TemplateInjectModal({
         </div>
 
         <div className="space-y-6 overflow-y-auto p-6">
-          <section className="grid gap-4 md:grid-cols-[1.3fr_0.7fr]">
-            <label className="form-control">
-              <span className="label-text">{t('templates.inject.projectRoot')}</span>
-              <input
-                className="input input-bordered"
-                value={projectRoot}
-                onChange={(event) => setProjectRoot(event.target.value)}
-                placeholder={t('templates.inject.projectRootPlaceholder')}
-              />
-            </label>
-            <div className="form-control">
-              <span className="label-text">{t('templates.inject.projectPicker')}</span>
-              <button className="btn btn-outline" onClick={() => void chooseProjectDirectory()}>
-                {t('templates.inject.chooseDirectory')}
-              </button>
-            </div>
-          </section>
-
-          <section className="rounded-box border border-base-300 bg-base-200/50 p-4">
-            <h4 className="font-semibold">{t('templates.inject.targetTitle')}</h4>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <label className="label cursor-pointer gap-2">
-                <input
-                  type="radio"
-                  className="radio radio-sm"
-                  checked={targetType === 'tag'}
-                  onChange={() => setTargetType('tag')}
-                />
-                <span>{t('templates.inject.targetTag')}</span>
-              </label>
-              <label className="label cursor-pointer gap-2">
-                <input
-                  type="radio"
-                  className="radio radio-sm"
-                  checked={targetType === 'custom'}
-                  onChange={() => setTargetType('custom')}
-                />
-                <span>{t('templates.inject.targetCustom')}</span>
-              </label>
-            </div>
-
-            {targetType === 'tag' ? (
-              <div className="mt-4 flex flex-wrap gap-3">
-                {targets.map((target) => (
-                  <button
-                    key={target.id}
-                    className={targetAgentId === target.id ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline'}
-                    onClick={() => setTargetAgentId(target.id)}
-                  >
-                    {target.label}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <label className="form-control mt-4">
-                <span className="label-text">{t('templates.inject.customRelativePath')}</span>
-                <input
-                  className="input input-bordered"
-                  value={customRelativePath}
-                  onChange={(event) => setCustomRelativePath(event.target.value)}
-                  placeholder={t('templates.inject.customRelativePathPlaceholder')}
-                />
-              </label>
-            )}
-          </section>
-
-          <section className="rounded-box border border-base-300 bg-base-200/50 p-4">
-            <h4 className="font-semibold">{t('templates.inject.modeTitle')}</h4>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {(['symlink', 'copy'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  className={installMode === mode ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline'}
-                  onClick={() => setInstallMode(mode)}
-                >
-                  {t(`templates.inject.modes.${mode}`)}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-box border border-base-300 bg-base-200/50 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h4 className="font-semibold">{t('templates.inject.previewTitle')}</h4>
+          <ProjectDistributionFields
+            projectRoot={projectRoot}
+            targetType={targetType}
+            targetAgentId={targetAgentId}
+            customRelativePath={customRelativePath}
+            installMode={installMode}
+            targets={targets}
+            resolvedTargetPath={resolvedTargetPath}
+            titleTarget={t('templates.inject.targetTitle')}
+            titleMode={t('templates.inject.modeTitle')}
+            titlePreview={t('templates.inject.previewTitle')}
+            labelProjectRoot={t('templates.inject.projectRoot')}
+            labelProjectPicker={t('templates.inject.projectPicker')}
+            labelChooseDirectory={t('templates.inject.chooseDirectory')}
+            labelTargetTag={t('templates.inject.targetTag')}
+            labelTargetCustom={t('templates.inject.targetCustom')}
+            labelCustomRelativePath={t('templates.inject.customRelativePath')}
+            placeholderProjectRoot={t('templates.inject.projectRootPlaceholder')}
+            placeholderCustomRelativePath={t('templates.inject.customRelativePathPlaceholder')}
+            noTargetPreviewText={t('templates.inject.noTargetPreview')}
+            previewMeta={
               <div className="flex flex-wrap gap-2 text-sm text-base-content/60">
                 <span>{t('templates.inject.validSkills', { count: validSkillCount })}</span>
                 <span>{t('templates.inject.missingSkills', { count: missingSkillCount })}</span>
               </div>
-            </div>
-            <p className="mt-3 break-all text-sm text-base-content/60">
-              {resolvedTargetPath || t('templates.inject.noTargetPreview')}
-            </p>
-          </section>
+            }
+            onProjectRootChange={setProjectRoot}
+            onTargetTypeChange={setTargetType}
+            onTargetAgentIdChange={setTargetAgentId}
+            onCustomRelativePathChange={setCustomRelativePath}
+            onInstallModeChange={setInstallMode}
+            onChooseProjectDirectory={() => void chooseProjectDirectory()}
+            renderModeLabel={(mode) => t(`templates.inject.modes.${mode}`)}
+          />
 
-          {result ? (
-            <section className="rounded-box border border-base-300 bg-base-200/50 p-4">
-              <div className="flex flex-wrap gap-4 text-sm">
-                <span>{t('templates.inject.result.installed', { count: result.installed.length })}</span>
-                <span>{t('templates.inject.result.skipped', { count: result.skipped.length })}</span>
-                <span>{t('templates.inject.result.failed', { count: result.failed.length })}</span>
-              </div>
-              <div className="mt-4 space-y-3">
-                {[...result.installed, ...result.skipped, ...result.failed].map((item) => (
-                  <article key={`${item.skillId}-${item.targetPath}`} className="rounded-box border border-base-300 bg-base-100 p-3 text-sm">
-                    <p className="font-medium">{item.skillName}</p>
-                    <p className="mt-1 break-all text-xs text-base-content/55">{item.targetPath}</p>
-                    {item.reason ? <p className="mt-2 text-xs text-warning">{item.reason}</p> : null}
-                  </article>
-                ))}
-              </div>
-            </section>
-          ) : null}
+          <ProjectDistributionResultPanel
+            result={result}
+            titleInstalled={t('templates.inject.result.installed', { count: result?.installed.length ?? 0 })}
+            titleSkipped={t('templates.inject.result.skipped', { count: result?.skipped.length ?? 0 })}
+            titleFailed={t('templates.inject.result.failed', { count: result?.failed.length ?? 0 })}
+          />
         </div>
 
         <div className="flex justify-end gap-3 border-t border-base-300 px-6 py-5">
@@ -225,7 +156,7 @@ export function TemplateInjectModal({
                 targetAgentId: targetType === 'tag' ? targetAgentId : null,
                 customRelativePath: targetType === 'custom' ? customRelativePath.trim() : null,
                 installMode,
-              })
+              }).catch(() => undefined)
             }
           >
             {injecting ? t('templates.inject.injecting') : t('templates.inject.confirm')}

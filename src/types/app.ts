@@ -301,3 +301,26 @@ export interface InjectTemplateResult {
   failed: InjectTemplateItemResult[]
 }
 
+export interface BatchDistributeRepositorySkillsRequest {
+  targetScope: 'global' | 'project'
+  skillIds: string[]
+  projectRoot?: string | null
+  targetType: 'tag' | 'custom'
+  targetAgentId?: string | null
+  customRelativePath?: string | null
+  installMode: 'symlink' | 'copy'
+}
+
+export interface BatchDistributeItemResult {
+  skillId: string
+  skillName: string
+  targetPath: string
+  reason?: string | null
+}
+
+export interface BatchDistributeResult {
+  installed: BatchDistributeItemResult[]
+  skipped: BatchDistributeItemResult[]
+  failed: BatchDistributeItemResult[]
+}
+

@@ -23,7 +23,7 @@
   },
   "repository": {
     "title": "Skills 仓库",
-    "description": "这里展示统一仓库中的 skills。你可以查看详情、从 GitHub 或本地导入 skill，或将仓库副本与已分发目标一起卸载。",
+    "description": "这里展示统一仓库中的 skills。你可以查看详情、从 GitHub 或本地导入 skill、自由选择仓库 skills 分发到项目目录，或将仓库副本与已分发目标一起卸载。",
     "source": "来源",
     "installedAt": "安装时间",
     "actions": "操作",
@@ -90,6 +90,45 @@
           "existing": "已存在",
           "failed": "失败"
         }
+      }
+    },
+    "distribute": {
+      "open": "分发 Skills",
+      "title": "分发 Skills",
+      "subtitle": "从统一仓库自由选择已安装 skills，并按项目目录、标签或自定义目录批量分发。",
+      "skillsTitle": "选择 Skills",
+      "selectedCount": "已选择 {{count}} 个",
+      "selectAll": "全选可见项",
+      "clearSelection": "清空选择",
+      "searchPlaceholder": "搜索已安装的 skills",
+      "emptySearch": "当前没有匹配的已安装 skills。",
+      "projectRoot": "项目根路径",
+      "projectRootPlaceholder": "例如 E:\\project\\my-app",
+      "projectPicker": "目录选择器",
+      "chooseDirectory": "选择目录",
+      "scopeTitle": "分发范围",
+      "scopeProject": "项目级",
+      "scopeGlobal": "全局级",
+      "targetTitle": "目标目录",
+      "targetTag": "使用标签目录",
+      "targetCustom": "使用自定义相对目录",
+      "customRelativePath": "自定义相对目录",
+      "customRelativePathPlaceholder": "例如 .company/skills/vue",
+      "modeTitle": "分发模式",
+      "modes": {
+        "symlink": "软链接",
+        "copy": "复制"
+      },
+      "previewTitle": "分发预览",
+      "noTargetPreview": "请选择项目路径与目标目录后预览最终分发路径。",
+      "previewListTitle": "待分发 Skills",
+      "noSkillsSelected": "请先选择至少一个仓库 skill。",
+      "distributing": "分发中...",
+      "confirm": "开始分发",
+      "result": {
+        "installed": "已分发：{{count}}",
+        "skipped": "已跳过：{{count}}",
+        "failed": "失败：{{count}}"
       }
     },
     "statusValues": {

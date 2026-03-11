@@ -371,3 +371,32 @@ pub struct InjectTemplateResult {
     pub failed: Vec<InjectTemplateItemResult>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchDistributeRepositorySkillsRequest {
+    pub target_scope: String,
+    pub skill_ids: Vec<String>,
+    pub project_root: Option<String>,
+    pub target_type: String,
+    pub target_agent_id: Option<String>,
+    pub custom_relative_path: Option<String>,
+    pub install_mode: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchDistributeItemResult {
+    pub skill_id: String,
+    pub skill_name: String,
+    pub target_path: String,
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchDistributeResult {
+    pub installed: Vec<BatchDistributeItemResult>,
+    pub skipped: Vec<BatchDistributeItemResult>,
+    pub failed: Vec<BatchDistributeItemResult>,
+}
+

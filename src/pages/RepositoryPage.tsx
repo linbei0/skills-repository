@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RepositoryDistributeModal } from '../components/RepositoryDistributeModal'
 import { RepositoryImportModal } from '../components/RepositoryImportModal'
+import { resolveSkillsTargets } from '../lib/skills-targets'
 import { useRepositoryStore } from '../stores/use-repository-store'
+import { useSettingsStore } from '../stores/use-settings-store'
 import type {
+  BatchDistributeRepositorySkillsRequest,
   ImportRepositorySkillRequest,
   RepositoryImportSourceKind,
 } from '../types/app'
@@ -42,6 +46,7 @@ const resolveStatusKey = (securityLevel: string, blocked: boolean) => {
 export function RepositoryPage() {
   const { t, i18n } = useTranslation()
   const [importOpen, setImportOpen] = useState(false)
+  const settings = useSettingsStore((state) => state.settings)
   const items = useRepositoryStore((state) => state.items)
   const loading = useRepositoryStore((state) => state.loading)
   const loaded = useRepositoryStore((state) => state.loaded)
@@ -50,6 +55,10 @@ export function RepositoryPage() {
   const detailLoading = useRepositoryStore((state) => state.detailLoading)
   const detailError = useRepositoryStore((state) => state.detailError)
   const uninstallingSkillId = useRepositoryStore((state) => state.uninstallingSkillId)
+  const distributionOpen = useRepositoryStore((state) => state.distributionOpen)
+  const distributing = useRepositoryStore((state) => state.distributing)
+  const distributionError = useRepositoryStore((state) => state.distributionError)
+  const lastDistributionResult = useRepositoryStore((state) => state.lastDistributionResult)
   const resolvingImport = useRepositoryStore((state) => state.resolvingImport)
   const importing = useRepositoryStore((state) => state.importing)
   const importError = useRepositoryStore((state) => state.importError)
@@ -59,6 +68,10 @@ export function RepositoryPage() {
   const loadDetail = useRepositoryStore((state) => state.loadDetail)
   const closeDetail = useRepositoryStore((state) => state.closeDetail)
   const uninstall = useRepositoryStore((state) => state.uninstall)
+  const openDistribution = useRepositoryStore((state) => state.openDistribution)
+  const closeDistribution = useRepositoryStore((state) => state.closeDistribution)
+  const batchDistributeSkills = useRepositoryStore((state) => state.batchDistributeSkills)
+  const resetDistributionState = useRepositoryStore((state) => state.resetDistributionState)
   const resolveImport = useRepositoryStore((state) => state.resolveImport)
   const importSkill = useRepositoryStore((state) => state.importSkill)
   const resetImportState = useRepositoryStore((state) => state.resetImportState)
@@ -66,6 +79,10 @@ export function RepositoryPage() {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  const visibleTargets = resolveSkillsTargets(settings).filter((target) =>
+    settings.visibleSkillsTargetIds.includes(target.id),
+  )
 
   const openImportModal = () => {
     resetImportState()
@@ -77,12 +94,26 @@ export function RepositoryPage() {
     resetImportState()
   }
 
+  const handleOpenDistribution = () => {
+    resetDistributionState()
+    openDistribution()
+  }
+
+  const handleCloseDistribution = () => {
+    closeDistribution()
+    resetDistributionState()
+  }
+
   const handleResolveImport = async (sourceKind: RepositoryImportSourceKind, input: string) => {
     await resolveImport({ sourceKind, input })
   }
 
   const handleImportSkill = async (request: ImportRepositorySkillRequest) => {
     return importSkill(request)
+  }
+
+  const handleBatchDistributeSkills = async (request: BatchDistributeRepositorySkillsRequest) => {
+    await batchDistributeSkills(request)
   }
 
   return (
@@ -95,9 +126,18 @@ export function RepositoryPage() {
               {t('repository.description')}
             </p>
           </div>
-          <button className="btn btn-primary" onClick={openImportModal}>
-            {t('repository.import.open')}
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button className="btn btn-primary" onClick={openImportModal}>
+              {t('repository.import.open')}
+            </button>
+            <button
+              className="btn btn-outline"
+              disabled={items.length === 0}
+              onClick={handleOpenDistribution}
+            >
+              {t('repository.distribute.open')}
+            </button>
+          </div>
         </div>
       </section>
 
@@ -230,6 +270,17 @@ export function RepositoryPage() {
         onClose={closeImportModal}
         onResolve={handleResolveImport}
         onImport={handleImportSkill}
+      />
+
+      <RepositoryDistributeModal
+        open={distributionOpen}
+        repositorySkills={items}
+        targets={visibleTargets}
+        distributing={distributing}
+        error={distributionError}
+        result={lastDistributionResult}
+        onClose={handleCloseDistribution}
+        onSubmit={handleBatchDistributeSkills}
       />
     </div>
   )

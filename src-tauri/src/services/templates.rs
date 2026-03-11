@@ -1,9 +1,5 @@
 use anyhow::{anyhow, Result};
-use std::{
-    fs,
-    io::ErrorKind,
-    path::{Path, PathBuf},
-};
+use std::path::Path;
 
 use crate::{
     domain::{
@@ -13,47 +9,11 @@ use crate::{
             SaveTemplateRequest, TemplateRecord,
         },
     },
-    repositories::{
-        distributions as distributions_repository, settings as settings_repository,
-        skills as skills_repository, templates as templates_repository,
+    repositories::templates as templates_repository,
+    services::project_distribution::{
+        self, ProjectDistributionRequest, ProjectDistributionSelection,
     },
-    services::distribution,
 };
-
-const BUILTIN_TEMPLATE_TARGETS: &[(&str, &str)] = &[
-    ("universal", ".agents/skills"),
-    ("antigravity", ".agent/skills"),
-    ("augment", ".augment/skills"),
-    ("claude-code", ".claude/skills"),
-    ("openclaw", "skills"),
-    ("codebuddy", ".codebuddy/skills"),
-    ("command-code", ".commandcode/skills"),
-    ("continue", ".continue/skills"),
-    ("cortex-code", ".cortex/skills"),
-    ("crush", ".crush/skills"),
-    ("droid", ".factory/skills"),
-    ("goose", ".goose/skills"),
-    ("junie", ".junie/skills"),
-    ("iflow-cli", ".iflow/skills"),
-    ("kilo-code", ".kilocode/skills"),
-    ("kiro-cli", ".kiro/skills"),
-    ("kode", ".kode/skills"),
-    ("mcpjam", ".mcpjam/skills"),
-    ("mistral-vibe", ".vibe/skills"),
-    ("mux", ".mux/skills"),
-    ("openhands", ".openhands/skills"),
-    ("pi", ".pi/skills"),
-    ("qoder", ".qoder/skills"),
-    ("qwen-code", ".qwen/skills"),
-    ("roo-code", ".roo/skills"),
-    ("trae", ".trae/skills"),
-    ("trae-cn", ".trae/skills"),
-    ("windsurf", ".windsurf/skills"),
-    ("zencoder", ".zencoder/skills"),
-    ("neovate", ".neovate/skills"),
-    ("pochi", ".pochi/skills"),
-    ("adal", ".adal/skills"),
-];
 
 fn validate_template(request: &SaveTemplateRequest) -> Result<()> {
     if request.name.trim().is_empty() {
@@ -67,81 +27,6 @@ fn validate_template(request: &SaveTemplateRequest) -> Result<()> {
         if item.skill_ref.trim().is_empty() {
             return Err(anyhow!("template item skill_ref is required"));
         }
-    }
-
-    Ok(())
-}
-
-fn normalize_relative_path(relative_path: &str) -> String {
-    relative_path
-        .replace('\\', "/")
-        .trim()
-        .trim_matches('/')
-        .to_string()
-}
-
-fn validate_custom_relative_path(relative_path: &str) -> Result<String> {
-    let normalized = normalize_relative_path(relative_path);
-    if normalized.is_empty() {
-        return Err(anyhow!("custom relative path is required"));
-    }
-    if normalized.starts_with('/') || normalized.starts_with('\\') {
-        return Err(anyhow!("custom relative path must be relative"));
-    }
-    if normalized.split('/').any(|segment| segment == "..") {
-        return Err(anyhow!("custom relative path cannot contain parent directory segments"));
-    }
-    Ok(normalized)
-}
-
-fn resolve_tag_relative_path(state: &AppState, target_agent_id: &str) -> Result<String> {
-    if let Some((_, relative_path)) = BUILTIN_TEMPLATE_TARGETS
-        .iter()
-        .find(|(id, _)| *id == target_agent_id)
-    {
-        return Ok((*relative_path).to_string());
-    }
-
-    let settings = settings_repository::load_settings(&state.paths.db_file)?
-        .unwrap_or_else(|| settings_repository::default_settings("en-US".into()));
-
-    settings
-        .custom_skills_targets
-        .into_iter()
-        .find(|target| target.id == target_agent_id)
-        .map(|target| target.relative_path)
-        .ok_or_else(|| anyhow!("unknown target agent id {}", target_agent_id))
-}
-
-fn ensure_project_root(project_root: &str) -> Result<PathBuf> {
-    let path = PathBuf::from(project_root);
-    if !path.exists() {
-        return Err(anyhow!("project root does not exist: {}", path.display()));
-    }
-    if !path.is_dir() {
-        return Err(anyhow!("project root is not a directory: {}", path.display()));
-    }
-    Ok(path)
-}
-
-fn create_injection_symlink(source: &Path, target: &Path) -> Result<()> {
-    #[cfg(target_os = "windows")]
-    {
-        std::os::windows::fs::symlink_dir(source, target).map_err(|error| {
-            if error.kind() == ErrorKind::PermissionDenied {
-                anyhow!(
-                    "Windows symlink permission denied for {}. Enable Developer Mode or run with elevated permission.",
-                    target.display()
-                )
-            } else {
-                anyhow!(error)
-            }
-        })?;
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        std::os::unix::fs::symlink(source, target)?;
     }
 
     Ok(())
@@ -182,12 +67,6 @@ pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Res
     if request.template_id.trim().is_empty() {
         return Err(anyhow!("template_id is required"));
     }
-    if request.project_root.trim().is_empty() {
-        return Err(anyhow!("project_root is required"));
-    }
-    if request.install_mode != "symlink" && request.install_mode != "copy" {
-        return Err(anyhow!("unsupported install mode {}", request.install_mode));
-    }
 
     let template = templates_repository::get_template(&state.paths.db_file, &request.template_id)?
         .ok_or_else(|| anyhow!("template {} does not exist", request.template_id))?;
@@ -195,30 +74,18 @@ pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Res
         return Err(anyhow!("template must contain at least one skill before injection"));
     }
 
-    let project_root = ensure_project_root(&request.project_root)?;
-    let relative_target = match request.target_type.as_str() {
-        "tag" => {
-            let target_agent_id = request
-                .target_agent_id
-                .as_deref()
-                .ok_or_else(|| anyhow!("target_agent_id is required when target_type=tag"))?;
-            resolve_tag_relative_path(state, target_agent_id)?
-        }
-        "custom" => validate_custom_relative_path(
-            request
-                .custom_relative_path
-                .as_deref()
-                .ok_or_else(|| anyhow!("custom_relative_path is required when target_type=custom"))?,
-        )?,
-        other => return Err(anyhow!("unsupported target_type {}", other)),
+    let distribution_request = ProjectDistributionRequest {
+        target_scope: "project".into(),
+        project_root: request.project_root.clone(),
+        target_type: request.target_type.clone(),
+        target_agent_id: request.target_agent_id.clone(),
+        custom_relative_path: request.custom_relative_path.clone(),
+        install_mode: request.install_mode.clone(),
     };
+    let target_root = project_distribution::resolve_project_target_root(state, &distribution_request)?;
 
-    let target_root = project_root.join(relative_target);
-    fs::create_dir_all(&target_root)?;
-
-    let mut installed = Vec::new();
-    let mut skipped = Vec::new();
     let mut failed = Vec::new();
+    let mut distribution_items = Vec::new();
 
     for item in &template.items {
         if item.skill_ref_type != "repository_skill" {
@@ -231,74 +98,39 @@ pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Res
             continue;
         }
 
-        let skill_name = item.display_name.clone().unwrap_or_else(|| item.skill_ref.clone());
-        let source = match skills_repository::load_skill_source(&state.paths.db_file, &item.skill_ref) {
-            Ok(source) => source,
-            Err(error) => {
-                failed.push(build_result_item(
-                    &item.skill_ref,
-                    &skill_name,
-                    &target_root.join(&item.skill_ref),
-                    Some(format!("missing repository skill: {}", error)),
-                ));
-                continue;
-            }
-        };
-
-        let source_path = PathBuf::from(&source.source_path);
-        let target_path = target_root.join(&source.target_name);
-
-        if target_path.exists() || fs::symlink_metadata(&target_path).is_ok() {
-            skipped.push(build_result_item(
-                &item.skill_ref,
-                &skill_name,
-                &target_path,
-                Some("target already exists".into()),
-            ));
-            continue;
-        }
-
-        let install_result: Result<()> = match request.install_mode.as_str() {
-            "symlink" => create_injection_symlink(&source_path, &target_path),
-            "copy" => distribution::copy_dir_all(&source_path, &target_path),
-            _ => unreachable!(),
-        };
-
-        match install_result {
-            Ok(()) => {
-                let project_id = distributions_repository::find_project_id_by_root(
-                    &state.paths.db_file,
-                    &request.project_root,
-                )?;
-
-                distributions_repository::save_distribution(
-                    &state.paths.db_file,
-                    &item.skill_ref,
-                    "project",
-                    request.target_agent_id.as_deref().unwrap_or("custom"),
-                    project_id.as_deref(),
-                    &target_path.to_string_lossy(),
-                    &request.install_mode,
-                    "active",
-                )?;
-
-                installed.push(build_result_item(&item.skill_ref, &skill_name, &target_path, None));
-            }
-            Err(error) => {
-                failed.push(build_result_item(
-                    &item.skill_ref,
-                    &skill_name,
-                    &target_path,
-                    Some(error.to_string()),
-                ));
-            }
-        }
+        distribution_items.push(ProjectDistributionSelection {
+            skill_id: item.skill_ref.clone(),
+            skill_name: item.display_name.clone().unwrap_or_else(|| item.skill_ref.clone()),
+        });
     }
 
+    if distribution_items.is_empty() {
+        return Err(anyhow!("template must contain at least one repository skill before injection"));
+    }
+
+    let distribution_result = project_distribution::distribute_repository_skills_to_project(
+        state,
+        &distribution_items,
+        &distribution_request,
+    )?;
+
     Ok(InjectTemplateResult {
-        installed,
-        skipped,
-        failed,
+        installed: distribution_result
+            .installed
+            .into_iter()
+            .map(|item| build_result_item(&item.skill_id, &item.skill_name, Path::new(&item.target_path), item.reason))
+            .collect(),
+        skipped: distribution_result
+            .skipped
+            .into_iter()
+            .map(|item| build_result_item(&item.skill_id, &item.skill_name, Path::new(&item.target_path), item.reason))
+            .collect(),
+        failed: failed
+            .into_iter()
+            .chain(distribution_result.failed.into_iter().map(|item| {
+                build_result_item(&item.skill_id, &item.skill_name, Path::new(&item.target_path), item.reason)
+            }))
+            .collect(),
     })
 }
 
@@ -313,7 +145,7 @@ mod tests {
         },
         repositories::{db::run_migrations, settings as settings_repository, skills as skills_repository},
     };
-    use std::sync::Arc;
+    use std::{fs, sync::Arc};
     use tempfile::tempdir;
 
     fn test_state(root: &Path) -> AppState {

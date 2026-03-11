@@ -130,6 +130,16 @@ pub fn repository_skill_slug_exists(path: &Path, slug: &str) -> Result<bool> {
     Ok(exists != 0)
 }
 
+pub fn load_skill_name(path: &Path, skill_id: &str) -> Result<String> {
+    let conn = open_connection(path)?;
+    conn.query_row(
+        "SELECT name FROM skills WHERE id = ?1",
+        params![skill_id],
+        |row| row.get(0),
+    )
+    .map_err(Into::into)
+}
+
 pub fn save_operation_log(
     path: &Path,
     operation_type: &str,

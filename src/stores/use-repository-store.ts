@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import {
+  batchDistributeRepositorySkills as batchDistributeRepositorySkillsCommand,
   getRepositorySkillDetail as getRepositorySkillDetailCommand,
   importRepositorySkill as importRepositorySkillCommand,
   listRepositorySkills as listRepositorySkillsCommand,
@@ -7,6 +8,8 @@ import {
   uninstallRepositorySkill as uninstallRepositorySkillCommand,
 } from '../lib/tauri-client'
 import type {
+  BatchDistributeRepositorySkillsRequest,
+  BatchDistributeResult,
   InstallSkillResult,
   ImportRepositorySkillRequest,
   RepositorySkillDetail,
@@ -24,6 +27,10 @@ interface RepositoryStoreState {
   detailLoading: boolean
   detailError: string | null
   uninstallingSkillId: string | null
+  distributionOpen: boolean
+  distributing: boolean
+  distributionError: string | null
+  lastDistributionResult: BatchDistributeResult | null
   resolvingImport: boolean
   importing: boolean
   importError: string | null
@@ -33,9 +40,13 @@ interface RepositoryStoreState {
   loadDetail: (skillId: string) => Promise<void>
   closeDetail: () => void
   uninstall: (skillId: string) => Promise<void>
+  openDistribution: () => void
+  closeDistribution: () => void
+  batchDistributeSkills: (request: BatchDistributeRepositorySkillsRequest) => Promise<BatchDistributeResult>
   resolveImport: (request: ResolveRepositoryImportRequest) => Promise<ResolveRepositoryImportResult>
   importSkill: (request: ImportRepositorySkillRequest) => Promise<InstallSkillResult>
   resetImportState: () => void
+  resetDistributionState: () => void
 }
 
 export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
@@ -47,6 +58,10 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
   detailLoading: false,
   detailError: null,
   uninstallingSkillId: null,
+  distributionOpen: false,
+  distributing: false,
+  distributionError: null,
+  lastDistributionResult: null,
   resolvingImport: false,
   importing: false,
   importError: null,
@@ -88,6 +103,36 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
       }))
     } finally {
       set({ uninstallingSkillId: null })
+    }
+  },
+  openDistribution: () =>
+    set({
+      distributionOpen: true,
+      distributionError: null,
+      lastDistributionResult: null,
+    }),
+  closeDistribution: () =>
+    set({
+      distributionOpen: false,
+      distributionError: null,
+      lastDistributionResult: null,
+    }),
+  batchDistributeSkills: async (request) => {
+    set({ distributing: true, distributionError: null, lastDistributionResult: null })
+    try {
+      const result = await batchDistributeRepositorySkillsCommand(request)
+      set({
+        distributing: false,
+        distributionError: null,
+        lastDistributionResult: result,
+      })
+      return result
+    } catch (error) {
+      set({
+        distributing: false,
+        distributionError: error instanceof Error ? error.message : String(error),
+      })
+      throw error
     }
   },
   resolveImport: async (request) => {
@@ -132,5 +177,11 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
       importError: null,
       importBlockedLevel: null,
       resolvedImport: null,
+    }),
+  resetDistributionState: () =>
+    set({
+      distributing: false,
+      distributionError: null,
+      lastDistributionResult: null,
     }),
 }))
