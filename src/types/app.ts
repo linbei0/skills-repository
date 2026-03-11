@@ -172,6 +172,45 @@ export interface InstallSkillResult {
   operationLogId?: string | null
 }
 
+export type RepositoryImportSourceKind = 'github' | 'local_directory' | 'local_zip'
+
+export interface ResolveRepositoryImportRequest {
+  sourceKind: RepositoryImportSourceKind
+  input: string
+}
+
+export interface ResolvedRepositoryImportCandidate {
+  name: string
+  slug: string
+  manifestPath: string
+  skillRoot: string
+  sourceUrl: string
+  repoUrl?: string | null
+  version?: string | null
+  author?: string | null
+  description?: string | null
+}
+
+export interface ResolveRepositoryImportResult {
+  sourceKind: RepositoryImportSourceKind
+  normalizedInput: string
+  candidates: ResolvedRepositoryImportCandidate[]
+  warnings: string[]
+}
+
+export interface ImportRepositorySkillRequest {
+  sourceKind: RepositoryImportSourceKind
+  input: string
+  selectedManifestPath: string
+  selectedSkillRoot: string
+  name: string
+  slug: string
+  sourceUrl: string
+  repoUrl?: string | null
+  version?: string | null
+  author?: string | null
+}
+
 export interface SecurityIssue {
   ruleId: string
   severity: string

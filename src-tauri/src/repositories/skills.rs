@@ -11,6 +11,22 @@ use crate::domain::types::{
 
 use super::db::open_connection;
 
+fn normalize_persisted_source_type(source_type: &str) -> &str {
+    match source_type {
+        "market" | "github" | "local" => source_type,
+        _ => "market",
+    }
+}
+
+fn normalize_persisted_source_market(request: &InstallSkillRequest, persisted_source_type: &str) -> Option<String> {
+    match persisted_source_type {
+        "market" => Some(request.provider.clone()),
+        "github" => Some("github".to_string()),
+        "local" => None,
+        _ => None,
+    }
+}
+
 pub fn save_installed_skill(
     path: &Path,
     request: &InstallSkillRequest,
@@ -21,6 +37,8 @@ pub fn save_installed_skill(
     let conn = open_connection(path)?;
     let now = OffsetDateTime::now_utc().unix_timestamp();
     let skill_id = Uuid::new_v4().to_string();
+    let persisted_source_type = normalize_persisted_source_type(&request.source_type);
+    let persisted_source_market = normalize_persisted_source_market(request, persisted_source_type);
 
     conn.execute(
         "
@@ -45,13 +63,14 @@ pub fn save_installed_skill(
             last_scanned_at,
             metadata_json
         )
-        VALUES (?1, ?2, ?3, NULL, 'market', ?4, ?5, ?6, ?7, ?8, NULL, 0, 'managed', ?9, ?10, ?11, ?12, ?13, ?14)
+        VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6, ?7, ?8, ?9, NULL, 0, 'managed', ?10, ?11, ?12, ?13, ?14, ?15)
         ",
         params![
             skill_id,
             request.slug,
             request.name,
-            request.provider,
+            persisted_source_type,
+            persisted_source_market,
             request.source_url,
             request.version,
             request.author,
@@ -75,6 +94,23 @@ pub fn save_installed_skill(
     )?;
 
     Ok(skill_id)
+}
+
+pub fn repository_skill_slug_exists(path: &Path, slug: &str) -> Result<bool> {
+    let conn = open_connection(path)?;
+    let exists = conn.query_row(
+        "
+        SELECT EXISTS(
+            SELECT 1
+            FROM skills
+            WHERE slug = ?1 AND canonical_path IS NOT NULL
+        )
+        ",
+        params![slug],
+        |row| row.get::<_, i64>(0),
+    )?;
+
+    Ok(exists != 0)
 }
 
 pub fn save_operation_log(

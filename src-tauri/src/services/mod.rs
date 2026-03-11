@@ -4,5 +4,6 @@ pub mod distribution;
 pub mod install;
 pub mod market;
 pub mod repository;
+pub mod repository_import;
 pub mod settings;
 pub mod templates;

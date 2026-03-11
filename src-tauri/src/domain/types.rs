@@ -217,6 +217,51 @@ pub struct InstallSkillResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ResolveRepositoryImportRequest {
+    pub source_kind: String,
+    pub input: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolvedRepositoryImportCandidate {
+    pub name: String,
+    pub slug: String,
+    pub manifest_path: String,
+    pub skill_root: String,
+    pub source_url: String,
+    pub repo_url: Option<String>,
+    pub version: Option<String>,
+    pub author: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveRepositoryImportResult {
+    pub source_kind: String,
+    pub normalized_input: String,
+    pub candidates: Vec<ResolvedRepositoryImportCandidate>,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportRepositorySkillRequest {
+    pub source_kind: String,
+    pub input: String,
+    pub selected_manifest_path: String,
+    pub selected_skill_root: String,
+    pub name: String,
+    pub slug: String,
+    pub source_url: String,
+    pub repo_url: Option<String>,
+    pub version: Option<String>,
+    pub author: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SecurityIssue {
     pub rule_id: String,
     pub severity: String,

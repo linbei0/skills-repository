@@ -23,7 +23,7 @@
   },
   "repository": {
     "title": "Skills Repository",
-    "description": "This page only shows skills stored in the unified repository. You can inspect details or uninstall the repository copy together with all distributed targets.",
+    "description": "This page shows skills stored in the unified repository. You can inspect details, import a skill from GitHub or local files, or uninstall the repository copy together with all distributed targets.",
     "source": "Source",
     "installedAt": "Installed at",
     "actions": "Actions",
@@ -34,8 +34,45 @@
     "uninstalling": "Uninstalling...",
     "detailTitle": "Skill Detail",
     "detailLoading": "Loading skill content...",
-    "sourceLocal": "Local install",
+    "sourceLocal": "Local import",
+    "sourceGithub": "GitHub import",
     "sourceMarket": "{{market}}",
+    "sourceUnknown": "Unknown source",
+    "import": {
+      "open": "Import Skill",
+      "title": "Import Skill",
+      "subtitle": "Resolve a public GitHub repository, a local directory, or a local zip package into an installable skill and import it into the unified repository.",
+      "inputLabel": "Import source",
+      "pickDirectory": "Directory picker",
+      "pickZip": "Zip picker",
+      "browse": "Browse",
+      "supportedHint": "GitHub imports only support public repositories and default-branch tree URLs in this build.",
+      "resolve": "Resolve source",
+      "resolving": "Resolving...",
+      "candidatesTitle": "Resolved skills",
+      "candidatesCount": "{{count}} candidate(s)",
+      "previewTitle": "Import preview",
+      "noCandidateSelected": "Resolve a source and select one skill candidate before importing.",
+      "blocked": "The security scan blocked this import ({{level}}).",
+      "confirm": "Import to repository",
+      "importing": "Importing...",
+      "sourceKinds": {
+        "github": "GitHub",
+        "local_directory": "Local directory",
+        "local_zip": "Local zip"
+      },
+      "placeholders": {
+        "github": "For example, https://github.com/vercel-labs/skills",
+        "local_directory": "For example, E:\\skills\\demo-skill",
+        "local_zip": "For example, E:\\downloads\\skills.zip"
+      },
+      "preview": {
+        "slug": "Slug: {{slug}}",
+        "sourceType": "Source type: {{type}}",
+        "sourceUrl": "Source URL: {{sourceUrl}}",
+        "canonicalPath": "Canonical path: <canonical store>/{{path}}"
+      }
+    },
     "statusValues": {
       "safe": "Safe",
       "low": "Low risk",

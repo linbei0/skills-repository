@@ -5,16 +5,17 @@ use crate::{
         app_state::AppState,
         types::{
             AgentGlobalScanRequest, AgentGlobalScanResult, AppSettings, DistributionRequest,
-            DistributionResult, InjectTemplateRequest, InjectTemplateResult, InstallSkillRequest,
-            InstallSkillResult, MarketSearchRequest, MarketSearchResponse, RepositorySkillDetail,
-            RepositorySkillSummary, RepositoryUninstallResult, SaveTemplateRequest,
-            SecurityReport, TemplateRecord,
+            DistributionResult, ImportRepositorySkillRequest, InjectTemplateRequest,
+            InjectTemplateResult, InstallSkillRequest, InstallSkillResult,
+            MarketSearchRequest, MarketSearchResponse, RepositorySkillDetail,
+            RepositorySkillSummary, RepositoryUninstallResult, ResolveRepositoryImportRequest,
+            ResolveRepositoryImportResult, SaveTemplateRequest, SecurityReport, TemplateRecord,
         },
     },
     repositories::security as security_repository,
     services::{
         agent_scan, bootstrap, distribution, install, market, repository, settings,
-        templates,
+        repository_import, templates,
     },
 };
 
@@ -100,6 +101,26 @@ pub fn install_skill(
 ) -> Result<InstallSkillResult, String> {
     log::info!("install_skill invoked");
     install::install_skill(&state.paths, &request).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn resolve_repository_import_source(
+    state: State<'_, AppState>,
+    request: ResolveRepositoryImportRequest,
+) -> Result<ResolveRepositoryImportResult, String> {
+    log::info!("resolve_repository_import_source invoked");
+    repository_import::resolve_repository_import_source(&state.paths, &request)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn import_repository_skill(
+    state: State<'_, AppState>,
+    request: ImportRepositorySkillRequest,
+) -> Result<InstallSkillResult, String> {
+    log::info!("import_repository_skill invoked");
+    repository_import::import_repository_skill(&state.paths, &request)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

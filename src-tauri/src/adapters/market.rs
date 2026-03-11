@@ -7,7 +7,7 @@ use crate::domain::types::{
 
 pub const GITHUB_PROVIDER: &str = "github";
 
-const SKILL_DIRECTORY_PREFIXES: &[&str] = &[
+pub(crate) const SKILL_DIRECTORY_PREFIXES: &[&str] = &[
     "skills/",
     ".claude/skills/",
     ".agents/skills/",
@@ -109,7 +109,7 @@ impl GithubMarketProvider {
         )
     }
 
-    fn is_manifest_path_supported(path: &str) -> bool {
+    pub(crate) fn is_manifest_path_supported(path: &str) -> bool {
         if !path.ends_with("SKILL.md") {
             return false;
         }
@@ -135,7 +135,7 @@ impl GithubMarketProvider {
             || normalized.matches('/').count() <= 3
     }
 
-    fn discover_manifest_paths(tree_payload: &Value) -> Vec<String> {
+    pub(crate) fn discover_manifest_paths(tree_payload: &Value) -> Vec<String> {
         let mut manifests = tree_payload
             .get("tree")
             .and_then(Value::as_array)
@@ -191,7 +191,7 @@ impl GithubMarketProvider {
             .to_string()
     }
 
-    fn skill_root_from_manifest_path(path: &str) -> String {
+    pub(crate) fn skill_root_from_manifest_path(path: &str) -> String {
         path.rsplit_once('/')
             .map(|(parent, _)| parent.to_string())
             .unwrap_or_default()

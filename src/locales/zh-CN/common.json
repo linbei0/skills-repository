@@ -23,7 +23,7 @@
   },
   "repository": {
     "title": "Skills 仓库",
-    "description": "这里仅展示统一仓库目录中的 skills。你可以查看详情，或将仓库与已分发目标一起卸载。",
+    "description": "这里展示统一仓库中的 skills。你可以查看详情、从 GitHub 或本地导入 skill，或将仓库副本与已分发目标一起卸载。",
     "source": "来源",
     "installedAt": "安装时间",
     "actions": "操作",
@@ -34,8 +34,45 @@
     "uninstalling": "卸载中...",
     "detailTitle": "Skill 详情",
     "detailLoading": "正在读取 skill 内容...",
-    "sourceLocal": "本地安装",
+    "sourceLocal": "本地导入",
+    "sourceGithub": "GitHub 导入",
     "sourceMarket": "{{market}}",
+    "sourceUnknown": "未知来源",
+    "import": {
+      "open": "导入 Skill",
+      "title": "导入 Skill",
+      "subtitle": "将公开 GitHub 仓库、本地目录或本地 zip 中解析到的 skill 导入统一仓库。",
+      "inputLabel": "导入来源",
+      "pickDirectory": "目录选择器",
+      "pickZip": "Zip 选择器",
+      "browse": "选择",
+      "supportedHint": "当前版本的 GitHub 导入只支持公开仓库和默认分支下的 /tree/... URL。",
+      "resolve": "解析来源",
+      "resolving": "解析中...",
+      "candidatesTitle": "候选 Skills",
+      "candidatesCount": "共 {{count}} 个候选",
+      "previewTitle": "导入预览",
+      "noCandidateSelected": "请先解析来源并选择一个候选 skill。",
+      "blocked": "安全扫描已阻断本次导入（{{level}}）。",
+      "confirm": "导入到仓库",
+      "importing": "导入中...",
+      "sourceKinds": {
+        "github": "GitHub",
+        "local_directory": "本地目录",
+        "local_zip": "本地 Zip"
+      },
+      "placeholders": {
+        "github": "例如 https://github.com/vercel-labs/skills",
+        "local_directory": "例如 E:\\skills\\demo-skill",
+        "local_zip": "例如 E:\\downloads\\skills.zip"
+      },
+      "preview": {
+        "slug": "Slug：{{slug}}",
+        "sourceType": "来源类型：{{type}}",
+        "sourceUrl": "来源地址：{{sourceUrl}}",
+        "canonicalPath": "统一仓库路径：<canonical store>/{{path}}"
+      }
+    },
     "statusValues": {
       "safe": "安全",
       "low": "低风险",

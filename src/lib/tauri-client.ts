@@ -7,8 +7,11 @@ import type {
   DistributionRequest,
   InstallSkillRequest,
   InstallSkillResult,
+  ImportRepositorySkillRequest,
   MarketSearchRequest,
   MarketSearchResponse,
+  ResolveRepositoryImportRequest,
+  ResolveRepositoryImportResult,
   RepositorySkillDetail,
   RepositorySkillSummary,
   RepositoryUninstallResult,
@@ -43,6 +46,12 @@ export const searchMarketSkills = (request: MarketSearchRequest) =>
 
 export const installSkill = (request: InstallSkillRequest) =>
   invoke<InstallSkillResult>('install_skill', { request })
+
+export const resolveRepositoryImportSource = (request: ResolveRepositoryImportRequest) =>
+  invoke<ResolveRepositoryImportResult>('resolve_repository_import_source', { request })
+
+export const importRepositorySkill = (request: ImportRepositorySkillRequest) =>
+  invoke<InstallSkillResult>('import_repository_skill', { request })
 
 export const distributeSkill = (request: DistributionRequest) =>
   invoke<DistributionResult>('distribute_skill', { request })

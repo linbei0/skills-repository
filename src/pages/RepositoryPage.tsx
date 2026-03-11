@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RepositoryImportModal } from '../components/RepositoryImportModal'
 import { useRepositoryStore } from '../stores/use-repository-store'
+import type { ImportRepositorySkillRequest, RepositoryImportSourceKind } from '../types/app'
 
 const formatInstalledAt = (value: number, locale: string) =>
   new Intl.DateTimeFormat(locale, {
@@ -14,10 +16,16 @@ const resolveSourceLabel = (
   sourceMarket: string | null | undefined,
   t: (key: string, options?: Record<string, unknown>) => string,
 ) => {
-  if (sourceType === 'market' && sourceMarket) {
-    return t('repository.sourceMarket', { market: sourceMarket })
+  if (sourceType === 'market') {
+    return t('repository.sourceMarket', { market: sourceMarket ?? 'market' })
   }
-  return t('repository.sourceLocal')
+  if (sourceType === 'github') {
+    return t('repository.sourceGithub')
+  }
+  if (sourceType === 'local') {
+    return t('repository.sourceLocal')
+  }
+  return t('repository.sourceUnknown')
 }
 
 const resolveStatusKey = (securityLevel: string, blocked: boolean) => {
@@ -30,6 +38,7 @@ const resolveStatusKey = (securityLevel: string, blocked: boolean) => {
 
 export function RepositoryPage() {
   const { t, i18n } = useTranslation()
+  const [importOpen, setImportOpen] = useState(false)
   const items = useRepositoryStore((state) => state.items)
   const loading = useRepositoryStore((state) => state.loading)
   const loaded = useRepositoryStore((state) => state.loaded)
@@ -38,20 +47,58 @@ export function RepositoryPage() {
   const detailLoading = useRepositoryStore((state) => state.detailLoading)
   const detailError = useRepositoryStore((state) => state.detailError)
   const uninstallingSkillId = useRepositoryStore((state) => state.uninstallingSkillId)
+  const resolvingImport = useRepositoryStore((state) => state.resolvingImport)
+  const importing = useRepositoryStore((state) => state.importing)
+  const importError = useRepositoryStore((state) => state.importError)
+  const importBlockedLevel = useRepositoryStore((state) => state.importBlockedLevel)
+  const resolvedImport = useRepositoryStore((state) => state.resolvedImport)
   const refresh = useRepositoryStore((state) => state.refresh)
   const loadDetail = useRepositoryStore((state) => state.loadDetail)
   const closeDetail = useRepositoryStore((state) => state.closeDetail)
   const uninstall = useRepositoryStore((state) => state.uninstall)
+  const resolveImport = useRepositoryStore((state) => state.resolveImport)
+  const importSkill = useRepositoryStore((state) => state.importSkill)
+  const resetImportState = useRepositoryStore((state) => state.resetImportState)
 
   useEffect(() => {
     void refresh()
   }, [refresh])
 
+  const openImportModal = () => {
+    resetImportState()
+    setImportOpen(true)
+  }
+
+  const closeImportModal = () => {
+    setImportOpen(false)
+    resetImportState()
+  }
+
+  const handleResolveImport = async (sourceKind: RepositoryImportSourceKind, input: string) => {
+    await resolveImport({ sourceKind, input })
+  }
+
+  const handleImportSkill = async (request: ImportRepositorySkillRequest) => {
+    const result = await importSkill(request)
+    if (!result.blocked) {
+      closeImportModal()
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-box border border-base-300 bg-base-100 p-6">
-        <h2 className="text-3xl font-semibold">{t('repository.title')}</h2>
-        <p className="mt-3 max-w-3xl text-sm text-base-content/65">{t('repository.description')}</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-semibold">{t('repository.title')}</h2>
+            <p className="mt-3 max-w-3xl text-sm text-base-content/65">
+              {t('repository.description')}
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={openImportModal}>
+            {t('repository.import.open')}
+          </button>
+        </div>
       </section>
 
       <section className="overflow-hidden rounded-box border border-base-300 bg-base-100">
@@ -81,12 +128,17 @@ export function RepositoryPage() {
                     <td>{formatInstalledAt(item.installedAt, i18n.language)}</td>
                     <td>
                       <span className="badge badge-outline">
-                        {t(`repository.statusValues.${resolveStatusKey(item.securityLevel, item.blocked)}`)}
+                        {t(
+                          `repository.statusValues.${resolveStatusKey(item.securityLevel, item.blocked)}`,
+                        )}
                       </span>
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-2">
-                        <button className="btn btn-sm btn-outline" onClick={() => void loadDetail(item.id)}>
+                        <button
+                          className="btn btn-sm btn-outline"
+                          onClick={() => void loadDetail(item.id)}
+                        >
                           {t('repository.view')}
                         </button>
                         <button
@@ -108,7 +160,7 @@ export function RepositoryPage() {
         )}
       </section>
 
-      {(selectedDetail || detailLoading || detailError) ? (
+      {selectedDetail || detailLoading || detailError ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-content/45 p-6 backdrop-blur-sm">
           <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-base-300 px-6 py-5">
@@ -139,8 +191,8 @@ export function RepositoryPage() {
                   </>
                 ) : null}
               </div>
-              <button className="btn btn-ghost btn-circle" onClick={closeDetail}>
-                <span className="text-2xl leading-none">×</span>
+              <button className="btn btn-ghost btn-circle" aria-label={t('common.close')} onClick={closeDetail}>
+                <span className="text-xl font-semibold leading-none">x</span>
               </button>
             </div>
 
@@ -152,9 +204,11 @@ export function RepositoryPage() {
               ) : selectedDetail ? (
                 <div className="space-y-4">
                   {selectedDetail.sourceUrl ? (
-                    <p className="text-sm text-base-content/70">{selectedDetail.sourceUrl}</p>
+                    <p className="break-all text-sm text-base-content/70">
+                      {selectedDetail.sourceUrl}
+                    </p>
                   ) : null}
-                  <pre className="overflow-x-auto rounded-box border border-base-300 bg-base-200/60 p-5 text-sm leading-7 whitespace-pre-wrap">
+                  <pre className="overflow-x-auto whitespace-pre-wrap rounded-box border border-base-300 bg-base-200/60 p-5 text-sm leading-7">
                     {selectedDetail.skillMarkdown}
                   </pre>
                 </div>
@@ -163,6 +217,19 @@ export function RepositoryPage() {
           </div>
         </div>
       ) : null}
+
+      <RepositoryImportModal
+        open={importOpen}
+        resolving={resolvingImport}
+        importing={importing}
+        importError={importError}
+        importBlockedLevel={importBlockedLevel}
+        resolvedImport={resolvedImport}
+        onReset={resetImportState}
+        onClose={closeImportModal}
+        onResolve={handleResolveImport}
+        onImport={handleImportSkill}
+      />
     </div>
   )
 }

@@ -18,7 +18,7 @@ use crate::{
     security,
 };
 
-fn ensure_clean_dir(path: &Path) -> Result<()> {
+pub(crate) fn ensure_clean_dir(path: &Path) -> Result<()> {
     if path.exists() {
         if path.is_dir() {
             fs::remove_dir_all(path)?;
@@ -30,11 +30,11 @@ fn ensure_clean_dir(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn sanitize_slug(slug: &str) -> String {
+pub(crate) fn sanitize_slug(slug: &str) -> String {
     slug.trim().replace('/', "-")
 }
 
-fn copy_dir_all(source: &Path, target: &Path) -> Result<()> {
+pub(crate) fn copy_dir_all(source: &Path, target: &Path) -> Result<()> {
     fs::create_dir_all(target)?;
 
     for entry in WalkDir::new(source) {
@@ -55,7 +55,7 @@ fn copy_dir_all(source: &Path, target: &Path) -> Result<()> {
     Ok(())
 }
 
-fn extract_zip_bytes(bytes: &[u8], target_dir: &Path) -> Result<()> {
+pub(crate) fn extract_zip_bytes(bytes: &[u8], target_dir: &Path) -> Result<()> {
     ensure_clean_dir(target_dir)?;
     let reader = Cursor::new(bytes.to_vec());
     let mut archive = ZipArchive::new(reader).context("failed to open downloaded zip archive")?;
@@ -131,7 +131,7 @@ fn find_skill_root(root: &Path) -> Result<PathBuf> {
         .ok_or_else(|| anyhow!("no SKILL.md found in downloaded source"))
 }
 
-fn collect_skill_roots(root: &Path) -> Result<Vec<PathBuf>> {
+pub(crate) fn collect_skill_roots(root: &Path) -> Result<Vec<PathBuf>> {
     let mut roots = Vec::new();
     for entry in WalkDir::new(root) {
         let entry = entry?;
@@ -150,7 +150,7 @@ fn collect_skill_roots(root: &Path) -> Result<Vec<PathBuf>> {
     Ok(roots)
 }
 
-fn normalize_relative_path(value: &str) -> String {
+pub(crate) fn normalize_relative_path(value: &str) -> String {
     value
         .trim()
         .trim_matches('/')
@@ -159,7 +159,7 @@ fn normalize_relative_path(value: &str) -> String {
         .to_string()
 }
 
-fn path_suffix_matches(candidate: &str, expected: &str) -> bool {
+pub(crate) fn path_suffix_matches(candidate: &str, expected: &str) -> bool {
     let expected = normalize_relative_path(expected);
     let candidate = normalize_relative_path(candidate);
     candidate == expected || candidate.ends_with(&format!("/{}", expected))

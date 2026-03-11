@@ -33,6 +33,7 @@ tauri = { version = "2.10.3", features = [] }
 thiserror = "2.0"
 time = { version = "0.3", features = ["formatting", "macros"] }
 ureq = "2.12"
+url = "2.5"
 urlencoding = "2.1"
 uuid = { version = "1.18", features = ["serde", "v4"] }
 walkdir = "2.5"

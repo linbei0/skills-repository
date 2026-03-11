@@ -1,10 +1,19 @@
 import { create } from 'zustand'
 import {
   getRepositorySkillDetail as getRepositorySkillDetailCommand,
+  importRepositorySkill as importRepositorySkillCommand,
   listRepositorySkills as listRepositorySkillsCommand,
+  resolveRepositoryImportSource as resolveRepositoryImportSourceCommand,
   uninstallRepositorySkill as uninstallRepositorySkillCommand,
 } from '../lib/tauri-client'
-import type { RepositorySkillDetail, RepositorySkillSummary } from '../types/app'
+import type {
+  InstallSkillResult,
+  ImportRepositorySkillRequest,
+  RepositorySkillDetail,
+  RepositorySkillSummary,
+  ResolveRepositoryImportRequest,
+  ResolveRepositoryImportResult,
+} from '../types/app'
 
 interface RepositoryStoreState {
   items: RepositorySkillSummary[]
@@ -15,13 +24,21 @@ interface RepositoryStoreState {
   detailLoading: boolean
   detailError: string | null
   uninstallingSkillId: string | null
+  resolvingImport: boolean
+  importing: boolean
+  importError: string | null
+  importBlockedLevel: string | null
+  resolvedImport: ResolveRepositoryImportResult | null
   refresh: () => Promise<void>
   loadDetail: (skillId: string) => Promise<void>
   closeDetail: () => void
   uninstall: (skillId: string) => Promise<void>
+  resolveImport: (request: ResolveRepositoryImportRequest) => Promise<ResolveRepositoryImportResult>
+  importSkill: (request: ImportRepositorySkillRequest) => Promise<InstallSkillResult>
+  resetImportState: () => void
 }
 
-export const useRepositoryStore = create<RepositoryStoreState>((set) => ({
+export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
   items: [],
   loading: false,
   loaded: false,
@@ -30,6 +47,11 @@ export const useRepositoryStore = create<RepositoryStoreState>((set) => ({
   detailLoading: false,
   detailError: null,
   uninstallingSkillId: null,
+  resolvingImport: false,
+  importing: false,
+  importError: null,
+  importBlockedLevel: null,
+  resolvedImport: null,
   refresh: async () => {
     set({ loading: true, error: null })
     try {
@@ -68,4 +90,47 @@ export const useRepositoryStore = create<RepositoryStoreState>((set) => ({
       set({ uninstallingSkillId: null })
     }
   },
+  resolveImport: async (request) => {
+    set({ resolvingImport: true, importError: null, importBlockedLevel: null, resolvedImport: null })
+    try {
+      const resolvedImport = await resolveRepositoryImportSourceCommand(request)
+      set({ resolvingImport: false, resolvedImport, importError: null, importBlockedLevel: null })
+      return resolvedImport
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      set({ resolvingImport: false, importError: message })
+      throw error
+    }
+  },
+  importSkill: async (request) => {
+    set({ importing: true, importError: null, importBlockedLevel: null })
+    try {
+      const result = await importRepositorySkillCommand(request)
+      const items = await listRepositorySkillsCommand()
+      set({
+        items,
+        importing: false,
+        importError: null,
+        importBlockedLevel: result.blocked ? result.securityLevel : null,
+        resolvedImport: result.blocked ? get().resolvedImport : null,
+        loaded: true,
+      })
+      return result
+    } catch (error) {
+      set({
+        importing: false,
+        importError: error instanceof Error ? error.message : String(error),
+        importBlockedLevel: null,
+      })
+      throw error
+    }
+  },
+  resetImportState: () =>
+    set({
+      resolvingImport: false,
+      importing: false,
+      importError: null,
+      importBlockedLevel: null,
+      resolvedImport: null,
+    }),
 }))

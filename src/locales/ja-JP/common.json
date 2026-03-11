@@ -23,7 +23,7 @@
   },
   "repository": {
     "title": "Skills リポジトリ",
-    "description": "ここでは統一リポジトリ内の skills だけを表示します。詳細確認と、配布先を含むアンインストールに対応します。",
+    "description": "ここでは統一リポジトリ内の skills を表示します。詳細確認、GitHub / ローカルからの導入、配布先を含むアンインストールに対応します。",
     "source": "ソース",
     "installedAt": "インストール日時",
     "actions": "操作",
@@ -35,7 +35,44 @@
     "detailTitle": "Skill 詳細",
     "detailLoading": "skill 内容を読み込み中...",
     "sourceLocal": "ローカル導入",
+    "sourceGithub": "GitHub 導入",
     "sourceMarket": "{{market}}",
+    "sourceUnknown": "不明なソース",
+    "import": {
+      "open": "Skill を導入",
+      "title": "Skill を導入",
+      "subtitle": "公開 GitHub リポジトリ、ローカルディレクトリ、またはローカル zip から解析した skill を統一リポジトリへ導入します。",
+      "inputLabel": "導入元",
+      "pickDirectory": "ディレクトリ選択",
+      "pickZip": "Zip 選択",
+      "browse": "参照",
+      "supportedHint": "このビルドの GitHub 導入は公開リポジトリと既定ブランチの /tree/... URL のみ対応します。",
+      "resolve": "ソースを解析",
+      "resolving": "解析中...",
+      "candidatesTitle": "候補 Skills",
+      "candidatesCount": "{{count}} 件の候補",
+      "previewTitle": "導入プレビュー",
+      "noCandidateSelected": "先にソースを解析し、候補 skill を 1 つ選択してください。",
+      "blocked": "セキュリティスキャンにより今回の導入は阻止されました（{{level}}）。",
+      "confirm": "リポジトリへ導入",
+      "importing": "導入中...",
+      "sourceKinds": {
+        "github": "GitHub",
+        "local_directory": "ローカルディレクトリ",
+        "local_zip": "ローカル Zip"
+      },
+      "placeholders": {
+        "github": "例: https://github.com/vercel-labs/skills",
+        "local_directory": "例: E:\\skills\\demo-skill",
+        "local_zip": "例: E:\\downloads\\skills.zip"
+      },
+      "preview": {
+        "slug": "Slug: {{slug}}",
+        "sourceType": "ソース種別: {{type}}",
+        "sourceUrl": "ソース URL: {{sourceUrl}}",
+        "canonicalPath": "統一リポジトリのパス: <canonical store>/{{path}}"
+      }
+    },
     "statusValues": {
       "safe": "安全",
       "low": "低リスク",
