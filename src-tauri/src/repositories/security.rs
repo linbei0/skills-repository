@@ -7,8 +7,17 @@ use crate::domain::types::{SecurityIssue, SecurityRecommendation, SecurityReport
 use super::db::open_connection;
 
 pub fn save_security_report(path: &Path, report: &SecurityReport) -> Result<()> {
-    let conn = open_connection(path)?;
-    conn.execute(
+    let mut conn = open_connection(path)?;
+    let tx = conn.transaction()?;
+
+    if let Some(skill_id) = report.skill_id.as_deref() {
+        tx.execute(
+            "DELETE FROM security_reports WHERE skill_id = ?1",
+            params![skill_id],
+        )?;
+    }
+
+    tx.execute(
         "
         INSERT INTO security_reports (
             id,
@@ -40,6 +49,7 @@ pub fn save_security_report(path: &Path, report: &SecurityReport) -> Result<()> 
         ],
     )?;
 
+    tx.commit()?;
     Ok(())
 }
 
@@ -47,35 +57,6 @@ pub fn list_security_reports(path: &Path) -> Result<Vec<SecurityReport>> {
     let conn = open_connection(path)?;
     let mut stmt = conn.prepare(
         "
-        WITH latest_reports AS (
-            SELECT
-                sr.rowid AS row_id,
-                sr.id,
-                sr.skill_id,
-                sr.scan_scope,
-                sr.level,
-                sr.score,
-                sr.blocked,
-                sr.issues_json,
-                sr.recommendations_json,
-                sr.scanned_files_json,
-                sr.engine_version,
-                sr.scanned_at
-            FROM security_reports sr
-            WHERE sr.skill_id IS NOT NULL
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM security_reports newer
-                  WHERE newer.skill_id = sr.skill_id
-                    AND (
-                        newer.scanned_at > sr.scanned_at
-                        OR (
-                            newer.scanned_at = sr.scanned_at
-                            AND newer.rowid > sr.rowid
-                        )
-                    )
-              )
-        )
         SELECT
             sr.id,
             sr.skill_id,
@@ -96,9 +77,10 @@ pub fn list_security_reports(path: &Path) -> Result<Vec<SecurityReport>> {
             sr.scanned_files_json,
             sr.engine_version,
             sr.scanned_at
-        FROM latest_reports sr
+        FROM security_reports sr
         LEFT JOIN skills s ON s.id = sr.skill_id
-        ORDER BY sr.scanned_at DESC, sr.row_id DESC
+        WHERE sr.skill_id IS NOT NULL
+        ORDER BY sr.scanned_at DESC
         ",
     )?;
 
@@ -332,5 +314,82 @@ mod tests {
         assert_eq!(loaded[0].scan_scope, "rescan");
         assert_eq!(loaded[1].id, "beta-only");
         assert!(loaded.iter().all(|report| report.skill_id.is_some()));
+    }
+
+    #[test]
+    fn save_security_report_replaces_existing_report_for_same_skill() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("security.db");
+        run_migrations(&db_path).unwrap();
+
+        let skill_id = skills_repository::save_installed_skill(
+            &db_path,
+            &install_request("demo", "Demo Skill"),
+            "E:/skills/demo",
+            "safe",
+            false,
+        )
+        .unwrap();
+
+        save_security_report(
+            &db_path,
+            &SecurityReport {
+                id: "report-old".into(),
+                skill_id: Some(skill_id.clone()),
+                skill_name: Some("Demo Skill".into()),
+                source_path: Some("E:/skills/demo".into()),
+                scan_scope: "canonical".into(),
+                level: "safe".into(),
+                score: 0,
+                blocked: false,
+                issues: Vec::new(),
+                recommendations: Vec::new(),
+                scanned_files: vec!["E:/skills/demo/SKILL.md".into()],
+                engine_version: "phase2-rules-v1".into(),
+                scanned_at: 100,
+            },
+        )
+        .unwrap();
+        save_security_report(
+            &db_path,
+            &SecurityReport {
+                id: "report-new".into(),
+                skill_id: Some(skill_id.clone()),
+                skill_name: Some("Demo Skill".into()),
+                source_path: Some("E:/skills/demo".into()),
+                scan_scope: "rescan".into(),
+                level: "medium".into(),
+                score: 30,
+                blocked: false,
+                issues: vec![SecurityIssue {
+                    rule_id: "network_fetch".into(),
+                    severity: "medium".into(),
+                    title: "Review required".into(),
+                    description: "demo".into(),
+                    file_path: Some("E:/skills/demo/install.sh".into()),
+                }],
+                recommendations: vec![SecurityRecommendation {
+                    action: "review_files".into(),
+                    description: "review".into(),
+                }],
+                scanned_files: vec!["E:/skills/demo/install.sh".into()],
+                engine_version: "phase2-rules-v1".into(),
+                scanned_at: 200,
+            },
+        )
+        .unwrap();
+
+        let conn = open_connection(&db_path).unwrap();
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM security_reports WHERE skill_id = ?1", [skill_id], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        let loaded = list_security_reports(&db_path).unwrap();
+
+        assert_eq!(count, 1);
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].id, "report-new");
+        assert_eq!(loaded[0].scan_scope, "rescan");
     }
 }

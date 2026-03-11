@@ -230,9 +230,9 @@ pub fn install_skill(
         let staged_dir = stage_source(&install_temp_dir, request)?;
         let skill_root = resolve_requested_skill_root(&staged_dir, request)?;
         let security_report = security::scan_skill_directory(&skill_root, None, "temp_install")?;
-        security_repository::save_security_report(&paths.db_file, &security_report)?;
 
         if security_report.blocked {
+            security_repository::save_security_report(&paths.db_file, &security_report)?;
             let operation_log_id = skills_repository::save_operation_log(
                 &paths.db_file,
                 "install",
@@ -322,7 +322,10 @@ pub fn install_skill(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{domain::app_state::AppPaths, repositories::db::run_migrations};
+    use crate::{
+        domain::app_state::AppPaths,
+        repositories::{db::{open_connection, run_migrations}, security as security_repository},
+    };
     use tempfile::tempdir;
 
     fn test_paths(root: &Path) -> AppPaths {
@@ -374,6 +377,16 @@ mod tests {
         }
     }
 
+    fn temp_install_report_count(db_file: &Path) -> i64 {
+        let conn = open_connection(db_file).unwrap();
+        conn.query_row(
+            "SELECT COUNT(*) FROM security_reports WHERE skill_id IS NULL AND scan_scope = 'temp_install'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap()
+    }
+
     #[test]
     fn installs_skill_into_canonical_store() {
         let dir = tempdir().unwrap();
@@ -403,6 +416,35 @@ mod tests {
     }
 
     #[test]
+    fn successful_install_does_not_persist_temp_install_report() {
+        let dir = tempdir().unwrap();
+        let paths = test_paths(dir.path());
+        run_migrations(&paths.db_file).unwrap();
+
+        let zip_path = dir.path().join("skill.zip");
+        write_zip(
+            &zip_path,
+            &[
+                ("demo-skill/SKILL.md", "# demo"),
+                ("demo-skill/README.md", "ok"),
+            ],
+        );
+
+        let result = install_skill(
+            &paths,
+            &request(zip_path.to_string_lossy().to_string()),
+        )
+        .unwrap();
+
+        let reports = security_repository::list_security_reports(&paths.db_file).unwrap();
+
+        assert!(!result.blocked);
+        assert_eq!(temp_install_report_count(&paths.db_file), 0);
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].skill_id.as_deref(), Some(result.skill_id.as_str()));
+    }
+
+    #[test]
     fn blocks_high_risk_skill_before_persisting() {
         let dir = tempdir().unwrap();
         let paths = test_paths(dir.path());
@@ -427,6 +469,7 @@ mod tests {
         assert_eq!(result.security_level, "high");
         assert!(result.skill_id.is_empty());
         assert!(!paths.canonical_store_dir.join("demo-skill").exists());
+        assert_eq!(temp_install_report_count(&paths.db_file), 1);
     }
 
     #[test]
