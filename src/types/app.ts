@@ -182,6 +182,8 @@ export interface InstallSkillResult {
   blocked: boolean
   securityLevel: string
   operationLogId?: string | null
+  securityReport?: SecurityReport | null
+  riskOverrideApplied?: boolean
 }
 
 export type RepositoryImportSourceKind = 'github' | 'local_directory' | 'local_zip'
@@ -222,6 +224,7 @@ export interface ImportRepositorySkillRequest {
   version?: string | null
   author?: string | null
   description?: string | null
+  allowRiskOverride?: boolean
 }
 
 export interface SecurityIssue {
@@ -261,7 +264,7 @@ export interface SecurityReport {
   recommendations: SecurityRecommendation[]
   scannedFiles: string[]
   categoryBreakdown?: SecurityCategoryBreakdown[]
-  blockingReasons?: string[]
+  blockingReasons: string[]
   engineVersion: string
   scannedAt: number
 }

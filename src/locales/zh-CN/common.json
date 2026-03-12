@@ -88,8 +88,22 @@
           "installed": "成功",
           "blocked": "已阻断",
           "existing": "已存在",
-          "failed": "失败"
-        }
+          "failed": "失败",
+          "overridden": "已忽略风险"
+        },
+        "overridden": "已在确认风险后导入。",
+        "overriddenCount": "已忽略风险 {{count}}",
+        "blockedCount": "已阻断 {{count}}"
+      },
+      "security": {
+        "title": "安全详情",
+        "summary": "风险等级：{{level}} · 命中 {{count}} 项",
+        "blockedBadge": "默认阻断",
+        "blockingReasons": "阻断原因",
+        "issues": "命中问题",
+        "overrideAcknowledge": "我已了解上述风险，仍要继续导入该 skill。",
+        "overrideAction": "无视风险继续导入",
+        "overrideInstalled": "该 skill 已在显式风险确认后导入，并会在安全中心继续标记为风险项。"
       }
     },
     "distribute": {

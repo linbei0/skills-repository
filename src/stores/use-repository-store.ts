@@ -18,6 +18,7 @@ import type {
   RepositorySkillSummary,
   ResolveRepositoryImportRequest,
   ResolveRepositoryImportResult,
+  SecurityReport,
 } from '../types/app'
 
 interface RepositoryStoreState {
@@ -39,7 +40,7 @@ interface RepositoryStoreState {
   resolvingImport: boolean
   importing: boolean
   importError: string | null
-  importBlockedLevel: string | null
+  importBlockedReport: SecurityReport | null
   resolvedImport: ResolveRepositoryImportResult | null
   refresh: () => Promise<void>
   loadDetail: (skillId: string) => Promise<void>
@@ -75,7 +76,7 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
   resolvingImport: false,
   importing: false,
   importError: null,
-  importBlockedLevel: null,
+  importBlockedReport: null,
   resolvedImport: null,
   refresh: async () => {
     set({ loading: true, error: null })
@@ -167,10 +168,10 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
     }
   },
   resolveImport: async (request) => {
-    set({ resolvingImport: true, importError: null, importBlockedLevel: null, resolvedImport: null })
+    set({ resolvingImport: true, importError: null, importBlockedReport: null, resolvedImport: null })
     try {
       const resolvedImport = await resolveRepositoryImportSourceCommand(request)
-      set({ resolvingImport: false, resolvedImport, importError: null, importBlockedLevel: null })
+      set({ resolvingImport: false, resolvedImport, importError: null, importBlockedReport: null })
       return resolvedImport
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -179,7 +180,7 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
     }
   },
   importSkill: async (request) => {
-    set({ importing: true, importError: null, importBlockedLevel: null })
+    set({ importing: true, importError: null, importBlockedReport: null })
     try {
       const result = await importRepositorySkillCommand(request)
       const items = await listRepositorySkillsCommand()
@@ -187,7 +188,7 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
         items,
         importing: false,
         importError: null,
-        importBlockedLevel: result.blocked ? result.securityLevel : null,
+        importBlockedReport: result.blocked ? result.securityReport ?? null : null,
         resolvedImport: result.blocked ? get().resolvedImport : null,
         loaded: true,
       })
@@ -196,7 +197,7 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
       set({
         importing: false,
         importError: error instanceof Error ? error.message : String(error),
-        importBlockedLevel: null,
+        importBlockedReport: null,
       })
       throw error
     }
@@ -206,7 +207,7 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
       resolvingImport: false,
       importing: false,
       importError: null,
-      importBlockedLevel: null,
+      importBlockedReport: null,
       resolvedImport: null,
     }),
   resetDistributionState: () =>

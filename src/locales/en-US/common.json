@@ -88,8 +88,22 @@
           "installed": "Installed",
           "blocked": "Blocked",
           "existing": "Existing",
-          "failed": "Failed"
-        }
+          "failed": "Failed",
+          "overridden": "Overridden"
+        },
+        "overridden": "Imported after risk override.",
+        "overriddenCount": "Overridden {{count}}",
+        "blockedCount": "Blocked {{count}}"
+      },
+      "security": {
+        "title": "Security details",
+        "summary": "Risk level: {{level}} ? {{count}} issue(s)",
+        "blockedBadge": "Would block",
+        "blockingReasons": "Blocking reasons",
+        "issues": "Matched issues",
+        "overrideAcknowledge": "I understand the reported risks and still want to import this skill.",
+        "overrideAction": "Import anyway",
+        "overrideInstalled": "Imported after explicit risk confirmation. This skill remains marked as risky in Security."
       }
     },
     "distribute": {

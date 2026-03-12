@@ -88,8 +88,22 @@
           "installed": "成功",
           "blocked": "阻止",
           "existing": "既存",
-          "failed": "失敗"
-        }
+          "failed": "失敗",
+          "overridden": "リスク確認済み"
+        },
+        "overridden": "リスク確認のうえで導入しました。",
+        "overriddenCount": "リスク確認 {{count}}",
+        "blockedCount": "阻止 {{count}}"
+      },
+      "security": {
+        "title": "セキュリティ詳細",
+        "summary": "リスクレベル: {{level}} · {{count}} 件の問題",
+        "blockedBadge": "既定では阻止",
+        "blockingReasons": "阻止理由",
+        "issues": "検出された問題",
+        "overrideAcknowledge": "上記のリスクを理解したうえで、この skill を引き続き導入します。",
+        "overrideAction": "リスクを無視して導入",
+        "overrideInstalled": "明示的なリスク確認後に導入しました。Security では引き続きリスク項目として表示されます。"
       }
     },
     "distribute": {

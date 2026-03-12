@@ -631,7 +631,7 @@ pub fn import_repository_skill(
     }
 
     let install_request = build_install_request_for_import(request)?;
-    install::install_skill(paths, &install_request)
+    install::install_skill_with_policy(paths, &install_request, request.allow_risk_override)
 }
 
 #[cfg(test)]
@@ -824,6 +824,7 @@ mod tests {
             version: Some("0123456789abcdef".into()),
             author: Some("vercel-labs".into()),
             description: Some("demo repo".into()),
+            allow_risk_override: false,
         })
         .unwrap();
 
@@ -902,6 +903,7 @@ mod tests {
                 version: None,
                 author: None,
                 description: Some("Import description".into()),
+                allow_risk_override: false,
             },
         )
         .unwrap();
@@ -952,6 +954,7 @@ mod tests {
                 version: None,
                 author: None,
                 description: Some("Adapt layouts across screens.".into()),
+                allow_risk_override: false,
             },
         )
         .unwrap();
@@ -987,6 +990,7 @@ mod tests {
             version: None,
             author: None,
             description: Some("Import description".into()),
+            allow_risk_override: false,
         };
 
         import_repository_skill(&paths, &request).unwrap();

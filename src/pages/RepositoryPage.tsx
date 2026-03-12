@@ -76,7 +76,7 @@ export function RepositoryPage() {
   const resolvingImport = useRepositoryStore((state) => state.resolvingImport)
   const importing = useRepositoryStore((state) => state.importing)
   const importError = useRepositoryStore((state) => state.importError)
-  const importBlockedLevel = useRepositoryStore((state) => state.importBlockedLevel)
+  const importBlockedReport = useRepositoryStore((state) => state.importBlockedReport)
   const resolvedImport = useRepositoryStore((state) => state.resolvedImport)
   const refresh = useRepositoryStore((state) => state.refresh)
   const loadDetail = useRepositoryStore((state) => state.loadDetail)
@@ -464,7 +464,7 @@ export function RepositoryPage() {
         resolving={resolvingImport}
         importing={importing}
         importError={importError}
-        importBlockedLevel={importBlockedLevel}
+        importBlockedReport={importBlockedReport}
         resolvedImport={resolvedImport}
         existingSlugs={items.map((item) => item.slug)}
         onReset={resetImportState}

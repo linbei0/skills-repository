@@ -223,6 +223,14 @@ pub fn install_skill(
     paths: &AppPaths,
     request: &InstallSkillRequest,
 ) -> Result<InstallSkillResult> {
+    install_skill_with_policy(paths, request, false)
+}
+
+pub fn install_skill_with_policy(
+    paths: &AppPaths,
+    request: &InstallSkillRequest,
+    allow_risk_override: bool,
+) -> Result<InstallSkillResult> {
     let install_temp_dir = paths.temp_dir.join(format!("install-{}", Uuid::new_v4()));
     ensure_clean_dir(&install_temp_dir)?;
 
@@ -243,7 +251,7 @@ pub fn install_skill(
             },
         )?;
 
-        if security_report.blocked {
+        if security_report.blocked && !allow_risk_override {
             security_repository::save_security_report(&paths.db_file, &security_report)?;
             let operation_log_id = skills_repository::save_operation_log(
                 &paths.db_file,
@@ -259,8 +267,10 @@ pub fn install_skill(
                 skill_id: String::new(),
                 canonical_path: String::new(),
                 blocked: true,
-                security_level: security_report.level,
+                security_level: security_report.level.clone(),
                 operation_log_id: Some(operation_log_id),
+                security_report: Some(security_report),
+                risk_override_applied: false,
             });
         }
 
@@ -296,10 +306,15 @@ pub fn install_skill(
             "skill",
             Some(&skill_id),
             "success",
-            "skill installed into canonical store",
+            if allow_risk_override && security_report.blocked {
+                "skill installed into canonical store after explicit risk override"
+            } else {
+                "skill installed into canonical store"
+            },
             Some(json!({
                 "canonicalPath": canonical_path.to_string_lossy(),
                 "securityLevel": security_report.level,
+                "riskOverrideApplied": allow_risk_override && security_report.blocked,
             })),
         )?;
 
@@ -307,8 +322,10 @@ pub fn install_skill(
             skill_id,
             canonical_path: canonical_path.to_string_lossy().to_string(),
             blocked: false,
-            security_level: security_report.level,
+            security_level: security_report.level.clone(),
             operation_log_id: Some(operation_log_id),
+            security_report: Some(persisted_report),
+            risk_override_applied: allow_risk_override && security_report.blocked,
         })
     })();
 
@@ -510,6 +527,8 @@ mod tests {
         assert!(result.skill_id.is_empty());
         assert!(!paths.canonical_store_dir.join("demo-skill").exists());
         assert_eq!(temp_install_report_count(&paths.db_file), 1);
+        assert!(result.security_report.is_some());
+        assert!(!result.risk_override_applied);
     }
 
     #[test]
@@ -594,5 +613,43 @@ mod tests {
         assert!(!PathBuf::from(&result.canonical_path)
             .join("../other-skill")
             .exists());
+    }
+
+    #[test]
+    fn allows_explicit_risk_override_for_blocked_skills() {
+        let dir = tempdir().unwrap();
+        let paths = test_paths(dir.path());
+        run_migrations(&paths.db_file).unwrap();
+
+        let zip_path = dir.path().join("blocked.zip");
+        write_zip(
+            &zip_path,
+            &[
+                ("blocked-skill/SKILL.md", "# blocked"),
+                ("blocked-skill/install.sh", "rm -rf /"),
+            ],
+        );
+
+        let result = install_skill_with_policy(
+            &paths,
+            &request(zip_path.to_string_lossy().to_string()),
+            true,
+        )
+        .unwrap();
+
+        assert!(!result.blocked);
+        assert!(result.risk_override_applied);
+        assert!(result
+            .security_report
+            .as_ref()
+            .is_some_and(|report| report.blocked));
+        assert!(!result.skill_id.is_empty());
+        assert!(PathBuf::from(&result.canonical_path)
+            .join("install.sh")
+            .exists());
+
+        let reports = security_repository::list_security_reports(&paths.db_file).unwrap();
+        assert_eq!(reports.len(), 1);
+        assert!(reports[0].blocked);
     }
 }

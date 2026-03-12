@@ -226,6 +226,10 @@ pub struct InstallSkillResult {
     pub blocked: bool,
     pub security_level: String,
     pub operation_log_id: Option<String>,
+    #[serde(default)]
+    pub security_report: Option<SecurityReport>,
+    #[serde(default)]
+    pub risk_override_applied: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -272,6 +276,8 @@ pub struct ImportRepositorySkillRequest {
     pub version: Option<String>,
     pub author: Option<String>,
     pub description: Option<String>,
+    #[serde(default)]
+    pub allow_risk_override: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

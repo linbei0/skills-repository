@@ -20,7 +20,9 @@ const FILE_KIND_POWERSHELL: &str = "powershell";
 const FILE_KIND_CMD: &str = "cmd";
 const FILE_KIND_SCRIPT: &str = "script";
 const FILE_KIND_ARCHIVE: &str = "archive";
-const FILE_KIND_BINARY: &str = "binary";
+const FILE_KIND_BINARY_EXECUTABLE: &str = "binary_executable";
+const FILE_KIND_BINARY_DATA: &str = "binary_data";
+const FILE_KIND_BINARY_ASSET: &str = "binary_asset";
 const FILE_KIND_UNKNOWN: &str = "unknown";
 const FILE_KIND_ANY_TEXT: &str = "*text";
 
@@ -398,19 +400,36 @@ pub fn scan_skill_directory_with_context(
         let scan_input = build_file_scan_input(entry.path())?;
         scanned_files.push(scan_input.display_path.clone());
 
-        if scan_input.file_kind == FILE_KIND_BINARY {
+        if scan_input.file_kind == FILE_KIND_BINARY_EXECUTABLE {
             matched.push(build_issue(
                 "suspicious_binary_payload",
                 CATEGORY_SYSTEM,
                 "high",
                 "Executable payload detected",
-                "The skill contains a binary or executable payload that requires manual trust review.",
+                "The skill contains a potentially executable binary payload that requires manual trust review.",
                 Some(scan_input.display_path.clone()),
                 Some(scan_input.file_kind.to_string()),
                 None,
                 None,
                 true,
                 85,
+            ));
+            continue;
+        }
+
+        if scan_input.file_kind == FILE_KIND_BINARY_DATA {
+            matched.push(build_issue(
+                "opaque_binary_blob",
+                CATEGORY_SYSTEM,
+                "low",
+                "Opaque binary file detected",
+                "The skill contains a non-executable binary file. Review it if you do not expect bundled data assets.",
+                Some(scan_input.display_path.clone()),
+                Some(scan_input.file_kind.to_string()),
+                None,
+                None,
+                false,
+                10,
             ));
             continue;
         }
@@ -492,7 +511,13 @@ fn build_file_scan_input(path: &Path) -> Result<FileScanInput> {
     let file_kind = classify_file_kind(path, sample);
     let display_path = path.to_string_lossy().to_string();
 
-    if matches!(file_kind, FILE_KIND_ARCHIVE | FILE_KIND_BINARY) {
+    if matches!(
+        file_kind,
+        FILE_KIND_ARCHIVE
+            | FILE_KIND_BINARY_EXECUTABLE
+            | FILE_KIND_BINARY_DATA
+            | FILE_KIND_BINARY_ASSET
+    ) {
         return Ok(FileScanInput {
             path: path.to_path_buf(),
             display_path,
@@ -561,14 +586,57 @@ fn classify_file_kind(path: &Path, sample: &[u8]) -> &'static str {
         extension.as_str(),
         "exe" | "dll" | "so" | "dylib" | "bin" | "msi"
     ) {
-        return FILE_KIND_BINARY;
+        return FILE_KIND_BINARY_EXECUTABLE;
+    }
+
+    if has_executable_magic(sample) {
+        return FILE_KIND_BINARY_EXECUTABLE;
+    }
+
+    if is_passive_binary_asset_extension(extension.as_str()) {
+        return FILE_KIND_BINARY_ASSET;
     }
 
     if looks_binary(sample) {
-        return FILE_KIND_BINARY;
+        return FILE_KIND_BINARY_DATA;
     }
 
     FILE_KIND_UNKNOWN
+}
+
+fn is_passive_binary_asset_extension(extension: &str) -> bool {
+    matches!(
+        extension,
+        "png"
+            | "jpg"
+            | "jpeg"
+            | "gif"
+            | "webp"
+            | "ico"
+            | "bmp"
+            | "tiff"
+            | "avif"
+            | "woff"
+            | "woff2"
+            | "ttf"
+            | "otf"
+            | "eot"
+            | "mp3"
+            | "wav"
+            | "ogg"
+            | "mp4"
+            | "mov"
+            | "pdf"
+    )
+}
+
+fn has_executable_magic(sample: &[u8]) -> bool {
+    sample.starts_with(b"MZ")
+        || sample.starts_with(&[0x7F, b'E', b'L', b'F'])
+        || sample.starts_with(&[0xCF, 0xFA, 0xED, 0xFE])
+        || sample.starts_with(&[0xCE, 0xFA, 0xED, 0xFE])
+        || sample.starts_with(&[0xFE, 0xED, 0xFA, 0xCF])
+        || sample.starts_with(&[0xFE, 0xED, 0xFA, 0xCE])
 }
 
 fn looks_binary(sample: &[u8]) -> bool {
@@ -1027,5 +1095,29 @@ mod tests {
             .blocking_reasons
             .iter()
             .any(|reason| reason.contains("insecure_http_source")));
+    }
+
+    #[test]
+    fn passive_image_assets_do_not_trigger_binary_blocking() {
+        let dir = tempdir().unwrap();
+        let skill_dir = dir.path().join("image-asset-skill");
+        fs::create_dir_all(skill_dir.join("assets")).unwrap();
+        fs::write(skill_dir.join("SKILL.md"), "# image asset skill").unwrap();
+        fs::write(
+            skill_dir.join("assets").join("icon.png"),
+            [
+                0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, b'I', b'H',
+                b'D', b'R',
+            ],
+        )
+        .unwrap();
+
+        let report = scan_skill_directory(&skill_dir, None, "temp_install").unwrap();
+
+        assert!(!report.blocked);
+        assert!(report
+            .issues
+            .iter()
+            .all(|issue| issue.rule_id != "suspicious_binary_payload"));
     }
 }
