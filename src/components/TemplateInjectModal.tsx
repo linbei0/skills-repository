@@ -146,7 +146,7 @@ export function TemplateInjectModal({
             {t('common.close')}
           </button>
           <button
-            className="btn btn-primary"
+            className="btn btn-primary h-10 min-h-[2.5rem] border-none bg-primary px-8 text-[var(--text-inverse)] shadow-[var(--shadow-neon-primary)] transition-all duration-300 hover:bg-primary hover:brightness-110 hover:shadow-[0_0_30px_rgba(var(--color-primary),0.6)] disabled:bg-base-300 disabled:text-base-content/30 disabled:shadow-none"
             disabled={!canSubmit}
             onClick={() =>
               void onSubmit({
