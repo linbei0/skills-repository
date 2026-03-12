@@ -193,14 +193,14 @@ export function RepositoryPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table w-full">
+            <table className="table-fixed table w-full">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)] bg-base-200/50 text-xs font-bold uppercase tracking-wider text-base-content/40">
                   <th className="py-4 pl-6 text-left">{t('common.name')}</th>
-                  <th className="text-center">{t('repository.source')}</th>
-                  <th className="text-center">{t('repository.installedAt')}</th>
-                  <th className="text-center">{t('common.status')}</th>
-                  <th className="pr-6 text-center">{t('repository.actions')}</th>
+                  <th className="w-28 text-center">{t('repository.source')}</th>
+                  <th className="w-32 text-center">{t('repository.installedAt')}</th>
+                  <th className="w-28 text-center">{t('common.status')}</th>
+                  <th className="w-24 pr-6 text-center">{t('repository.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -231,7 +231,7 @@ export function RepositoryPage() {
                       {(() => {
                         const statusKey = resolveStatusKey(item.securityLevel, item.blocked)
                         return (
-                          <span className={`badge badge-sm gap-1 border-0 font-bold ${
+                          <span className={`inline-flex whitespace-nowrap badge badge-sm gap-1 border-0 font-bold ${
                             statusKey === 'blocked' ? 'bg-error/20 text-error' :
                             statusKey === 'safe' ? 'bg-success/20 text-success' :
                             statusKey === 'low' ? 'bg-success/10 text-success/80' :
