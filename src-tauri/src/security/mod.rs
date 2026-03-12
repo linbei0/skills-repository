@@ -265,7 +265,13 @@ const SYSTEM_RULES: &[SecurityRule] = &[
         title: "Remote transfer command detected",
         description: "The skill appears to transfer files or data to remote locations.",
         file_kinds: &[FILE_KIND_ANY_TEXT],
-        patterns: &["scp ", "ftp ", "bitsadmin", "certutil -urlcache", "invoke-restmethod"],
+        patterns: &[
+            "scp ",
+            "ftp ",
+            "bitsadmin",
+            "certutil -urlcache",
+            "invoke-restmethod",
+        ],
         match_mode: MatchMode::Any,
     },
 ];
@@ -345,7 +351,8 @@ const PROMPT_RULES: &[SecurityRule] = &[
         score: 25,
         blocking: false,
         title: "Secret exfiltration instruction detected",
-        description: "The skill appears to request secrets, tokens, or credentials for exfiltration.",
+        description:
+            "The skill appears to request secrets, tokens, or credentials for exfiltration.",
         file_kinds: &[FILE_KIND_MARKDOWN, FILE_KIND_UNKNOWN, FILE_KIND_SCRIPT],
         patterns: &[
             "send secrets",
@@ -451,7 +458,10 @@ pub fn scan_skill_directory_with_context(
 
     let score = matched.iter().map(|item| item.score).sum();
     let blocked = matched.iter().any(|item| item.issue.blocking);
-    let issues = matched.iter().map(|item| item.issue.clone()).collect::<Vec<_>>();
+    let issues = matched
+        .iter()
+        .map(|item| item.issue.clone())
+        .collect::<Vec<_>>();
 
     Ok(SecurityReport {
         id: uuid::Uuid::new_v4().to_string(),
@@ -517,7 +527,10 @@ fn classify_file_kind(path: &Path, sample: &[u8]) -> &'static str {
         .unwrap_or_default()
         .to_ascii_lowercase();
 
-    if matches!(extension.as_str(), "md" | "markdown" | "mdx" | "txt" | "rst") {
+    if matches!(
+        extension.as_str(),
+        "md" | "markdown" | "mdx" | "txt" | "rst"
+    ) {
         return FILE_KIND_MARKDOWN;
     }
 
@@ -544,7 +557,10 @@ fn classify_file_kind(path: &Path, sample: &[u8]) -> &'static str {
         return FILE_KIND_ARCHIVE;
     }
 
-    if matches!(extension.as_str(), "exe" | "dll" | "so" | "dylib" | "bin" | "msi") {
+    if matches!(
+        extension.as_str(),
+        "exe" | "dll" | "so" | "dylib" | "bin" | "msi"
+    ) {
         return FILE_KIND_BINARY;
     }
 
@@ -668,7 +684,11 @@ fn downgrade_severity(severity: &str) -> &'static str {
 }
 
 fn downgrade_score(score: u32) -> u32 {
-    if score >= 70 { 30 } else { 10 }
+    if score >= 70 {
+        30
+    } else {
+        10
+    }
 }
 
 fn build_issue(
@@ -703,14 +723,26 @@ fn build_issue(
 
 fn scan_source_context(context: &SecurityScanSourceContext, scan_scope: &str) -> Vec<MatchedIssue> {
     let mut matched = Vec::new();
-    let source_url = context.source_url.as_deref().map(str::trim).filter(|value| !value.is_empty());
+    let source_url = context
+        .source_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     let download_url = context
         .download_url
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty());
-    let repo_url = context.repo_url.as_deref().map(str::trim).filter(|value| !value.is_empty());
-    let version = context.version.as_deref().map(str::trim).filter(|value| !value.is_empty());
+    let repo_url = context
+        .repo_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let version = context
+        .version
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
     let manifest_path = context
         .manifest_path
         .as_deref()

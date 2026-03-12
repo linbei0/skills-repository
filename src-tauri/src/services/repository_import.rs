@@ -27,6 +27,7 @@ struct GithubRepoMetadata {
     html_url: String,
     repo_name: String,
     default_branch: String,
+    resolved_ref: String,
     description: Option<String>,
     author: Option<String>,
 }
@@ -79,7 +80,9 @@ fn parse_github_input(input: &str) -> Result<ParsedGithubInput> {
         .host_str()
         .ok_or_else(|| anyhow!("invalid GitHub URL host"))?;
     if host != "github.com" && host != "www.github.com" {
-        return Err(anyhow!("only github.com public repository URLs are supported"));
+        return Err(anyhow!(
+            "only github.com public repository URLs are supported"
+        ));
     }
 
     let segments = url
@@ -131,12 +134,35 @@ fn github_get_json(url: &str) -> Result<Value> {
     serde_json::from_str(&body).context("failed to parse GitHub response")
 }
 
-fn fetch_github_repo_metadata_with<F>(parsed: &ParsedGithubInput, fetch_json: &F) -> Result<GithubRepoMetadata>
+fn fetch_github_repo_metadata_with<F>(
+    parsed: &ParsedGithubInput,
+    fetch_json: &F,
+) -> Result<GithubRepoMetadata>
 where
     F: Fn(&str) -> Result<Value>,
 {
-    let repo_api_url = format!("https://api.github.com/repos/{}/{}", parsed.owner, parsed.repo);
+    let repo_api_url = format!(
+        "https://api.github.com/repos/{}/{}",
+        parsed.owner, parsed.repo
+    );
     let payload = fetch_json(&repo_api_url)?;
+    let default_branch = payload
+        .get("default_branch")
+        .and_then(Value::as_str)
+        .unwrap_or("main")
+        .to_string();
+    let branch_api_url = format!(
+        "https://api.github.com/repos/{}/{}/branches/{}",
+        parsed.owner, parsed.repo, default_branch
+    );
+    let branch_payload = fetch_json(&branch_api_url)?;
+    let resolved_ref = branch_payload
+        .get("commit")
+        .and_then(|commit| commit.get("sha"))
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .map(ToString::to_string)
+        .ok_or_else(|| anyhow!("failed to resolve GitHub default branch head commit"))?;
 
     Ok(GithubRepoMetadata {
         owner: parsed.owner.clone(),
@@ -151,11 +177,8 @@ where
             .and_then(Value::as_str)
             .unwrap_or(&parsed.repo)
             .to_string(),
-        default_branch: payload
-            .get("default_branch")
-            .and_then(Value::as_str)
-            .unwrap_or("main")
-            .to_string(),
+        default_branch,
+        resolved_ref,
         description: payload
             .get("description")
             .and_then(Value::as_str)
@@ -208,7 +231,10 @@ fn github_source_url_for(repo: &GithubRepoMetadata, skill_root: &str) -> String 
     if skill_root.is_empty() {
         repo.html_url.clone()
     } else {
-        format!("{}/tree/{}/{}", repo.html_url, repo.default_branch, skill_root)
+        format!(
+            "{}/tree/{}/{}",
+            repo.html_url, repo.resolved_ref, skill_root
+        )
     }
 }
 
@@ -228,7 +254,7 @@ fn github_candidates_from_tree(
                 skill_root: skill_root.clone(),
                 source_url: github_source_url_for(repo, &skill_root),
                 repo_url: Some(repo.html_url.clone()),
-                version: Some(repo.default_branch.clone()),
+                version: Some(repo.resolved_ref.clone()),
                 author: repo.author.clone(),
                 description: repo.description.clone(),
             }
@@ -341,7 +367,8 @@ fn build_local_candidates(
     source_url: &str,
     roots: Vec<PathBuf>,
 ) -> Result<Vec<ResolvedRepositoryImportCandidate>> {
-    roots.into_iter()
+    roots
+        .into_iter()
         .map(|skill_root| {
             let manifest_path = skill_root.join("SKILL.md");
             let relative_manifest_path = manifest_path
@@ -377,7 +404,9 @@ fn build_local_candidates(
         .collect()
 }
 
-fn resolve_local_directory_import_source(request: &ResolveRepositoryImportRequest) -> Result<ResolveRepositoryImportResult> {
+fn resolve_local_directory_import_source(
+    request: &ResolveRepositoryImportRequest,
+) -> Result<ResolveRepositoryImportResult> {
     let input_path = canonicalize_existing_path(Path::new(request.input.trim()))?;
     if !input_path.is_dir() {
         return Err(anyhow!("selected local import source is not a directory"));
@@ -385,7 +414,9 @@ fn resolve_local_directory_import_source(request: &ResolveRepositoryImportReques
 
     let roots = install::collect_skill_roots(&input_path)?;
     if roots.is_empty() {
-        return Err(anyhow!("no SKILL.md was found in the selected local directory"));
+        return Err(anyhow!(
+            "no SKILL.md was found in the selected local directory"
+        ));
     }
 
     Ok(ResolveRepositoryImportResult {
@@ -408,7 +439,9 @@ fn validate_local_zip_path(path: &Path) -> Result<PathBuf> {
         .unwrap_or_default()
         .to_ascii_lowercase();
     if extension != "zip" {
-        return Err(anyhow!("only .zip files are supported for local zip import"));
+        return Err(anyhow!(
+            "only .zip files are supported for local zip import"
+        ));
     }
 
     Ok(canonical_path)
@@ -437,7 +470,11 @@ fn resolve_local_zip_import_source(
         Ok(ResolveRepositoryImportResult {
             source_kind: request.source_kind.clone(),
             normalized_input: display_local_path(&zip_path),
-            candidates: build_local_candidates(&extract_dir, &display_local_path(&zip_path), roots)?,
+            candidates: build_local_candidates(
+                &extract_dir,
+                &display_local_path(&zip_path),
+                roots,
+            )?,
             warnings: Vec::new(),
         })
     })();
@@ -449,11 +486,11 @@ fn resolve_local_zip_import_source(
     result
 }
 
-fn github_download_url(repo_url: &str, default_branch: &str) -> String {
+fn github_download_url(repo_url: &str, resolved_ref: &str) -> String {
     format!(
-        "{}/archive/refs/heads/{}.zip",
+        "{}/archive/{}.zip",
         repo_url.trim_end_matches('/'),
-        default_branch
+        resolved_ref
     )
 }
 
@@ -475,18 +512,20 @@ fn github_package_ref(repo_url: &str, skill_root: &str) -> Option<String> {
     }
 }
 
-fn build_install_request_for_import(request: &ImportRepositorySkillRequest) -> Result<InstallSkillRequest> {
+fn build_install_request_for_import(
+    request: &ImportRepositorySkillRequest,
+) -> Result<InstallSkillRequest> {
     match request.source_kind.as_str() {
         "github" => {
             let repo_url = request
                 .repo_url
                 .clone()
                 .ok_or_else(|| anyhow!("GitHub import requires repoUrl"))?;
-            let default_branch = request
+            let resolved_ref = request
                 .version
                 .clone()
                 .filter(|value| !value.trim().is_empty())
-                .ok_or_else(|| anyhow!("GitHub import requires the default branch name"))?;
+                .ok_or_else(|| anyhow!("GitHub import requires a stable ref"))?;
 
             Ok(InstallSkillRequest {
                 provider: "github".to_string(),
@@ -494,14 +533,14 @@ fn build_install_request_for_import(request: &ImportRepositorySkillRequest) -> R
                 source_type: "github".to_string(),
                 source_url: request.source_url.clone(),
                 repo_url: Some(repo_url.clone()),
-                download_url: Some(github_download_url(&repo_url, &default_branch)),
+                download_url: Some(github_download_url(&repo_url, &resolved_ref)),
                 package_ref: github_package_ref(&repo_url, &request.selected_skill_root),
                 manifest_path: Some(request.selected_manifest_path.clone()),
                 skill_root: Some(request.selected_skill_root.clone()),
                 name: request.name.clone(),
                 slug: request.slug.clone(),
                 description: request.description.clone(),
-                version: Some(default_branch),
+                version: Some(resolved_ref),
                 author: request.author.clone(),
                 requested_targets: Vec::new(),
             })
@@ -536,7 +575,9 @@ fn build_install_request_for_import(request: &ImportRepositorySkillRequest) -> R
             provider: "local".to_string(),
             market_skill_id: request.slug.clone(),
             source_type: "local".to_string(),
-            source_url: display_local_path(&canonicalize_existing_path(Path::new(request.input.trim()))?),
+            source_url: display_local_path(&canonicalize_existing_path(Path::new(
+                request.input.trim(),
+            ))?),
             repo_url: None,
             download_url: None,
             package_ref: Some(format!("local:{}", request.slug)),
@@ -580,7 +621,9 @@ pub fn import_repository_skill(
     let canonical_path = paths
         .canonical_store_dir
         .join(install::sanitize_slug(&request.slug));
-    if canonical_path.exists() || skills_repository::repository_skill_slug_exists(&paths.db_file, &request.slug)? {
+    if canonical_path.exists()
+        || skills_repository::repository_skill_slug_exists(&paths.db_file, &request.slug)?
+    {
         return Err(anyhow!(
             "a repository skill with slug '{}' already exists",
             request.slug
@@ -635,6 +678,14 @@ mod tests {
         })
     }
 
+    fn github_branch_payload(sha: &str) -> Value {
+        serde_json::json!({
+            "commit": {
+                "sha": sha
+            }
+        })
+    }
+
     #[test]
     fn resolves_github_repo_url_to_single_candidate() {
         let request = ResolveRepositoryImportRequest {
@@ -645,13 +696,18 @@ mod tests {
         let result = resolve_github_import_source_with(&request, |url| {
             if url.contains("/git/trees/") {
                 Ok(github_tree_payload(&["skills/react/SKILL.md"]))
+            } else if url.contains("/branches/") {
+                Ok(github_branch_payload("0123456789abcdef"))
             } else {
                 Ok(github_repo_payload("main"))
             }
         })
         .unwrap();
 
-        assert_eq!(result.normalized_input, "https://github.com/vercel-labs/skills");
+        assert_eq!(
+            result.normalized_input,
+            "https://github.com/vercel-labs/skills"
+        );
         assert_eq!(result.candidates.len(), 1);
         assert_eq!(result.candidates[0].slug, "vercel-labs-skills-skills-react");
     }
@@ -669,6 +725,8 @@ mod tests {
                     "skills/react/SKILL.md",
                     "skills/rust/SKILL.md",
                 ]))
+            } else if url.contains("/branches/") {
+                Ok(github_branch_payload("0123456789abcdef"))
             } else {
                 Ok(github_repo_payload("main"))
             }
@@ -691,6 +749,8 @@ mod tests {
                     "skills/react/SKILL.md",
                     "skills/rust/SKILL.md",
                 ]))
+            } else if url.contains("/branches/") {
+                Ok(github_branch_payload("0123456789abcdef"))
             } else {
                 Ok(github_repo_payload("main"))
             }
@@ -708,12 +768,70 @@ mod tests {
             input: "https://github.com/vercel-labs/skills/tree/dev/skills/rust".into(),
         };
 
-        let error = resolve_github_import_source_with(&request, |_url| Ok(github_repo_payload("main")))
-            .unwrap_err();
+        let error = resolve_github_import_source_with(&request, |url| {
+            if url.contains("/branches/") {
+                Ok(github_branch_payload("0123456789abcdef"))
+            } else {
+                Ok(github_repo_payload("main"))
+            }
+        })
+        .unwrap_err();
 
         assert!(error
             .to_string()
             .contains("only default-branch GitHub tree URLs are supported"));
+    }
+
+    #[test]
+    fn resolves_github_candidates_with_pinned_commit_version() {
+        let request = ResolveRepositoryImportRequest {
+            source_kind: "github".into(),
+            input: "https://github.com/vercel-labs/skills".into(),
+        };
+
+        let result = resolve_github_import_source_with(&request, |url| {
+            if url.contains("/git/trees/") {
+                Ok(github_tree_payload(&["skills/react/SKILL.md"]))
+            } else if url.contains("/branches/") {
+                Ok(github_branch_payload("0123456789abcdef"))
+            } else {
+                Ok(github_repo_payload("main"))
+            }
+        })
+        .unwrap();
+
+        assert_eq!(
+            result.candidates[0].version.as_deref(),
+            Some("0123456789abcdef")
+        );
+        assert!(result.candidates[0]
+            .source_url
+            .contains("/tree/0123456789abcdef/"));
+    }
+
+    #[test]
+    fn builds_github_install_request_with_pinned_download_ref() {
+        let install_request = build_install_request_for_import(&ImportRepositorySkillRequest {
+            source_kind: "github".into(),
+            input: "https://github.com/vercel-labs/skills".into(),
+            selected_manifest_path: "skills/react/SKILL.md".into(),
+            selected_skill_root: "skills/react".into(),
+            name: "react".into(),
+            slug: "vercel-labs-skills-skills-react".into(),
+            source_url: "https://github.com/vercel-labs/skills/tree/0123456789abcdef/skills/react"
+                .into(),
+            repo_url: Some("https://github.com/vercel-labs/skills".into()),
+            version: Some("0123456789abcdef".into()),
+            author: Some("vercel-labs".into()),
+            description: Some("demo repo".into()),
+        })
+        .unwrap();
+
+        assert_eq!(
+            install_request.download_url.as_deref(),
+            Some("https://github.com/vercel-labs/skills/archive/0123456789abcdef.zip")
+        );
+        assert_eq!(install_request.version.as_deref(), Some("0123456789abcdef"));
     }
 
     #[test]
@@ -789,11 +907,17 @@ mod tests {
         .unwrap();
 
         assert!(!result.blocked);
-        assert!(PathBuf::from(result.canonical_path).join("SKILL.md").exists());
+        assert!(PathBuf::from(result.canonical_path)
+            .join("SKILL.md")
+            .exists());
 
         let conn = crate::repositories::db::open_connection(&paths.db_file).unwrap();
         let description: Option<String> = conn
-            .query_row("SELECT description FROM skills WHERE slug = 'demo-skill'", [], |row| row.get(0))
+            .query_row(
+                "SELECT description FROM skills WHERE slug = 'demo-skill'",
+                [],
+                |row| row.get(0),
+            )
             .unwrap();
         assert_eq!(description.as_deref(), Some("Import description"));
     }
@@ -834,7 +958,10 @@ mod tests {
 
         let canonical_root = PathBuf::from(result.canonical_path);
         assert!(canonical_root.join("SKILL.md").exists());
-        assert_eq!(fs::read_to_string(canonical_root.join("README.md")).unwrap(), "adapt");
+        assert_eq!(
+            fs::read_to_string(canonical_root.join("README.md")).unwrap(),
+            "adapt"
+        );
         assert!(!canonical_root.join("animate").exists());
     }
 

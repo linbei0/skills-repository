@@ -114,7 +114,10 @@ fn ensure_project_root(project_root: &str) -> Result<PathBuf> {
         return Err(anyhow!("project root does not exist: {}", path.display()));
     }
     if !path.is_dir() {
-        return Err(anyhow!("project root is not a directory: {}", path.display()));
+        return Err(anyhow!(
+            "project root is not a directory: {}",
+            path.display()
+        ));
     }
     Ok(path)
 }
@@ -143,21 +146,20 @@ pub(crate) fn resolve_project_target_root(
                 .ok_or_else(|| anyhow!("target_agent_id is required when target_type=tag"))?;
             resolve_tag_relative_path(state, target_agent_id)?
         }
-        "custom" => validate_custom_relative_path(
-            request
-                .custom_relative_path
-                .as_deref()
-                .ok_or_else(|| {
-                    anyhow!("custom_relative_path is required when target_type=custom")
-                })?,
-        )?,
+        "custom" => {
+            validate_custom_relative_path(request.custom_relative_path.as_deref().ok_or_else(
+                || anyhow!("custom_relative_path is required when target_type=custom"),
+            )?)?
+        }
         other => return Err(anyhow!("unsupported target_type {}", other)),
     };
 
     let target_root = match request.target_scope.as_str() {
         "project" => {
             if request.project_root.trim().is_empty() {
-                return Err(anyhow!("project_root is required when target_scope=project"));
+                return Err(anyhow!(
+                    "project_root is required when target_scope=project"
+                ));
             }
             ensure_project_root(&request.project_root)?
         }
@@ -219,7 +221,9 @@ pub(crate) fn distribute_repository_skills_to_project(
     request: &ProjectDistributionRequest,
 ) -> Result<BatchDistributeResult> {
     if skills.is_empty() {
-        return Err(anyhow!("at least one repository skill is required for distribution"));
+        return Err(anyhow!(
+            "at least one repository skill is required for distribution"
+        ));
     }
 
     let target_root = resolve_project_target_root(state, request)?;
@@ -230,29 +234,29 @@ pub(crate) fn distribute_repository_skills_to_project(
     let mut failed = Vec::new();
 
     for skill in skills {
-        let source = match skills_repository::load_skill_source(&state.paths.db_file, &skill.skill_id)
-        {
-            Ok(source) => source,
-            Err(error) => {
-                let item = build_result_item(
-                    &skill.skill_id,
-                    &skill.skill_name,
-                    &target_root.join(&skill.skill_name),
-                    Some(format!("missing repository skill: {}", error)),
-                );
-                let _ = save_distribution_operation_log(
-                    state,
-                    "failed",
-                    &skill.skill_id,
-                    &skill.skill_name,
-                    &PathBuf::from(&item.target_path),
-                    request,
-                    item.reason.as_deref(),
-                );
-                failed.push(item);
-                continue;
-            }
-        };
+        let source =
+            match skills_repository::load_skill_source(&state.paths.db_file, &skill.skill_id) {
+                Ok(source) => source,
+                Err(error) => {
+                    let item = build_result_item(
+                        &skill.skill_id,
+                        &skill.skill_name,
+                        &target_root.join(&skill.skill_name),
+                        Some(format!("missing repository skill: {}", error)),
+                    );
+                    let _ = save_distribution_operation_log(
+                        state,
+                        "failed",
+                        &skill.skill_id,
+                        &skill.skill_name,
+                        &PathBuf::from(&item.target_path),
+                        request,
+                        item.reason.as_deref(),
+                    );
+                    failed.push(item);
+                    continue;
+                }
+            };
 
         let source_path = PathBuf::from(&source.source_path);
         if !source_path.exists() {
@@ -261,7 +265,10 @@ pub(crate) fn distribute_repository_skills_to_project(
                 &skill.skill_id,
                 &skill.skill_name,
                 &target_path,
-                Some(format!("skill source path does not exist: {}", source_path.display())),
+                Some(format!(
+                    "skill source path does not exist: {}",
+                    source_path.display()
+                )),
             );
             let _ = save_distribution_operation_log(
                 state,
@@ -315,7 +322,8 @@ pub(crate) fn distribute_repository_skills_to_project(
                     "active",
                 )?;
 
-                let item = build_result_item(&skill.skill_id, &skill.skill_name, &target_path, None);
+                let item =
+                    build_result_item(&skill.skill_id, &skill.skill_name, &target_path, None);
                 let _ = save_distribution_operation_log(
                     state,
                     "success",
@@ -364,7 +372,9 @@ mod tests {
             app_state::{AppPaths, AppState},
             types::{AppSettings, CustomSkillsTarget, DistributionRequest, InstallSkillRequest},
         },
-        repositories::{db::run_migrations, settings as settings_repository, skills as skills_repository},
+        repositories::{
+            db::run_migrations, settings as settings_repository, skills as skills_repository,
+        },
     };
     use std::{fs, path::Path, sync::Arc};
     use tempfile::tempdir;
@@ -433,8 +443,14 @@ mod tests {
         let result = distribute_repository_skills_to_project(
             &state,
             &[
-                ProjectDistributionSelection { skill_id: skill_a.clone(), skill_name: "Demo A".into() },
-                ProjectDistributionSelection { skill_id: skill_b.clone(), skill_name: "Demo B".into() },
+                ProjectDistributionSelection {
+                    skill_id: skill_a.clone(),
+                    skill_name: "Demo A".into(),
+                },
+                ProjectDistributionSelection {
+                    skill_id: skill_b.clone(),
+                    skill_name: "Demo B".into(),
+                },
             ],
             &ProjectDistributionRequest {
                 target_scope: "project".into(),
@@ -463,7 +479,10 @@ mod tests {
 
         let result = distribute_repository_skills_to_project(
             &state,
-            &[ProjectDistributionSelection { skill_id, skill_name: "Demo Skill".into() }],
+            &[ProjectDistributionSelection {
+                skill_id,
+                skill_name: "Demo Skill".into(),
+            }],
             &ProjectDistributionRequest {
                 target_scope: "project".into(),
                 project_root: project_root.to_string_lossy().to_string(),
@@ -492,7 +511,10 @@ mod tests {
 
         let result = distribute_repository_skills_to_project(
             &state,
-            &[ProjectDistributionSelection { skill_id, skill_name: "Demo Skill".into() }],
+            &[ProjectDistributionSelection {
+                skill_id,
+                skill_name: "Demo Skill".into(),
+            }],
             &ProjectDistributionRequest {
                 target_scope: "project".into(),
                 project_root: project_root.to_string_lossy().to_string(),
@@ -505,7 +527,10 @@ mod tests {
         .unwrap();
 
         assert_eq!(result.skipped.len(), 1);
-        assert_eq!(result.skipped[0].reason.as_deref(), Some("target already exists"));
+        assert_eq!(
+            result.skipped[0].reason.as_deref(),
+            Some("target already exists")
+        );
     }
 
     #[test]
@@ -520,8 +545,14 @@ mod tests {
         let result = distribute_repository_skills_to_project(
             &state,
             &[
-                ProjectDistributionSelection { skill_id: existing_skill, skill_name: "Demo Skill".into() },
-                ProjectDistributionSelection { skill_id: "missing-id".into(), skill_name: "Missing Skill".into() },
+                ProjectDistributionSelection {
+                    skill_id: existing_skill,
+                    skill_name: "Demo Skill".into(),
+                },
+                ProjectDistributionSelection {
+                    skill_id: "missing-id".into(),
+                    skill_name: "Missing Skill".into(),
+                },
             ],
             &ProjectDistributionRequest {
                 target_scope: "project".into(),
@@ -550,7 +581,10 @@ mod tests {
 
         let result = distribute_repository_skills_to_project(
             &state,
-            &[ProjectDistributionSelection { skill_id, skill_name: "Demo Skill".into() }],
+            &[ProjectDistributionSelection {
+                skill_id,
+                skill_name: "Demo Skill".into(),
+            }],
             &ProjectDistributionRequest {
                 target_scope: "project".into(),
                 project_root: project_root.to_string_lossy().to_string(),

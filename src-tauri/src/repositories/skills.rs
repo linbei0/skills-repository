@@ -1,13 +1,14 @@
 use anyhow::{anyhow, Context, Result};
 use rusqlite::params;
-use serde_json::json;
-use std::{fs, path::{Path, PathBuf}};
+use serde_json::{json, Value};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::domain::types::{
-    InstallSkillRequest, RepositorySkillDetail, RepositorySkillSummary,
-};
+use crate::domain::types::{InstallSkillRequest, RepositorySkillDetail, RepositorySkillSummary};
 
 use super::db::open_connection;
 
@@ -18,7 +19,10 @@ fn normalize_persisted_source_type(source_type: &str) -> &str {
     }
 }
 
-fn normalize_persisted_source_market(request: &InstallSkillRequest, persisted_source_type: &str) -> Option<String> {
+fn normalize_persisted_source_market(
+    request: &InstallSkillRequest,
+    persisted_source_type: &str,
+) -> Option<String> {
     match persisted_source_type {
         "market" => Some(request.provider.clone()),
         "github" => Some("github".to_string()),
@@ -42,6 +46,17 @@ fn display_source_url(source_type: &str, source_url: Option<String>) -> Option<S
         ("local", Some(value)) => Some(normalize_windows_path_for_display(&value)),
         (_, value) => value,
     }
+}
+
+fn repo_url_from_metadata(metadata_json: Option<String>) -> Option<String> {
+    metadata_json
+        .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
+        .and_then(|metadata| {
+            metadata
+                .get("repoUrl")
+                .and_then(Value::as_str)
+                .map(ToString::to_string)
+        })
 }
 
 pub fn save_installed_skill(
@@ -257,7 +272,7 @@ pub fn list_installed_skills(path: &Path) -> Result<Vec<InstalledSkillSummary>> 
     let conn = open_connection(path)?;
     let mut stmt = conn.prepare(
         "
-        SELECT id, name, canonical_path, source_url, version
+        SELECT id, name, canonical_path, source_url, version, metadata_json
         FROM skills
         WHERE canonical_path IS NOT NULL
         ORDER BY updated_at DESC
@@ -265,12 +280,13 @@ pub fn list_installed_skills(path: &Path) -> Result<Vec<InstalledSkillSummary>> 
     )?;
 
     let rows = stmt.query_map([], |row| {
+        let metadata_json: Option<String> = row.get(5)?;
         Ok(InstalledSkillSummary {
             skill_id: row.get(0)?,
             name: row.get(1)?,
             canonical_path: row.get(2)?,
             source_url: row.get(3)?,
-            repo_url: None,
+            repo_url: repo_url_from_metadata(metadata_json),
             version: row.get(4)?,
         })
     })?;
@@ -278,7 +294,6 @@ pub fn list_installed_skills(path: &Path) -> Result<Vec<InstalledSkillSummary>> 
     rows.collect::<rusqlite::Result<Vec<_>>>()
         .map_err(Into::into)
 }
-
 
 fn canonicalize_existing_path(path: &Path) -> Result<PathBuf> {
     fs::canonicalize(path).with_context(|| format!("failed to canonicalize {}", path.display()))
@@ -326,8 +341,18 @@ pub fn list_repository_skills(
 
     let mut skills = Vec::new();
     for row in rows {
-        let (id, slug, name, description, source_type, source_market, installed_at, security_level, blocked, raw_path) =
-            row?;
+        let (
+            id,
+            slug,
+            name,
+            description,
+            source_type,
+            source_market,
+            installed_at,
+            security_level,
+            blocked,
+            raw_path,
+        ) = row?;
         let skill_path = PathBuf::from(&raw_path);
         if !skill_path.exists() {
             continue;
@@ -518,7 +543,11 @@ mod tests {
     };
     use tempfile::tempdir;
 
-    fn seed_skill(root: &Path, source_type: &str, source_market: Option<&str>) -> (PathBuf, String) {
+    fn seed_skill(
+        root: &Path,
+        source_type: &str,
+        source_market: Option<&str>,
+    ) -> (PathBuf, String) {
         let app_data_dir = root.join("app-data");
         let db_dir = app_data_dir.join("db");
         let canonical_store_dir = app_data_dir.join("skills");
@@ -590,7 +619,8 @@ mod tests {
         let (db_path, skill_id) = seed_skill(dir.path(), "market", Some("github"));
         let canonical_store_dir = dir.path().join("app-data").join("skills");
 
-        let detail = get_repository_skill_detail(&db_path, &canonical_store_dir, &skill_id).unwrap();
+        let detail =
+            get_repository_skill_detail(&db_path, &canonical_store_dir, &skill_id).unwrap();
 
         assert_eq!(detail.id, skill_id);
         assert!(detail.skill_markdown.contains("demo skill"));
@@ -646,19 +676,39 @@ mod tests {
         delete_repository_skill(&db_path, &skill_id).unwrap();
         let conn = open_connection(&db_path).unwrap();
         let skill_count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM skills WHERE id = ?1", params![skill_id], |row| {
+            .query_row(
+                "SELECT COUNT(*) FROM skills WHERE id = ?1",
+                params![skill_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let distribution_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM skill_distributions", [], |row| {
                 row.get(0)
             })
             .unwrap();
-        let distribution_count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM skill_distributions", [], |row| row.get(0))
-            .unwrap();
         let report_count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM security_reports", [], |row| row.get(0))
+            .query_row("SELECT COUNT(*) FROM security_reports", [], |row| {
+                row.get(0)
+            })
             .unwrap();
 
         assert_eq!(skill_count, 0);
         assert_eq!(distribution_count, 0);
         assert_eq!(report_count, 0);
+    }
+
+    #[test]
+    fn list_installed_skills_preserves_repo_url_from_metadata() {
+        let dir = tempdir().unwrap();
+        let (db_path, _skill_id) = seed_skill(dir.path(), "market", Some("github"));
+
+        let skills = list_installed_skills(&db_path).unwrap();
+
+        assert_eq!(skills.len(), 1);
+        assert_eq!(
+            skills[0].repo_url.as_deref(),
+            Some("https://example.com/demo")
+        );
     }
 }

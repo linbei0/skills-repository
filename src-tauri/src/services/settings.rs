@@ -14,7 +14,6 @@ pub fn load_or_create_settings(state: &AppState, language: String) -> Result<App
     settings_repo::save_settings(&state.paths.db_file, &settings)
 }
 
-
 pub fn save_settings(state: &AppState, settings: &AppSettings) -> Result<AppSettings> {
     settings_repo::save_settings(&state.paths.db_file, settings)
 }

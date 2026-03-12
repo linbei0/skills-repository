@@ -63,7 +63,10 @@ pub fn delete_template(path: &Path, template_id: &str) -> Result<()> {
     templates_repository::delete_template(path, template_id)
 }
 
-pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Result<InjectTemplateResult> {
+pub fn inject_template(
+    state: &AppState,
+    request: &InjectTemplateRequest,
+) -> Result<InjectTemplateResult> {
     if request.template_id.trim().is_empty() {
         return Err(anyhow!("template_id is required"));
     }
@@ -71,7 +74,9 @@ pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Res
     let template = templates_repository::get_template(&state.paths.db_file, &request.template_id)?
         .ok_or_else(|| anyhow!("template {} does not exist", request.template_id))?;
     if template.items.is_empty() {
-        return Err(anyhow!("template must contain at least one skill before injection"));
+        return Err(anyhow!(
+            "template must contain at least one skill before injection"
+        ));
     }
 
     let distribution_request = ProjectDistributionRequest {
@@ -82,7 +87,8 @@ pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Res
         custom_relative_path: request.custom_relative_path.clone(),
         install_mode: request.install_mode.clone(),
     };
-    let target_root = project_distribution::resolve_project_target_root(state, &distribution_request)?;
+    let target_root =
+        project_distribution::resolve_project_target_root(state, &distribution_request)?;
 
     let mut failed = Vec::new();
     let mut distribution_items = Vec::new();
@@ -93,19 +99,27 @@ pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Res
                 &item.skill_ref,
                 item.display_name.as_deref().unwrap_or(&item.skill_ref),
                 &target_root.join(&item.skill_ref),
-                Some(format!("unsupported template item type {}", item.skill_ref_type)),
+                Some(format!(
+                    "unsupported template item type {}",
+                    item.skill_ref_type
+                )),
             ));
             continue;
         }
 
         distribution_items.push(ProjectDistributionSelection {
             skill_id: item.skill_ref.clone(),
-            skill_name: item.display_name.clone().unwrap_or_else(|| item.skill_ref.clone()),
+            skill_name: item
+                .display_name
+                .clone()
+                .unwrap_or_else(|| item.skill_ref.clone()),
         });
     }
 
     if distribution_items.is_empty() {
-        return Err(anyhow!("template must contain at least one repository skill before injection"));
+        return Err(anyhow!(
+            "template must contain at least one repository skill before injection"
+        ));
     }
 
     let distribution_result = project_distribution::distribute_repository_skills_to_project(
@@ -118,17 +132,36 @@ pub fn inject_template(state: &AppState, request: &InjectTemplateRequest) -> Res
         installed: distribution_result
             .installed
             .into_iter()
-            .map(|item| build_result_item(&item.skill_id, &item.skill_name, Path::new(&item.target_path), item.reason))
+            .map(|item| {
+                build_result_item(
+                    &item.skill_id,
+                    &item.skill_name,
+                    Path::new(&item.target_path),
+                    item.reason,
+                )
+            })
             .collect(),
         skipped: distribution_result
             .skipped
             .into_iter()
-            .map(|item| build_result_item(&item.skill_id, &item.skill_name, Path::new(&item.target_path), item.reason))
+            .map(|item| {
+                build_result_item(
+                    &item.skill_id,
+                    &item.skill_name,
+                    Path::new(&item.target_path),
+                    item.reason,
+                )
+            })
             .collect(),
         failed: failed
             .into_iter()
             .chain(distribution_result.failed.into_iter().map(|item| {
-                build_result_item(&item.skill_id, &item.skill_name, Path::new(&item.target_path), item.reason)
+                build_result_item(
+                    &item.skill_id,
+                    &item.skill_name,
+                    Path::new(&item.target_path),
+                    item.reason,
+                )
             }))
             .collect(),
     })
@@ -141,9 +174,14 @@ mod tests {
         domain::{
             agent_registry::AgentRegistry,
             app_state::{AppPaths, AppState},
-            types::{AppSettings, CustomSkillsTarget, DistributionRequest, InstallSkillRequest, SaveTemplateItemRequest},
+            types::{
+                AppSettings, CustomSkillsTarget, DistributionRequest, InstallSkillRequest,
+                SaveTemplateItemRequest,
+            },
         },
-        repositories::{db::run_migrations, settings as settings_repository, skills as skills_repository},
+        repositories::{
+            db::run_migrations, settings as settings_repository, skills as skills_repository,
+        },
     };
     use std::{fs, sync::Arc};
     use tempfile::tempdir;
@@ -210,12 +248,14 @@ mod tests {
                 items: skill_ids
                     .iter()
                     .enumerate()
-                    .map(|(index, (skill_id, display_name))| SaveTemplateItemRequest {
-                        skill_ref_type: "repository_skill".into(),
-                        skill_ref: (*skill_id).into(),
-                        display_name: Some((*display_name).into()),
-                        order_index: Some(index as u32),
-                    })
+                    .map(
+                        |(index, (skill_id, display_name))| SaveTemplateItemRequest {
+                            skill_ref_type: "repository_skill".into(),
+                            skill_ref: (*skill_id).into(),
+                            display_name: Some((*display_name).into()),
+                            order_index: Some(index as u32),
+                        },
+                    )
                     .collect(),
             },
         )
@@ -258,8 +298,13 @@ mod tests {
         let state = test_state(dir.path());
         run_migrations(&state.paths.db_file).unwrap();
         let skill_id = seed_skill(&state, "demo-skill", "Demo Skill");
-        let template_id =
-            seed_template(&state, &[(&skill_id, "Demo Skill"), ("missing-skill", "Missing Skill")]);
+        let template_id = seed_template(
+            &state,
+            &[
+                (&skill_id, "Demo Skill"),
+                ("missing-skill", "Missing Skill"),
+            ],
+        );
         let project_root = dir.path().join("workspace");
         fs::create_dir_all(project_root.join(".claude/skills/demo-skill")).unwrap();
 
@@ -319,7 +364,9 @@ mod tests {
         )
         .unwrap();
         assert_eq!(tag_result.installed.len(), 1);
-        assert!(project_root.join(".demo/skills/demo-skill/SKILL.md").exists());
+        assert!(project_root
+            .join(".demo/skills/demo-skill/SKILL.md")
+            .exists());
 
         let project_root_custom = dir.path().join("workspace-custom");
         fs::create_dir_all(&project_root_custom).unwrap();
@@ -389,7 +436,9 @@ mod tests {
         )
         .unwrap_err();
 
-        assert!(error.to_string().contains("cannot contain parent directory"));
+        assert!(error
+            .to_string()
+            .contains("cannot contain parent directory"));
     }
 
     #[cfg(target_os = "windows")]

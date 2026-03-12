@@ -109,6 +109,13 @@ impl GithubMarketProvider {
         )
     }
 
+    fn build_branch_url(repo: &GithubRepoCandidate) -> String {
+        format!(
+            "https://api.github.com/repos/{}/branches/{}",
+            repo.full_name, repo.default_branch
+        )
+    }
+
     pub(crate) fn is_manifest_path_supported(path: &str) -> bool {
         if !path.ends_with("SKILL.md") {
             return false;
@@ -197,18 +204,30 @@ impl GithubMarketProvider {
             .unwrap_or_default()
     }
 
-    fn source_url_for(repo: &GithubRepoCandidate, skill_root: &str) -> String {
+    fn source_url_for(repo: &GithubRepoCandidate, skill_root: &str, resolved_ref: &str) -> String {
         if skill_root.is_empty() {
             repo.html_url.clone()
         } else {
-            format!(
-                "{}/tree/{}/{}",
-                repo.html_url, repo.default_branch, skill_root
-            )
+            format!("{}/tree/{}/{}", repo.html_url, resolved_ref, skill_root)
         }
     }
 
-    fn resolve_repo_skills(repo: &GithubRepoCandidate, tree_payload: &Value) -> Vec<MarketSkillSummary> {
+    fn resolve_branch_head_sha(repo: &GithubRepoCandidate) -> Result<String> {
+        let payload = Self::github_get_json(&Self::build_branch_url(repo))?;
+        payload
+            .get("commit")
+            .and_then(|commit| commit.get("sha"))
+            .and_then(Value::as_str)
+            .filter(|value| !value.trim().is_empty())
+            .map(ToString::to_string)
+            .ok_or_else(|| anyhow!("github branch head sha missing from response"))
+    }
+
+    fn resolve_repo_skills(
+        repo: &GithubRepoCandidate,
+        tree_payload: &Value,
+        resolved_ref: &str,
+    ) -> Vec<MarketSkillSummary> {
         Self::discover_manifest_paths(tree_payload)
             .into_iter()
             .map(|manifest_path| {
@@ -220,16 +239,13 @@ impl GithubMarketProvider {
                     description: repo.description.clone(),
                     provider: GITHUB_PROVIDER.to_string(),
                     source_type: "github-resolved-skill".to_string(),
-                    source_url: Self::source_url_for(repo, &skill_root),
+                    source_url: Self::source_url_for(repo, &skill_root, resolved_ref),
                     repo_url: Some(repo.html_url.clone()),
-                    download_url: Some(format!(
-                        "{}/archive/refs/heads/{}.zip",
-                        repo.html_url, repo.default_branch
-                    )),
+                    download_url: Some(format!("{}/archive/{}.zip", repo.html_url, resolved_ref)),
                     package_ref: Some(Self::package_ref_for(repo, &skill_root)),
                     manifest_path: Some(manifest_path),
                     skill_root: Some(skill_root),
-                    version: Some(repo.default_branch.clone()),
+                    version: Some(resolved_ref.to_string()),
                     author: repo.author.clone(),
                     tags: repo.tags.clone(),
                     installable: true,
@@ -263,9 +279,23 @@ impl MarketProviderAdapter for GithubMarketProvider {
 
         for repo in &repos {
             match Self::github_get_json(&Self::build_tree_url(repo)) {
-                Ok(tree_payload) => {
-                    results.extend(Self::resolve_repo_skills(repo, &tree_payload));
-                }
+                Ok(tree_payload) => match Self::resolve_branch_head_sha(repo) {
+                    Ok(resolved_ref) => {
+                        results.extend(Self::resolve_repo_skills(
+                            repo,
+                            &tree_payload,
+                            &resolved_ref,
+                        ));
+                    }
+                    Err(error) => {
+                        resolution_failures += 1;
+                        log::warn!(
+                            "failed to resolve repo {} pinned ref: {}",
+                            repo.full_name,
+                            error
+                        );
+                    }
+                },
                 Err(error) => {
                     resolution_failures += 1;
                     log::warn!(
@@ -364,7 +394,8 @@ mod tests {
             ]
         });
 
-        let resolved = GithubMarketProvider::resolve_repo_skills(&repo(), &tree_payload);
+        let resolved =
+            GithubMarketProvider::resolve_repo_skills(&repo(), &tree_payload, "0123456789abcdef");
 
         assert_eq!(resolved.len(), 2);
         assert_eq!(resolved[0].name, "react");
@@ -372,6 +403,11 @@ mod tests {
         assert_eq!(
             resolved[0].package_ref.as_deref(),
             Some("vercel-labs/skills@skills/react")
+        );
+        assert_eq!(resolved[0].version.as_deref(), Some("0123456789abcdef"));
+        assert_eq!(
+            resolved[0].download_url.as_deref(),
+            Some("https://github.com/vercel-labs/skills/archive/0123456789abcdef.zip")
         );
         assert!(resolved.iter().all(|skill| skill.installable));
     }

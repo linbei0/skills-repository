@@ -67,8 +67,11 @@ pub fn get_repository_skill_deletion_preview(
     canonical_store_dir: &Path,
     skill_id: &str,
 ) -> Result<RepositorySkillDeletionPreview> {
-    let plan =
-        skills_repository::load_repository_skill_removal_plan(db_path, canonical_store_dir, skill_id)?;
+    let plan = skills_repository::load_repository_skill_removal_plan(
+        db_path,
+        canonical_store_dir,
+        skill_id,
+    )?;
 
     Ok(RepositorySkillDeletionPreview {
         skill_id: plan.skill_id,
@@ -83,8 +86,11 @@ pub fn uninstall_repository_skill(
     canonical_store_dir: &Path,
     skill_id: &str,
 ) -> Result<RepositoryUninstallResult> {
-    let plan =
-        skills_repository::load_repository_skill_removal_plan(db_path, canonical_store_dir, skill_id)?;
+    let plan = skills_repository::load_repository_skill_removal_plan(
+        db_path,
+        canonical_store_dir,
+        skill_id,
+    )?;
 
     let mut removed_paths = Vec::new();
     for distribution_path in &plan.distribution_paths {
@@ -116,12 +122,20 @@ mod tests {
     use super::*;
     use crate::{
         domain::types::{DistributionRequest, InstallSkillRequest},
-        repositories::{db::run_migrations, distributions as distributions_repository, skills as skills_repository},
+        repositories::{
+            db::run_migrations, distributions as distributions_repository,
+            skills as skills_repository,
+        },
     };
     use std::{fs, io::ErrorKind};
     use tempfile::tempdir;
 
-    fn setup_skill_fixture() -> (std::path::PathBuf, std::path::PathBuf, String, std::path::PathBuf) {
+    fn setup_skill_fixture() -> (
+        std::path::PathBuf,
+        std::path::PathBuf,
+        String,
+        std::path::PathBuf,
+    ) {
         let dir = tempdir().unwrap();
         let root = dir.keep();
         let app_data_dir = root.join("app-data");
@@ -190,7 +204,8 @@ mod tests {
         assert_eq!(result.skill_id, skill_id);
         assert!(!distributed_path.exists());
         assert!(!canonical_skill_dir.exists());
-        let remaining = skills_repository::list_repository_skills(&db_path, &canonical_store_dir).unwrap();
+        let remaining =
+            skills_repository::list_repository_skills(&db_path, &canonical_store_dir).unwrap();
         assert!(remaining.is_empty());
     }
 
@@ -199,11 +214,15 @@ mod tests {
         let (db_path, canonical_store_dir, skill_id, distributed_path) = setup_skill_fixture();
 
         let preview =
-            get_repository_skill_deletion_preview(&db_path, &canonical_store_dir, &skill_id).unwrap();
+            get_repository_skill_deletion_preview(&db_path, &canonical_store_dir, &skill_id)
+                .unwrap();
 
         assert_eq!(preview.skill_id, skill_id);
         assert_eq!(preview.skill_name, "Demo");
-        assert_eq!(preview.distribution_paths, vec![distributed_path.to_string_lossy().to_string()]);
+        assert_eq!(
+            preview.distribution_paths,
+            vec![distributed_path.to_string_lossy().to_string()]
+        );
     }
 
     #[test]
@@ -213,7 +232,10 @@ mod tests {
         fs::create_dir_all(&target_dir).unwrap();
         let metadata = fs::symlink_metadata(&target_dir).unwrap();
 
-        assert_eq!(resolve_removal_kind(&target_dir, &metadata), RemovalKind::Directory);
+        assert_eq!(
+            resolve_removal_kind(&target_dir, &metadata),
+            RemovalKind::Directory
+        );
     }
 
     #[test]

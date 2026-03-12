@@ -1,4 +1,4 @@
-﻿use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context, Result};
 use serde_json::json;
 use std::{
     fs,
@@ -336,7 +336,10 @@ mod tests {
     use super::*;
     use crate::{
         domain::app_state::AppPaths,
-        repositories::{db::{open_connection, run_migrations}, security as security_repository},
+        repositories::{
+            db::{open_connection, run_migrations},
+            security as security_repository,
+        },
     };
     use tempfile::tempdir;
 
@@ -415,11 +418,8 @@ mod tests {
             ],
         );
 
-        let result = install_skill(
-            &paths,
-            &request(zip_path.to_string_lossy().to_string()),
-        )
-        .unwrap();
+        let result =
+            install_skill(&paths, &request(zip_path.to_string_lossy().to_string())).unwrap();
 
         assert!(!result.blocked);
         assert!(!result.skill_id.is_empty());
@@ -443,11 +443,8 @@ mod tests {
             ],
         );
 
-        let result = install_skill(
-            &paths,
-            &request(zip_path.to_string_lossy().to_string()),
-        )
-        .unwrap();
+        let result =
+            install_skill(&paths, &request(zip_path.to_string_lossy().to_string())).unwrap();
 
         let conn = open_connection(&paths.db_file).unwrap();
         let description: Option<String> = conn
@@ -476,18 +473,18 @@ mod tests {
             ],
         );
 
-        let result = install_skill(
-            &paths,
-            &request(zip_path.to_string_lossy().to_string()),
-        )
-        .unwrap();
+        let result =
+            install_skill(&paths, &request(zip_path.to_string_lossy().to_string())).unwrap();
 
         let reports = security_repository::list_security_reports(&paths.db_file).unwrap();
 
         assert!(!result.blocked);
         assert_eq!(temp_install_report_count(&paths.db_file), 0);
         assert_eq!(reports.len(), 1);
-        assert_eq!(reports[0].skill_id.as_deref(), Some(result.skill_id.as_str()));
+        assert_eq!(
+            reports[0].skill_id.as_deref(),
+            Some(result.skill_id.as_str())
+        );
     }
 
     #[test]
@@ -505,11 +502,8 @@ mod tests {
             ],
         );
 
-        let result = install_skill(
-            &paths,
-            &request(zip_path.to_string_lossy().to_string()),
-        )
-        .unwrap();
+        let result =
+            install_skill(&paths, &request(zip_path.to_string_lossy().to_string())).unwrap();
 
         assert!(result.blocked);
         assert_eq!(result.security_level, "high");
@@ -542,10 +536,7 @@ mod tests {
 
         assert!(result.blocked);
         assert!(result.skill_id.is_empty());
-        assert!(!paths
-            .canonical_store_dir
-            .join("http-source-skill")
-            .exists());
+        assert!(!paths.canonical_store_dir.join("http-source-skill").exists());
         assert_eq!(temp_install_report_count(&paths.db_file), 1);
     }
 
@@ -558,10 +549,7 @@ mod tests {
         let zip_path = dir.path().join("broken.zip");
         write_zip(&zip_path, &[("broken-skill/README.md", "no manifest")]);
 
-        let result = install_skill(
-            &paths,
-            &request(zip_path.to_string_lossy().to_string()),
-        );
+        let result = install_skill(&paths, &request(zip_path.to_string_lossy().to_string()));
 
         assert!(result.is_err());
         assert!(!paths.canonical_store_dir.join("demo-skill").exists());
@@ -596,7 +584,9 @@ mod tests {
         .unwrap();
 
         assert!(!result.blocked);
-        assert!(PathBuf::from(&result.canonical_path).join("README.md").exists());
+        assert!(PathBuf::from(&result.canonical_path)
+            .join("README.md")
+            .exists());
         assert_eq!(
             fs::read_to_string(PathBuf::from(&result.canonical_path).join("README.md")).unwrap(),
             "demo"

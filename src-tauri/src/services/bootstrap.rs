@@ -2,12 +2,12 @@ use anyhow::Result;
 use dark_light::Mode;
 use sys_locale::get_locale;
 
+use super::settings::load_or_create_settings;
 use crate::domain::{
     agent_registry::AgentCapability,
     app_state::AppState,
     types::{BootstrapPayload, SystemInfo},
 };
-use super::settings::load_or_create_settings;
 
 pub fn system_locale() -> String {
     get_locale().unwrap_or_else(|| "en-US".to_string())

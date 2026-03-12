@@ -108,10 +108,8 @@ mod tests {
     #[test]
     fn rejects_relative_source_reference() {
         let error = parse_source_reference("./skills/teach-impeccable").unwrap_err();
-        assert!(
-            error
-                .to_string()
-                .contains("unsupported source reference: ./skills/teach-impeccable")
-        );
+        assert!(error
+            .to_string()
+            .contains("unsupported source reference: ./skills/teach-impeccable"));
     }
 }

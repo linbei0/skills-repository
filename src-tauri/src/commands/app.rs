@@ -7,18 +7,17 @@ use crate::{
             AgentGlobalScanRequest, AgentGlobalScanResult, AppSettings,
             BatchDistributeRepositorySkillsRequest, BatchDistributeResult, DistributionRequest,
             DistributionResult, ImportRepositorySkillRequest, InjectTemplateRequest,
-            InjectTemplateResult, InstallSkillRequest, InstallSkillResult,
-            MarketSearchRequest, MarketSearchResponse, RepositorySkillDetail,
-            RepositorySkillDeletionPreview, RepositorySkillSummary, RepositoryUninstallResult,
-            ResolveRepositoryImportRequest, ResolveRepositoryImportResult, SaveTemplateRequest,
-            SecurityReport, TemplateRecord,
+            InjectTemplateResult, InstallSkillRequest, InstallSkillResult, MarketSearchRequest,
+            MarketSearchResponse, RepositorySkillDeletionPreview, RepositorySkillDetail,
+            RepositorySkillSummary, RepositoryUninstallResult, ResolveRepositoryImportRequest,
+            ResolveRepositoryImportResult, SaveTemplateRequest, SecurityReport, TemplateRecord,
         },
     },
-    repositories::skills as skills_repository,
     repositories::security as security_repository,
+    repositories::skills as skills_repository,
     services::{
-        agent_scan, bootstrap, distribution, install, market, project_distribution,
-        repository, repository_import, settings, source_reference, templates,
+        agent_scan, bootstrap, distribution, install, market, project_distribution, repository,
+        repository_import, settings, source_reference, templates,
     },
 };
 
@@ -37,7 +36,6 @@ pub fn bootstrap_app(
             error.to_string()
         })
 }
-
 
 #[tauri::command]
 pub fn save_settings(
@@ -237,8 +235,12 @@ pub fn distribute_skill(
     request: DistributionRequest,
 ) -> Result<DistributionResult, String> {
     log::info!("distribute_skill invoked");
-    distribution::distribute_skill(state.agent_registry.as_ref(), &state.paths.db_file, &request)
-        .map_err(|error| error.to_string())
+    distribution::distribute_skill(
+        state.agent_registry.as_ref(),
+        &state.paths.db_file,
+        &request,
+    )
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -251,11 +253,13 @@ pub fn batch_distribute_repository_skills(
     let selections = request
         .skill_ids
         .iter()
-        .map(|skill_id| project_distribution::ProjectDistributionSelection {
-            skill_id: skill_id.clone(),
-            skill_name: skills_repository::load_skill_name(&state.paths.db_file, skill_id)
-                .unwrap_or_else(|_| skill_id.clone()),
-        })
+        .map(
+            |skill_id| project_distribution::ProjectDistributionSelection {
+                skill_id: skill_id.clone(),
+                skill_name: skills_repository::load_skill_name(&state.paths.db_file, skill_id)
+                    .unwrap_or_else(|_| skill_id.clone()),
+            },
+        )
         .collect::<Vec<_>>();
 
     project_distribution::distribute_repository_skills_to_project(

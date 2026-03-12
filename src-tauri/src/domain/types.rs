@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::agent_registry::AgentCapability;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -175,7 +175,6 @@ pub struct AgentGlobalScanRequest {
     pub agent_label: String,
     pub relative_path: String,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -435,4 +434,3 @@ pub struct BatchDistributeResult {
     pub skipped: Vec<BatchDistributeItemResult>,
     pub failed: Vec<BatchDistributeItemResult>,
 }
-

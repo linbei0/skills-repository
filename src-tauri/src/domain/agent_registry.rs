@@ -1,6 +1,5 @@
 use serde::Serialize;
 
-
 #[derive(Debug, Clone)]
 pub struct AgentPathClaim {
     pub agent_label: String,
@@ -145,9 +144,6 @@ impl AgentRegistry {
     pub fn agents(&self) -> &[AgentCapability] {
         &self.agents
     }
-
-
-
 
     pub fn preferred_global_path_for(&self, label: &str) -> Option<&str> {
         self.global_path_claims

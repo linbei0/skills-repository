@@ -273,9 +273,11 @@ mod tests {
 
         let conn = open_connection(&db_path).unwrap();
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM security_reports WHERE skill_id = ?1", [skill_id], |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT COUNT(*) FROM security_reports WHERE skill_id = ?1",
+                [skill_id],
+                |row| row.get(0),
+            )
             .unwrap();
         let loaded = list_security_reports(&db_path).unwrap();
 
