@@ -102,6 +102,7 @@ export const useMarketStore = create<MarketStoreState>((set, get) => ({
         skillRoot: skill.skillRoot,
         name: skill.name,
         slug: skill.slug,
+        description: skill.description,
         version: skill.version,
         author: skill.author,
         requestedTargets: [],

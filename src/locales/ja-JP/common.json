@@ -137,7 +137,18 @@
       "medium": "中リスク",
       "blocked": "高リスクで阻止",
       "unknown": "不明"
-    }
+    },
+    "summaryTitle": "用途概要",
+    "descriptionMissing": "この skill にはまだ用途説明がありません。",
+    "deleteConfirmTitle": "削除を確認",
+    "deleteConfirmBody": "{{name}} をリポジトリから削除し、配布済みのすべての配置先も同時に削除します。",
+    "deleteConfirmLoading": "削除プレビュー情報を読み込み中...",
+    "deleteConfirmWarning": "この操作では、リポジトリ内のコピーに加えて、配布済みのコピーやシンボリックリンクも削除されます。内容を確認して続行してください。",
+    "deleteCanonicalPath": "リポジトリパス",
+    "deleteDistributedPaths": "配布先",
+    "deleteDistributedCount": "{{count}} 件のターゲット",
+    "deleteNoDistributions": "この skill はまだどのプロジェクトや Agent パスにも配布されていません。",
+    "confirmUninstall": "Skill を削除"
   },
   "skills": {
     "title": "My Skills",
@@ -363,6 +374,7 @@
     "managed": "管理対象",
     "unmanaged": "未管理",
     "footer": "アイコンは HackerNoon Pixel Icon Library（CC BY 4.0）を利用しています。",
-    "close": "閉じる"
+    "close": "閉じる",
+    "cancel": "キャンセル"
   }
 }

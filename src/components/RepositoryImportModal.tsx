@@ -193,6 +193,7 @@ export function RepositoryImportModal({
           repoUrl: candidate.repoUrl,
           version: candidate.version,
           author: candidate.author,
+          description: candidate.description,
         })
 
         if (result.blocked) {

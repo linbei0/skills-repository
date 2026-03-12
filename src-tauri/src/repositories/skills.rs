@@ -80,12 +80,13 @@ pub fn save_installed_skill(
             last_scanned_at,
             metadata_json
         )
-        VALUES (?1, ?2, ?3, NULL, ?4, ?5, ?6, ?7, ?8, ?9, NULL, 0, 'managed', ?10, ?11, ?12, ?13, ?14, ?15)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, 0, 'managed', ?11, ?12, ?13, ?14, ?15, ?16)
         ",
         params![
             skill_id,
             request.slug,
             request.name,
+            request.description,
             persisted_source_type,
             persisted_source_market,
             request.source_url,
@@ -198,6 +199,7 @@ pub struct InstalledSkillSummary {
 
 pub struct RepositorySkillRemovalPlan {
     pub skill_id: String,
+    pub skill_name: String,
     pub canonical_path: String,
     pub distribution_paths: Vec<String>,
 }
@@ -294,6 +296,7 @@ pub fn list_repository_skills(
             id,
             slug,
             name,
+            description,
             source_type,
             source_market,
             installed_at,
@@ -311,18 +314,19 @@ pub fn list_repository_skills(
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,
             row.get::<_, String>(2)?,
-            row.get::<_, String>(3)?,
-            row.get::<_, Option<String>>(4)?,
-            row.get::<_, i64>(5)?,
-            row.get::<_, String>(6)?,
-            row.get::<_, i64>(7)? != 0,
-            row.get::<_, String>(8)?,
+            row.get::<_, Option<String>>(3)?,
+            row.get::<_, String>(4)?,
+            row.get::<_, Option<String>>(5)?,
+            row.get::<_, i64>(6)?,
+            row.get::<_, String>(7)?,
+            row.get::<_, i64>(8)? != 0,
+            row.get::<_, String>(9)?,
         ))
     })?;
 
     let mut skills = Vec::new();
     for row in rows {
-        let (id, slug, name, source_type, source_market, installed_at, security_level, blocked, raw_path) =
+        let (id, slug, name, description, source_type, source_market, installed_at, security_level, blocked, raw_path) =
             row?;
         let skill_path = PathBuf::from(&raw_path);
         if !skill_path.exists() {
@@ -340,6 +344,7 @@ pub fn list_repository_skills(
             id,
             slug,
             name,
+            description,
             source_type,
             source_market,
             installed_at,
@@ -364,6 +369,7 @@ pub fn get_repository_skill_detail(
             id,
             slug,
             name,
+            description,
             canonical_path,
             source_type,
             source_market,
@@ -380,13 +386,14 @@ pub fn get_repository_skill_detail(
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, String>(2)?,
-                row.get::<_, String>(3)?,
+                row.get::<_, Option<String>>(3)?,
                 row.get::<_, String>(4)?,
-                row.get::<_, Option<String>>(5)?,
+                row.get::<_, String>(5)?,
                 row.get::<_, Option<String>>(6)?,
-                row.get::<_, i64>(7)?,
-                row.get::<_, String>(8)?,
-                row.get::<_, i64>(9)? != 0,
+                row.get::<_, Option<String>>(7)?,
+                row.get::<_, i64>(8)?,
+                row.get::<_, String>(9)?,
+                row.get::<_, i64>(10)? != 0,
             ))
         },
     )?;
@@ -395,6 +402,7 @@ pub fn get_repository_skill_detail(
         id,
         slug,
         name,
+        description,
         canonical_path,
         source_type,
         source_market,
@@ -427,6 +435,7 @@ pub fn get_repository_skill_detail(
         id,
         slug,
         name,
+        description,
         canonical_path: canonical_skill_dir.to_string_lossy().to_string(),
         source_type,
         source_market,
@@ -445,10 +454,10 @@ pub fn load_repository_skill_removal_plan(
 ) -> Result<RepositorySkillRemovalPlan> {
     let canonical_root = canonicalize_existing_path(canonical_store_dir)?;
     let conn = open_connection(path)?;
-    let canonical_path: String = conn.query_row(
-        "SELECT canonical_path FROM skills WHERE id = ?1 AND canonical_path IS NOT NULL",
+    let (skill_name, canonical_path): (String, String) = conn.query_row(
+        "SELECT name, canonical_path FROM skills WHERE id = ?1 AND canonical_path IS NOT NULL",
         params![skill_id],
-        |row| row.get(0),
+        |row| Ok((row.get(0)?, row.get(1)?)),
     )?;
 
     let canonical_skill_dir = canonicalize_existing_path(Path::new(&canonical_path))?;
@@ -473,6 +482,7 @@ pub fn load_repository_skill_removal_plan(
 
     Ok(RepositorySkillRemovalPlan {
         skill_id: skill_id.to_string(),
+        skill_name,
         canonical_path: canonical_skill_dir.to_string_lossy().to_string(),
         distribution_paths,
     })
@@ -533,6 +543,7 @@ mod tests {
             skill_root: Some("skills/demo-skill".into()),
             name: "Demo Skill".into(),
             slug: "demo-skill".into(),
+            description: Some("Improve confusing UX copy and labels.".into()),
             version: Some("main".into()),
             author: Some("tester".into()),
             requested_targets: Vec::<DistributionRequest>::new(),
@@ -567,6 +578,10 @@ mod tests {
         assert_eq!(skills.len(), 1);
         assert_eq!(skills[0].id, skill_id);
         assert_eq!(skills[0].source_market.as_deref(), Some("github"));
+        assert_eq!(
+            skills[0].description.as_deref(),
+            Some("Improve confusing UX copy and labels.")
+        );
     }
 
     #[test]
@@ -580,6 +595,10 @@ mod tests {
         assert_eq!(detail.id, skill_id);
         assert!(detail.skill_markdown.contains("demo skill"));
         assert_eq!(detail.source_market.as_deref(), Some("github"));
+        assert_eq!(
+            detail.description.as_deref(),
+            Some("Improve confusing UX copy and labels.")
+        );
     }
 
     #[test]

@@ -2,9 +2,32 @@ use anyhow::{anyhow, Context, Result};
 use std::{fs, path::Path};
 
 use crate::{
-    domain::types::{RepositorySkillDetail, RepositorySkillSummary, RepositoryUninstallResult},
+    domain::types::{
+        RepositorySkillDeletionPreview, RepositorySkillDetail, RepositorySkillSummary,
+        RepositoryUninstallResult,
+    },
     repositories::skills as skills_repository,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RemovalKind {
+    File,
+    Directory,
+}
+
+fn resolve_removal_kind(path: &Path, metadata: &fs::Metadata) -> RemovalKind {
+    if metadata.file_type().is_symlink() {
+        if path.is_dir() {
+            RemovalKind::Directory
+        } else {
+            RemovalKind::File
+        }
+    } else if metadata.is_file() {
+        RemovalKind::File
+    } else {
+        RemovalKind::Directory
+    }
+}
 
 fn remove_path_if_present(path: &Path) -> Result<()> {
     if !path.exists() {
@@ -13,7 +36,7 @@ fn remove_path_if_present(path: &Path) -> Result<()> {
 
     let metadata = fs::symlink_metadata(path)
         .with_context(|| format!("failed to read metadata for {}", path.display()))?;
-    if metadata.file_type().is_symlink() || metadata.is_file() {
+    if resolve_removal_kind(path, &metadata) == RemovalKind::File {
         fs::remove_file(path)
             .with_context(|| format!("failed to remove file {}", path.display()))?;
     } else {
@@ -37,6 +60,22 @@ pub fn get_repository_skill_detail(
     skill_id: &str,
 ) -> Result<RepositorySkillDetail> {
     skills_repository::get_repository_skill_detail(db_path, canonical_store_dir, skill_id)
+}
+
+pub fn get_repository_skill_deletion_preview(
+    db_path: &Path,
+    canonical_store_dir: &Path,
+    skill_id: &str,
+) -> Result<RepositorySkillDeletionPreview> {
+    let plan =
+        skills_repository::load_repository_skill_removal_plan(db_path, canonical_store_dir, skill_id)?;
+
+    Ok(RepositorySkillDeletionPreview {
+        skill_id: plan.skill_id,
+        skill_name: plan.skill_name,
+        canonical_path: plan.canonical_path,
+        distribution_paths: plan.distribution_paths,
+    })
 }
 
 pub fn uninstall_repository_skill(
@@ -79,7 +118,7 @@ mod tests {
         domain::types::{DistributionRequest, InstallSkillRequest},
         repositories::{db::run_migrations, distributions as distributions_repository, skills as skills_repository},
     };
-    use std::fs;
+    use std::{fs, io::ErrorKind};
     use tempfile::tempdir;
 
     fn setup_skill_fixture() -> (std::path::PathBuf, std::path::PathBuf, String, std::path::PathBuf) {
@@ -111,6 +150,7 @@ mod tests {
                 skill_root: Some("skills/demo-skill".into()),
                 name: "Demo".into(),
                 slug: "demo-skill".into(),
+                description: Some("Demo repository skill".into()),
                 version: None,
                 author: None,
                 requested_targets: Vec::<DistributionRequest>::new(),
@@ -152,5 +192,55 @@ mod tests {
         assert!(!canonical_skill_dir.exists());
         let remaining = skills_repository::list_repository_skills(&db_path, &canonical_store_dir).unwrap();
         assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn returns_deletion_preview_with_distribution_paths() {
+        let (db_path, canonical_store_dir, skill_id, distributed_path) = setup_skill_fixture();
+
+        let preview =
+            get_repository_skill_deletion_preview(&db_path, &canonical_store_dir, &skill_id).unwrap();
+
+        assert_eq!(preview.skill_id, skill_id);
+        assert_eq!(preview.skill_name, "Demo");
+        assert_eq!(preview.distribution_paths, vec![distributed_path.to_string_lossy().to_string()]);
+    }
+
+    #[test]
+    fn resolves_directory_symlink_as_directory_removal_kind() {
+        let root = tempfile::tempdir().unwrap();
+        let target_dir = root.path().join("target-dir");
+        fs::create_dir_all(&target_dir).unwrap();
+        let metadata = fs::symlink_metadata(&target_dir).unwrap();
+
+        assert_eq!(resolve_removal_kind(&target_dir, &metadata), RemovalKind::Directory);
+    }
+
+    #[test]
+    fn removes_directory_symlink_without_removing_source_directory() {
+        let root = tempfile::tempdir().unwrap();
+        let source_dir = root.path().join("source");
+        let link_dir = root.path().join("link");
+        fs::create_dir_all(&source_dir).unwrap();
+        fs::write(source_dir.join("SKILL.md"), "# demo").unwrap();
+
+        #[cfg(target_os = "windows")]
+        let create_result = std::os::windows::fs::symlink_dir(&source_dir, &link_dir);
+        #[cfg(not(target_os = "windows"))]
+        let create_result = std::os::unix::fs::symlink(&source_dir, &link_dir);
+
+        if let Err(error) = create_result {
+            #[cfg(target_os = "windows")]
+            if error.kind() == ErrorKind::PermissionDenied {
+                return;
+            }
+            panic!("failed to create symlink for test: {}", error);
+        }
+
+        remove_path_if_present(&link_dir).unwrap();
+
+        assert!(!link_dir.exists());
+        assert!(source_dir.exists());
+        assert!(source_dir.join("SKILL.md").exists());
     }
 }

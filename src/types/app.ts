@@ -42,6 +42,7 @@ export interface RepositorySkillSummary {
   id: string
   slug: string
   name: string
+  description?: string | null
   sourceType: string
   sourceMarket?: string | null
   installedAt: number
@@ -53,6 +54,7 @@ export interface RepositorySkillDetail {
   id: string
   slug: string
   name: string
+  description?: string | null
   canonicalPath: string
   sourceType: string
   sourceMarket?: string | null
@@ -66,6 +68,13 @@ export interface RepositorySkillDetail {
 export interface RepositoryUninstallResult {
   skillId: string
   removedPaths: string[]
+}
+
+export interface RepositorySkillDeletionPreview {
+  skillId: string
+  skillName: string
+  canonicalPath: string
+  distributionPaths: string[]
 }
 
 export interface AgentGlobalSkillEntry {
@@ -161,6 +170,7 @@ export interface InstallSkillRequest {
   skillRoot?: string | null
   name: string
   slug: string
+  description?: string | null
   version?: string | null
   author?: string | null
   requestedTargets: DistributionRequest[]
@@ -211,6 +221,7 @@ export interface ImportRepositorySkillRequest {
   repoUrl?: string | null
   version?: string | null
   author?: string | null
+  description?: string | null
 }
 
 export interface SecurityIssue {

@@ -15,6 +15,7 @@ import type {
   ResolveRepositoryImportRequest,
   ResolveRepositoryImportResult,
   RepositorySkillDetail,
+  RepositorySkillDeletionPreview,
   RepositorySkillSummary,
   RepositoryUninstallResult,
   SecurityReport,
@@ -36,6 +37,9 @@ export const listRepositorySkills = () =>
 
 export const getRepositorySkillDetail = (skillId: string) =>
   invoke<RepositorySkillDetail>('get_repository_skill_detail', { skillId })
+
+export const getRepositorySkillDeletionPreview = (skillId: string) =>
+  invoke<RepositorySkillDeletionPreview>('get_repository_skill_deletion_preview', { skillId })
 
 export const uninstallRepositorySkill = (skillId: string) =>
   invoke<RepositoryUninstallResult>('uninstall_repository_skill', { skillId })

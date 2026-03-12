@@ -44,6 +44,11 @@ const resolveStatusKey = (securityLevel: string, blocked: boolean) => {
   return 'unknown'
 }
 
+const resolveDescription = (
+  value: string | null | undefined,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) => (value?.trim() ? value : t('repository.descriptionMissing'))
+
 export function RepositoryPage() {
   const { t, i18n } = useTranslation()
   const [importOpen, setImportOpen] = useState(false)
@@ -56,6 +61,9 @@ export function RepositoryPage() {
   const detailLoading = useRepositoryStore((state) => state.detailLoading)
   const detailError = useRepositoryStore((state) => state.detailError)
   const uninstallingSkillId = useRepositoryStore((state) => state.uninstallingSkillId)
+  const deletePreview = useRepositoryStore((state) => state.deletePreview)
+  const deletePreviewLoading = useRepositoryStore((state) => state.deletePreviewLoading)
+  const deletePreviewError = useRepositoryStore((state) => state.deletePreviewError)
   const distributionOpen = useRepositoryStore((state) => state.distributionOpen)
   const distributing = useRepositoryStore((state) => state.distributing)
   const distributionError = useRepositoryStore((state) => state.distributionError)
@@ -68,6 +76,8 @@ export function RepositoryPage() {
   const refresh = useRepositoryStore((state) => state.refresh)
   const loadDetail = useRepositoryStore((state) => state.loadDetail)
   const closeDetail = useRepositoryStore((state) => state.closeDetail)
+  const loadDeletePreview = useRepositoryStore((state) => state.loadDeletePreview)
+  const clearDeletePreview = useRepositoryStore((state) => state.clearDeletePreview)
   const uninstall = useRepositoryStore((state) => state.uninstall)
   const openDistribution = useRepositoryStore((state) => state.openDistribution)
   const closeDistribution = useRepositoryStore((state) => state.closeDistribution)
@@ -103,6 +113,14 @@ export function RepositoryPage() {
   const handleCloseDistribution = () => {
     closeDistribution()
     resetDistributionState()
+  }
+
+  const handleOpenDeletePreview = async (skillId: string) => {
+    await loadDeletePreview(skillId)
+  }
+
+  const handleCloseDeletePreview = () => {
+    clearDeletePreview()
   }
 
   const handleResolveImport = async (sourceKind: RepositoryImportSourceKind, input: string) => {
@@ -188,9 +206,14 @@ export function RepositoryPage() {
                         <div className="flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary">
                           <i className="hn hn-code-block"></i>
                         </div>
-                        <span className="font-bold text-base-content/90 transition-colors group-hover:text-primary">
-                          {item.name}
-                        </span>
+                        <div className="min-w-0">
+                          <p className="font-bold text-base-content/90 transition-colors group-hover:text-primary">
+                            {item.name}
+                          </p>
+                          <p className="mt-1 line-clamp-2 text-sm leading-6 text-base-content/50">
+                            {resolveDescription(item.description, t)}
+                          </p>
+                        </div>
                       </div>
                     </td>
                     <td className="text-center text-sm text-base-content/70">
@@ -230,7 +253,7 @@ export function RepositoryPage() {
                         </button>
                         <button
                           className="btn btn-square btn-ghost btn-sm text-error/70 hover:bg-error/10 hover:text-error"
-                          onClick={() => void uninstall(item.id)}
+                          onClick={() => void handleOpenDeletePreview(item.id)}
                           disabled={uninstallingSkillId === item.id}
                           title={t('repository.uninstall')}
                         >
@@ -263,6 +286,14 @@ export function RepositoryPage() {
                 </h3>
                 {selectedDetail ? (
                   <div className="mt-3 flex flex-col gap-2">
+                    <div className="rounded-lg border border-[var(--border-subtle)] bg-base-200/40 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-base-content/40">
+                        {t('repository.summaryTitle')}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-base-content/75">
+                        {resolveDescription(selectedDetail.description, t)}
+                      </p>
+                    </div>
                     <p className="break-all font-mono text-xs text-base-content/40">
                       {normalizeDisplayPath(selectedDetail.canonicalPath)}
                     </p>
@@ -313,6 +344,107 @@ export function RepositoryPage() {
                   </pre>
                 </div>
               ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deletePreview || deletePreviewLoading || deletePreviewError ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg-modal-overlay)] p-6 backdrop-blur-sm transition-all duration-300">
+          <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-modal-panel)] shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--border-subtle)] bg-base-100/50 px-8 py-6 backdrop-blur-md">
+              <div className="min-w-0">
+                <h3 className="truncate text-2xl font-bold text-base-content">
+                  {t('repository.deleteConfirmTitle')}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-base-content/60">
+                  {deletePreview
+                    ? t('repository.deleteConfirmBody', { name: deletePreview.skillName })
+                    : t('repository.deleteConfirmLoading')}
+                </p>
+              </div>
+              <button
+                className="btn btn-circle btn-ghost btn-sm text-base-content/50 hover:bg-base-content/10 hover:text-base-content"
+                onClick={handleCloseDeletePreview}
+              >
+                <i className="hn hn-times text-lg"></i>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-8 custom-scrollbar">
+              {deletePreviewLoading ? (
+                <div className="flex justify-center py-12">
+                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                </div>
+              ) : deletePreviewError ? (
+                <div className="rounded border border-error/20 bg-error/5 p-4 text-sm text-error">
+                  {deletePreviewError}
+                </div>
+              ) : deletePreview ? (
+                <div className="space-y-5">
+                  <div className="rounded-lg border border-warning/20 bg-warning/5 p-4 text-sm leading-6 text-base-content/75">
+                    {t('repository.deleteConfirmWarning')}
+                  </div>
+                  <div className="rounded-lg border border-[var(--border-subtle)] bg-base-200/30 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-base-content/40">
+                      {t('repository.deleteCanonicalPath')}
+                    </p>
+                    <p className="mt-2 break-all font-mono text-xs text-base-content/50">
+                      {normalizeDisplayPath(deletePreview.canonicalPath)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-[var(--border-subtle)] bg-base-200/30 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-base-content/40">
+                        {t('repository.deleteDistributedPaths')}
+                      </p>
+                      <span className="badge badge-outline">
+                        {t('repository.deleteDistributedCount', {
+                          count: deletePreview.distributionPaths.length,
+                        })}
+                      </span>
+                    </div>
+                    {deletePreview.distributionPaths.length === 0 ? (
+                      <p className="mt-2 text-sm text-base-content/60">
+                        {t('repository.deleteNoDistributions')}
+                      </p>
+                    ) : (
+                      <ul className="mt-3 space-y-2">
+                        {deletePreview.distributionPaths.map((path) => (
+                          <li
+                            key={path}
+                            className="break-all rounded bg-base-100/60 px-3 py-2 font-mono text-xs text-base-content/55"
+                          >
+                            {normalizeDisplayPath(path)}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-[var(--border-subtle)] px-8 py-5">
+              <button
+                className="btn btn-ghost"
+                onClick={handleCloseDeletePreview}
+                disabled={uninstallingSkillId !== null}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={() => deletePreview ? void uninstall(deletePreview.skillId) : undefined}
+                disabled={!deletePreview || uninstallingSkillId === deletePreview.skillId}
+              >
+                {deletePreview && uninstallingSkillId === deletePreview.skillId ? (
+                  <span className="loading loading-spinner loading-xs"></span>
+                ) : (
+                  <i className="hn hn-trash"></i>
+                )}
+                {t('repository.confirmUninstall')}
+              </button>
             </div>
           </div>
         </div>

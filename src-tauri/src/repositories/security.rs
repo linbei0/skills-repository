@@ -137,6 +137,7 @@ mod tests {
             skill_root: None,
             name: name.into(),
             slug: slug.into(),
+            description: Some("Demo skill description".into()),
             version: Some("main".into()),
             author: Some("tester".into()),
             requested_targets: Vec::new(),

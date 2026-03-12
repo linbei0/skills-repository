@@ -9,8 +9,9 @@ use crate::{
             DistributionResult, ImportRepositorySkillRequest, InjectTemplateRequest,
             InjectTemplateResult, InstallSkillRequest, InstallSkillResult,
             MarketSearchRequest, MarketSearchResponse, RepositorySkillDetail,
-            RepositorySkillSummary, RepositoryUninstallResult, ResolveRepositoryImportRequest,
-            ResolveRepositoryImportResult, SaveTemplateRequest, SecurityReport, TemplateRecord,
+            RepositorySkillDeletionPreview, RepositorySkillSummary, RepositoryUninstallResult,
+            ResolveRepositoryImportRequest, ResolveRepositoryImportResult, SaveTemplateRequest,
+            SecurityReport, TemplateRecord,
         },
     },
     repositories::skills as skills_repository,
@@ -257,6 +258,20 @@ pub fn batch_distribute_repository_skills(
             custom_relative_path: request.custom_relative_path,
             install_mode: request.install_mode,
         },
+    )
+    .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn get_repository_skill_deletion_preview(
+    state: State<'_, AppState>,
+    skill_id: String,
+) -> Result<RepositorySkillDeletionPreview, String> {
+    log::info!("get_repository_skill_deletion_preview invoked");
+    repository::get_repository_skill_deletion_preview(
+        &state.paths.db_file,
+        &state.paths.canonical_store_dir,
+        &skill_id,
     )
     .map_err(|error| error.to_string())
 }

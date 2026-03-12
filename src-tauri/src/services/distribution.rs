@@ -41,7 +41,13 @@ fn remove_existing_target(path: &Path) -> Result<()> {
     }
 
     let metadata = fs::symlink_metadata(path)?;
-    if metadata.file_type().is_symlink() || metadata.is_file() {
+    if metadata.file_type().is_symlink() {
+        if path.is_dir() {
+            fs::remove_dir(path)?;
+        } else {
+            fs::remove_file(path)?;
+        }
+    } else if metadata.is_file() {
         fs::remove_file(path)?;
     } else {
         fs::remove_dir_all(path)?;
@@ -198,6 +204,7 @@ mod tests {
                 skill_root: Some("skills/demo-skill".into()),
                 name: "Demo Skill".into(),
                 slug: "demo-skill".into(),
+                description: Some("Demo skill description".into()),
                 version: Some("main".into()),
                 author: Some("tester".into()),
                 requested_targets: Vec::new(),

@@ -187,6 +187,7 @@ mod tests {
                 skill_root: Some(format!("skills/{}", slug)),
                 name: name.into(),
                 slug: slug.into(),
+                description: Some(format!("Description for {}", slug)),
                 version: Some("main".into()),
                 author: Some("tester".into()),
                 requested_targets: Vec::<DistributionRequest>::new(),

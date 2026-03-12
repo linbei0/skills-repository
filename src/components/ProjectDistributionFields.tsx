@@ -80,6 +80,8 @@ export function ProjectDistributionFields({
             <button 
               className="btn h-12 min-h-[3rem] border-[var(--border-subtle)] bg-base-200/50 text-base-content hover:bg-base-200 hover:border-[var(--border-subtle)]" 
               onClick={onChooseProjectDirectory}
+              title={labelProjectPicker}
+              aria-label={labelProjectPicker}
             >
               <i className="hn hn-folder-open mr-2"></i>
               {labelChooseDirectory}

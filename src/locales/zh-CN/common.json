@@ -137,7 +137,18 @@
       "medium": "中风险",
       "blocked": "高风险已阻断",
       "unknown": "未知"
-    }
+    },
+    "summaryTitle": "用途摘要",
+    "descriptionMissing": "这个 skill 暂未提供用途说明。",
+    "deleteConfirmTitle": "确认删除",
+    "deleteConfirmBody": "你将从仓库中删除 {{name}}，并同时移除所有已分发目标。",
+    "deleteConfirmLoading": "正在加载删除预检信息...",
+    "deleteConfirmWarning": "此操作会删除仓库副本以及所有已分发的副本或符号链接，请确认后继续。",
+    "deleteCanonicalPath": "仓库路径",
+    "deleteDistributedPaths": "已分发位置",
+    "deleteDistributedCount": "{{count}} 个目标",
+    "deleteNoDistributions": "这个 skill 还没有分发到任何项目或 Agent 路径。",
+    "confirmUninstall": "删除 Skill"
   },
   "skills": {
     "title": "我的 Skills",
@@ -363,6 +374,7 @@
     "managed": "受管",
     "unmanaged": "未受管",
     "footer": "图标来自 HackerNoon Pixel Icon Library（CC BY 4.0）。",
-    "close": "关闭"
+    "close": "关闭",
+    "cancel": "取消"
   }
 }

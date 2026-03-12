@@ -137,7 +137,18 @@
       "medium": "Medium risk",
       "blocked": "Blocked",
       "unknown": "Unknown"
-    }
+    },
+    "summaryTitle": "Purpose summary",
+    "descriptionMissing": "No usage summary was provided for this skill yet.",
+    "deleteConfirmTitle": "Confirm removal",
+    "deleteConfirmBody": "You are about to remove {{name}} from the repository and all distributed targets.",
+    "deleteConfirmLoading": "Loading deletion preview...",
+    "deleteConfirmWarning": "This action deletes the repository copy and any distributed copies or symlinks. Please confirm before continuing.",
+    "deleteCanonicalPath": "Repository path",
+    "deleteDistributedPaths": "Distributed locations",
+    "deleteDistributedCount": "{{count}} targets",
+    "deleteNoDistributions": "This skill has not been distributed to any project or agent path.",
+    "confirmUninstall": "Delete skill"
   },
   "skills": {
     "title": "My Skills",
@@ -363,6 +374,7 @@
     "managed": "Managed",
     "unmanaged": "Unmanaged",
     "footer": "Icons powered by HackerNoon Pixel Icon Library (CC BY 4.0).",
-    "close": "Close"
+    "close": "Close",
+    "cancel": "Cancel"
   }
 }

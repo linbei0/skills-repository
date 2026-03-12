@@ -383,6 +383,7 @@ mod tests {
             skill_root: None,
             name: "Demo Skill".into(),
             slug: "demo-skill".into(),
+            description: Some("Improves demo workflows.".into()),
             version: Some("main".into()),
             author: Some("tester".into()),
             requested_targets: Vec::new(),
@@ -425,6 +426,39 @@ mod tests {
         assert!(PathBuf::from(&result.canonical_path)
             .join("SKILL.md")
             .exists());
+    }
+
+    #[test]
+    fn persists_description_when_installing_skill() {
+        let dir = tempdir().unwrap();
+        let paths = test_paths(dir.path());
+        run_migrations(&paths.db_file).unwrap();
+
+        let zip_path = dir.path().join("skill.zip");
+        write_zip(
+            &zip_path,
+            &[
+                ("demo-skill/SKILL.md", "# demo"),
+                ("demo-skill/README.md", "ok"),
+            ],
+        );
+
+        let result = install_skill(
+            &paths,
+            &request(zip_path.to_string_lossy().to_string()),
+        )
+        .unwrap();
+
+        let conn = open_connection(&paths.db_file).unwrap();
+        let description: Option<String> = conn
+            .query_row(
+                "SELECT description FROM skills WHERE id = ?1",
+                [&result.skill_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+
+        assert_eq!(description.as_deref(), Some("Improves demo workflows."));
     }
 
     #[test]

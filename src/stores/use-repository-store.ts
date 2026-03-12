@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import {
   batchDistributeRepositorySkills as batchDistributeRepositorySkillsCommand,
+  getRepositorySkillDeletionPreview as getRepositorySkillDeletionPreviewCommand,
   getRepositorySkillDetail as getRepositorySkillDetailCommand,
   importRepositorySkill as importRepositorySkillCommand,
   listRepositorySkills as listRepositorySkillsCommand,
@@ -13,6 +14,7 @@ import type {
   InstallSkillResult,
   ImportRepositorySkillRequest,
   RepositorySkillDetail,
+  RepositorySkillDeletionPreview,
   RepositorySkillSummary,
   ResolveRepositoryImportRequest,
   ResolveRepositoryImportResult,
@@ -27,6 +29,9 @@ interface RepositoryStoreState {
   detailLoading: boolean
   detailError: string | null
   uninstallingSkillId: string | null
+  deletePreview: RepositorySkillDeletionPreview | null
+  deletePreviewLoading: boolean
+  deletePreviewError: string | null
   distributionOpen: boolean
   distributing: boolean
   distributionError: string | null
@@ -40,6 +45,8 @@ interface RepositoryStoreState {
   loadDetail: (skillId: string) => Promise<void>
   closeDetail: () => void
   uninstall: (skillId: string) => Promise<void>
+  loadDeletePreview: (skillId: string) => Promise<void>
+  clearDeletePreview: () => void
   openDistribution: () => void
   closeDistribution: () => void
   batchDistributeSkills: (request: BatchDistributeRepositorySkillsRequest) => Promise<BatchDistributeResult>
@@ -58,6 +65,9 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
   detailLoading: false,
   detailError: null,
   uninstallingSkillId: null,
+  deletePreview: null,
+  deletePreviewLoading: false,
+  deletePreviewError: null,
   distributionOpen: false,
   distributing: false,
   distributionError: null,
@@ -93,6 +103,21 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
     }
   },
   closeDetail: () => set({ selectedDetail: null, detailLoading: false, detailError: null }),
+  loadDeletePreview: async (skillId) => {
+    set({ deletePreviewLoading: true, deletePreviewError: null, deletePreview: null })
+    try {
+      const deletePreview = await getRepositorySkillDeletionPreviewCommand(skillId)
+      set({ deletePreview, deletePreviewLoading: false, deletePreviewError: null })
+    } catch (error) {
+      set({
+        deletePreviewLoading: false,
+        deletePreviewError: error instanceof Error ? error.message : String(error),
+      })
+      throw error
+    }
+  },
+  clearDeletePreview: () =>
+    set({ deletePreview: null, deletePreviewLoading: false, deletePreviewError: null }),
   uninstall: async (skillId) => {
     set({ uninstallingSkillId: skillId })
     try {
@@ -100,7 +125,13 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
       set((state) => ({
         items: state.items.filter((item) => item.id !== result.skillId),
         selectedDetail: state.selectedDetail?.id === result.skillId ? null : state.selectedDetail,
+        deletePreview: state.deletePreview?.skillId === result.skillId ? null : state.deletePreview,
+        deletePreviewError: null,
       }))
+    } catch (error) {
+      set({
+        deletePreviewError: error instanceof Error ? error.message : String(error),
+      })
     } finally {
       set({ uninstallingSkillId: null })
     }

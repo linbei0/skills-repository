@@ -310,6 +310,32 @@ fn local_candidate_display_name(skill_root: &Path) -> String {
         .to_string()
 }
 
+fn parse_skill_frontmatter_description(skill_root: &Path) -> Option<String> {
+    let content = fs::read_to_string(skill_root.join("SKILL.md")).ok()?;
+    let normalized = content.replace("\r\n", "\n");
+    let mut lines = normalized.lines();
+
+    if lines.next()? != "---" {
+        return None;
+    }
+
+    for line in lines {
+        if line.trim() == "---" {
+            break;
+        }
+
+        let trimmed = line.trim();
+        if let Some(value) = trimmed.strip_prefix("description:") {
+            let value = value.trim().trim_matches('"').trim_matches('\'').trim();
+            if !value.is_empty() {
+                return Some(value.to_string());
+            }
+        }
+    }
+
+    None
+}
+
 fn build_local_candidates(
     scan_root: &Path,
     source_url: &str,
@@ -330,6 +356,7 @@ fn build_local_candidates(
                 .replace('\\', "/");
             let name = local_candidate_display_name(&skill_root);
             let slug = slugify_name(&name);
+            let description = parse_skill_frontmatter_description(&skill_root);
 
             Ok(ResolvedRepositoryImportCandidate {
                 name,
@@ -344,7 +371,7 @@ fn build_local_candidates(
                 repo_url: None,
                 version: None,
                 author: None,
-                description: None,
+                description,
             })
         })
         .collect()
@@ -473,6 +500,7 @@ fn build_install_request_for_import(request: &ImportRepositorySkillRequest) -> R
                 skill_root: Some(request.selected_skill_root.clone()),
                 name: request.name.clone(),
                 slug: request.slug.clone(),
+                description: request.description.clone(),
                 version: Some(default_branch),
                 author: request.author.clone(),
                 requested_targets: Vec::new(),
@@ -498,6 +526,7 @@ fn build_install_request_for_import(request: &ImportRepositorySkillRequest) -> R
                 skill_root: None,
                 name: request.name.clone(),
                 slug: request.slug.clone(),
+                description: request.description.clone(),
                 version: None,
                 author: request.author.clone(),
                 requested_targets: Vec::new(),
@@ -515,6 +544,7 @@ fn build_install_request_for_import(request: &ImportRepositorySkillRequest) -> R
             skill_root: Some(request.selected_skill_root.clone()),
             name: request.name.clone(),
             slug: request.slug.clone(),
+            description: request.description.clone(),
             version: None,
             author: request.author.clone(),
             requested_targets: Vec::new(),
@@ -753,12 +783,19 @@ mod tests {
                 repo_url: None,
                 version: None,
                 author: None,
+                description: Some("Import description".into()),
             },
         )
         .unwrap();
 
         assert!(!result.blocked);
         assert!(PathBuf::from(result.canonical_path).join("SKILL.md").exists());
+
+        let conn = crate::repositories::db::open_connection(&paths.db_file).unwrap();
+        let description: Option<String> = conn
+            .query_row("SELECT description FROM skills WHERE slug = 'demo-skill'", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(description.as_deref(), Some("Import description"));
     }
 
     #[test]
@@ -790,6 +827,7 @@ mod tests {
                 repo_url: None,
                 version: None,
                 author: None,
+                description: Some("Adapt layouts across screens.".into()),
             },
         )
         .unwrap();
@@ -821,10 +859,67 @@ mod tests {
             repo_url: None,
             version: None,
             author: None,
+            description: Some("Import description".into()),
         };
 
         import_repository_skill(&paths, &request).unwrap();
         let error = import_repository_skill(&paths, &request).unwrap_err();
         assert!(error.to_string().contains("already exists"));
+    }
+
+    #[test]
+    fn resolves_local_directory_candidate_description_from_skill_frontmatter() {
+        let dir = tempdir().unwrap();
+        let source_dir = dir.path().join("source").join("polish");
+        fs::create_dir_all(&source_dir).unwrap();
+        fs::write(
+            source_dir.join("SKILL.md"),
+            "---\nname: polish\ndescription: Final quality pass before shipping.\n---\n\nBody",
+        )
+        .unwrap();
+
+        let result = resolve_local_directory_import_source(&ResolveRepositoryImportRequest {
+            source_kind: "local_directory".into(),
+            input: source_dir.to_string_lossy().to_string(),
+        })
+        .unwrap();
+
+        assert_eq!(
+            result.candidates[0].description.as_deref(),
+            Some("Final quality pass before shipping.")
+        );
+    }
+
+    #[test]
+    fn resolves_local_zip_candidate_description_from_skill_frontmatter() {
+        let dir = tempdir().unwrap();
+        let paths = test_paths(dir.path());
+        let zip_path = dir.path().join("polish.zip");
+
+        super::super::install::ensure_clean_dir(&paths.temp_dir).unwrap();
+        let file = fs::File::create(&zip_path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        let options = zip::write::SimpleFileOptions::default();
+        zip.start_file("polish/SKILL.md", options).unwrap();
+        use std::io::Write as _;
+        zip.write_all(
+            b"---\nname: polish\ndescription: Final quality pass before shipping.\n---\n\nBody",
+        )
+        .unwrap();
+        zip.finish().unwrap();
+
+        let result = resolve_local_zip_import_source(
+            &paths,
+            &ResolveRepositoryImportRequest {
+                source_kind: "local_zip".into(),
+                input: zip_path.to_string_lossy().to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            result.candidates[0].description.as_deref(),
+            Some("Final quality pass before shipping.")
+        );
     }
 }

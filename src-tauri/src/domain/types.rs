@@ -109,6 +109,7 @@ pub struct RepositorySkillSummary {
     pub id: String,
     pub slug: String,
     pub name: String,
+    pub description: Option<String>,
     pub source_type: String,
     pub source_market: Option<String>,
     pub installed_at: i64,
@@ -122,6 +123,7 @@ pub struct RepositorySkillDetail {
     pub id: String,
     pub slug: String,
     pub name: String,
+    pub description: Option<String>,
     pub canonical_path: String,
     pub source_type: String,
     pub source_market: Option<String>,
@@ -137,6 +139,15 @@ pub struct RepositorySkillDetail {
 pub struct RepositoryUninstallResult {
     pub skill_id: String,
     pub removed_paths: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepositorySkillDeletionPreview {
+    pub skill_id: String,
+    pub skill_name: String,
+    pub canonical_path: String,
+    pub distribution_paths: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -202,6 +213,7 @@ pub struct InstallSkillRequest {
     pub skill_root: Option<String>,
     pub name: String,
     pub slug: String,
+    pub description: Option<String>,
     pub version: Option<String>,
     pub author: Option<String>,
     pub requested_targets: Vec<DistributionRequest>,
@@ -260,6 +272,7 @@ pub struct ImportRepositorySkillRequest {
     pub repo_url: Option<String>,
     pub version: Option<String>,
     pub author: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
