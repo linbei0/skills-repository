@@ -76,7 +76,7 @@ export function ProjectDistributionFields({
             />
           </label>
           <div className="form-control">
-            <span className="label-text mb-2 block opacity-0 select-none">.</span>
+            <span className="label-text mb-2 block opacity-0 select-none">{labelProjectPicker}</span>
             <button 
               className="btn h-12 min-h-[3rem] border-[var(--border-subtle)] bg-base-200/50 text-base-content hover:bg-base-200 hover:border-[var(--border-subtle)]" 
               onClick={onChooseProjectDirectory}
