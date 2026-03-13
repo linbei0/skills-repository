@@ -1,0 +1,19 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple Rounded Square Background -->
+  <rect x="128" y="128" width="768" height="768" rx="160" fill="url(#cube_gradient)"/>
+  
+  <!-- Minimalist Isometric Cube inside -->
+  <g transform="translate(512 512) scale(0.6)">
+    <path d="M0 -300 L260 -150 V150 L0 300 L-260 150 V-150 Z" fill="#FFFFFF"/>
+    <path d="M0 -300 L260 -150 L0 0 L-260 -150 Z" fill="#E8EFEC"/> <!-- Top -->
+    <path d="M-260 -150 L0 0 V300 L-260 150 Z" fill="#D6E0DC"/> <!-- Left -->
+    <path d="M260 -150 L0 0 V300 L260 150 Z" fill="#BCCCC6"/> <!-- Right -->
+  </g>
+
+  <defs>
+    <linearGradient id="cube_gradient" x1="128" y1="128" x2="896" y2="896" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#139A74"/>
+      <stop offset="100%" stop-color="#0C6F55"/>
+    </linearGradient>
+  </defs>
+</svg>

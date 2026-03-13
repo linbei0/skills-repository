@@ -1,0 +1,27 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Hexagon Container -->
+  <path d="M512 64 L896 288 V736 L512 960 L128 736 V288 Z" fill="url(#hex_gradient)"/>
+  
+  <!-- Inner Network Nodes -->
+  <g stroke="#FFFFFF" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Center Node -->
+    <circle cx="512" cy="512" r="64" fill="#FFFFFF" stroke="none"/>
+    
+    <!-- Connections -->
+    <line x1="512" y1="512" x2="512" y2="256"/>
+    <line x1="512" y1="512" x2="736" y2="640"/>
+    <line x1="512" y1="512" x2="288" y2="640"/>
+    
+    <!-- Outer Nodes -->
+    <circle cx="512" cy="256" r="48" fill="none"/>
+    <circle cx="736" cy="640" r="48" fill="none"/>
+    <circle cx="288" cy="640" r="48" fill="none"/>
+  </g>
+
+  <defs>
+    <linearGradient id="hex_gradient" x1="512" y1="64" x2="512" y2="960" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3FC7A0"/>
+      <stop offset="100%" stop-color="#139A74"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -53,7 +53,7 @@ export function SettingsPage() {
       {
         value: 'system',
         label: t('settings.themeOptions.system'),
-        icon: 'hn-laptop',
+        icon: 'hn-themes',
       },
       {
         value: 'light',

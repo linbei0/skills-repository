@@ -1,0 +1,36 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle (Optional container for App Icon context) -->
+  <rect x="64" y="64" width="896" height="896" rx="224" fill="url(#bg_gradient)"/>
+  
+  <!-- Pixel Vault Structure -->
+  <g filter="url(#shadow)">
+    <!-- Main Body: 3D Pixel Cube structure -->
+    <path d="M256 320 L512 192 L768 320 V704 L512 832 L256 704 Z" fill="#0E1514"/>
+    
+    <!-- Top Face (Lighter) -->
+    <path d="M256 320 L512 192 L768 320 L512 448 Z" fill="#3FC7A0"/>
+    
+    <!-- Left Face (Medium) -->
+    <path d="M256 320 L512 448 V832 L256 704 Z" fill="#1A8C62"/>
+    
+    <!-- Right Face (Darker) -->
+    <path d="M512 448 L768 320 V704 L512 832 Z" fill="#0C6F55"/>
+    
+    <!-- "Pixel" Details (Simulating the pixel art style) -->
+    <rect x="448" y="384" width="128" height="128" fill="#FFFFFF" opacity="0.2" transform="skewY(26.5)"/>
+    <rect x="320" y="512" width="64" height="64" fill="#FFFFFF" opacity="0.1" transform="skewY(-26.5)"/>
+    
+    <!-- Center Symbol: "S" or Lock/Keyhole -->
+    <path d="M512 560 L576 528 V600 L512 632 L448 600 V528 Z" fill="#F3F6F4"/>
+  </g>
+
+  <defs>
+    <linearGradient id="bg_gradient" x1="64" y1="64" x2="960" y2="960" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#16211F"/>
+      <stop offset="100%" stop-color="#0E1514"/>
+    </linearGradient>
+    <filter id="shadow" x="200" y="150" width="624" height="750" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+</svg>
