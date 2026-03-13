@@ -16,6 +16,7 @@ use crate::{
             ResolveRepositoryImportResult, ResolvedRepositoryImportCandidate,
         },
     },
+    path_utils::display_path,
     repositories::skills as skills_repository,
     services::install,
 };
@@ -64,14 +65,7 @@ fn slugify_name(value: &str) -> String {
 }
 
 fn display_local_path(path: &Path) -> String {
-    let value = path.to_string_lossy().to_string();
-    if let Some(stripped) = value.strip_prefix(r"\\?\UNC\") {
-        format!(r"\\{}", stripped)
-    } else if let Some(stripped) = value.strip_prefix(r"\\?\") {
-        stripped.to_string()
-    } else {
-        value
-    }
+    display_path(&path.to_string_lossy())
 }
 
 fn parse_github_input(input: &str) -> Result<ParsedGithubInput> {

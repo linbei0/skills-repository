@@ -1,7 +1,7 @@
 use super::agent_registry::AgentCapability;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub language: String,
@@ -10,9 +10,11 @@ pub struct AppSettings {
     pub visible_skills_target_ids: Vec<String>,
     #[serde(default)]
     pub custom_skills_targets: Vec<CustomSkillsTarget>,
+    #[serde(default)]
+    pub repository_storage_path: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct CustomSkillsTarget {
     pub id: String,
@@ -50,6 +52,31 @@ pub struct BootstrapPayload {
     pub system: SystemInfo,
     pub settings: AppSettings,
     pub agents: Vec<AgentCapability>,
+    pub repository_storage: RepositoryStorageInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RepositoryStorageInfo {
+    pub default_path: String,
+    pub current_path: String,
+    pub is_custom: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MigrateRepositoryStorageRequest {
+    pub target_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MigrateRepositoryStorageResult {
+    pub previous_path: String,
+    pub current_path: String,
+    pub migrated_skill_count: usize,
+    pub removed_old_path: bool,
+    pub cleanup_warning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

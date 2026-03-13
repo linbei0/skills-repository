@@ -347,6 +347,7 @@ mod tests {
                     label: "Demo IDE".into(),
                     relative_path: ".demo/skills".into(),
                 }],
+                repository_storage_path: None,
             },
         )
         .unwrap();

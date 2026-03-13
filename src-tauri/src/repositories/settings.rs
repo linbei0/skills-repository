@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension};
 use std::path::Path;
 use time::OffsetDateTime;
 
@@ -7,7 +7,7 @@ use crate::domain::types::AppSettings;
 
 use super::db::open_connection;
 
-const SETTINGS_KEY: &str = "app_settings";
+pub(crate) const SETTINGS_KEY: &str = "app_settings";
 
 pub fn load_settings(path: &Path) -> Result<Option<AppSettings>> {
     let conn = open_connection(path)?;
@@ -26,6 +26,13 @@ pub fn load_settings(path: &Path) -> Result<Option<AppSettings>> {
 
 pub fn save_settings(path: &Path, settings: &AppSettings) -> Result<AppSettings> {
     let conn = open_connection(path)?;
+    save_settings_with_connection(&conn, settings)
+}
+
+pub(crate) fn save_settings_with_connection(
+    conn: &Connection,
+    settings: &AppSettings,
+) -> Result<AppSettings> {
     let now = OffsetDateTime::now_utc().unix_timestamp();
     let json = serde_json::to_string(settings)?;
 
@@ -59,6 +66,7 @@ pub fn default_settings(language: String) -> AppSettings {
             "windsurf".into(),
         ],
         custom_skills_targets: Vec::new(),
+        repository_storage_path: None,
     }
 }
 
@@ -83,6 +91,7 @@ mod tests {
                 label: "Demo IDE".into(),
                 relative_path: ".demo/skills".into(),
             }],
+            repository_storage_path: Some("D:/skills-repository".into()),
         };
 
         save_settings(&db_path, &settings).unwrap();
@@ -92,5 +101,9 @@ mod tests {
         assert_eq!(loaded.theme_mode, "dark");
         assert_eq!(loaded.visible_skills_target_ids.len(), 2);
         assert_eq!(loaded.custom_skills_targets.len(), 1);
+        assert_eq!(
+            loaded.repository_storage_path.as_deref(),
+            Some("D:/skills-repository")
+        );
     }
 }

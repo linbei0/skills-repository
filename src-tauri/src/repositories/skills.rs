@@ -9,6 +9,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::domain::types::{InstallSkillRequest, RepositorySkillDetail, RepositorySkillSummary};
+use crate::path_utils::display_path;
 
 use super::db::open_connection;
 
@@ -31,19 +32,9 @@ fn normalize_persisted_source_market(
     }
 }
 
-fn normalize_windows_path_for_display(value: &str) -> String {
-    if let Some(stripped) = value.strip_prefix(r"\\?\UNC\") {
-        format!(r"\\{}", stripped)
-    } else if let Some(stripped) = value.strip_prefix(r"\\?\") {
-        stripped.to_string()
-    } else {
-        value.to_string()
-    }
-}
-
 fn display_source_url(source_type: &str, source_url: Option<String>) -> Option<String> {
     match (source_type, source_url) {
-        ("local", Some(value)) => Some(normalize_windows_path_for_display(&value)),
+        ("local", Some(value)) => Some(display_path(&value)),
         (_, value) => value,
     }
 }
@@ -227,6 +218,12 @@ pub struct RepositorySkillRemovalPlan {
     pub distribution_paths: Vec<String>,
 }
 
+pub struct RepositoryStorageEntry {
+    pub skill_id: String,
+    pub slug: String,
+    pub canonical_path: String,
+}
+
 pub fn load_skill_source(path: &Path, skill_id: &str) -> Result<SkillSource> {
     let conn = open_connection(path)?;
     conn.query_row(
@@ -342,6 +339,54 @@ pub fn list_installed_skills(path: &Path) -> Result<Vec<InstalledSkillSummary>> 
 
     rows.collect::<rusqlite::Result<Vec<_>>>()
         .map_err(Into::into)
+}
+
+pub fn list_repository_storage_entries(
+    path: &Path,
+    canonical_store_dir: &Path,
+) -> Result<Vec<RepositoryStorageEntry>> {
+    let canonical_root = canonicalize_existing_path(canonical_store_dir)?;
+    let conn = open_connection(path)?;
+    let mut stmt = conn.prepare(
+        "
+        SELECT id, slug, canonical_path
+        FROM skills
+        WHERE canonical_path IS NOT NULL
+        ORDER BY installed_at DESC, name ASC
+        ",
+    )?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+        ))
+    })?;
+
+    let mut entries = Vec::new();
+    for row in rows {
+        let (skill_id, slug, raw_path) = row?;
+        let skill_path = PathBuf::from(&raw_path);
+        if !skill_path.exists() {
+            continue;
+        }
+        let canonical_skill_path = match canonicalize_existing_path(&skill_path) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        if !canonical_skill_path.starts_with(&canonical_root) {
+            continue;
+        }
+
+        entries.push(RepositoryStorageEntry {
+            skill_id,
+            slug,
+            canonical_path: canonical_skill_path.to_string_lossy().to_string(),
+        });
+    }
+
+    Ok(entries)
 }
 
 fn canonicalize_existing_path(path: &Path) -> Result<PathBuf> {
@@ -517,7 +562,7 @@ pub fn get_repository_skill_detail(
         slug,
         name,
         description,
-        canonical_path: canonical_skill_dir.to_string_lossy().to_string(),
+        canonical_path: display_path(&canonical_skill_dir.to_string_lossy()),
         source_type,
         source_market,
         source_url: display_source_url,
@@ -560,12 +605,16 @@ pub fn load_repository_skill_removal_plan(
         ",
     )?;
     let rows = stmt.query_map(params![skill_id], |row| row.get::<_, String>(0))?;
-    let distribution_paths = rows.collect::<rusqlite::Result<Vec<_>>>()?;
+    let distribution_paths = rows
+        .collect::<rusqlite::Result<Vec<_>>>()?
+        .into_iter()
+        .map(|path| display_path(&path))
+        .collect::<Vec<_>>();
 
     Ok(RepositorySkillRemovalPlan {
         skill_id: skill_id.to_string(),
         skill_name,
-        canonical_path: canonical_skill_dir.to_string_lossy().to_string(),
+        canonical_path: display_path(&canonical_skill_dir.to_string_lossy()),
         distribution_paths,
     })
 }

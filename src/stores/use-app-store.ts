@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AgentCapability, BootstrapPayload, SystemInfo } from '../types/app'
+import type { AgentCapability, BootstrapPayload, RepositoryStorageInfo, SystemInfo } from '../types/app'
 
 interface AppStoreState {
   bootstrapping: boolean
@@ -7,7 +7,9 @@ interface AppStoreState {
   error: string | null
   system: SystemInfo | null
   agents: AgentCapability[]
+  repositoryStorage: RepositoryStorageInfo | null
   setBootstrapPayload: (payload: BootstrapPayload) => void
+  setRepositoryStorage: (repositoryStorage: RepositoryStorageInfo) => void
   setBootstrapError: (message: string) => void
 }
 
@@ -17,6 +19,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
   error: null,
   system: null,
   agents: [],
+  repositoryStorage: null,
   setBootstrapPayload: (payload) =>
     set({
       bootstrapping: false,
@@ -24,7 +27,9 @@ export const useAppStore = create<AppStoreState>((set) => ({
       error: null,
       system: payload.system,
       agents: payload.agents,
+      repositoryStorage: payload.repositoryStorage,
     }),
+  setRepositoryStorage: (repositoryStorage) => set({ repositoryStorage }),
   setBootstrapError: (message) =>
     set({
       bootstrapping: false,

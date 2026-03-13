@@ -1,4 +1,4 @@
-﻿import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/cn'
 import { resolveThemeMode } from '../../lib/theme'
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/market', key: 'market', icon: 'hn-search' },
   { to: '/security', key: 'security', icon: 'hn-lock-alt' },
   { to: '/templates', key: 'templates', icon: 'hn-grid' },
+  { to: '/settings', key: 'settings', icon: 'hn-cog' },
 ] as const
 
 export function AppShell() {

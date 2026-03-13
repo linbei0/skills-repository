@@ -15,6 +15,7 @@ interface SettingsStoreState {
   setSettings: (settings: AppSettings) => void
   setLanguage: (language: AppLocale) => void
   setThemeMode: (themeMode: ThemeMode) => void
+  setRepositoryStoragePath: (repositoryStoragePath: string | null) => void
   toggleVisibleSkillsTarget: (targetId: string) => void
   addCustomSkillsTarget: (target: CustomSkillsTarget) => void
   removeCustomSkillsTarget: (targetId: string) => void
@@ -26,6 +27,7 @@ const defaultSettings: AppSettings = {
   themeMode: 'system',
   visibleSkillsTargetIds: [...DEFAULT_SETTINGS_SKILLS_TARGET_IDS],
   customSkillsTargets: [],
+  repositoryStoragePath: null,
 }
 
 export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
@@ -39,6 +41,10 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   setThemeMode: (themeMode) =>
     set((state) => ({
       settings: { ...state.settings, themeMode },
+    })),
+  setRepositoryStoragePath: (repositoryStoragePath) =>
+    set((state) => ({
+      settings: { ...state.settings, repositoryStoragePath },
     })),
   toggleVisibleSkillsTarget: (targetId) =>
     set((state) => {

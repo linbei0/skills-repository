@@ -2,7 +2,7 @@ use anyhow::Result;
 use dark_light::Mode;
 use sys_locale::get_locale;
 
-use super::settings::load_or_create_settings;
+use super::settings::{load_or_create_settings, repository_storage_info};
 use crate::domain::{
     agent_registry::AgentCapability,
     app_state::AppState,
@@ -51,6 +51,7 @@ pub fn bootstrap_payload(state: &AppState, version: String) -> Result<BootstrapP
         system,
         settings,
         agents,
+        repository_storage: repository_storage_info(state)?,
     })
 }
 

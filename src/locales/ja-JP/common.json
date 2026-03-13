@@ -9,16 +9,60 @@
     "skills": "My Skills",
     "market": "マーケット",
     "security": "セキュリティ",
-    "templates": "テンプレート"
+    "templates": "テンプレート",
+    "settings": "設定"
   },
   "topbar": {
     "searchPlaceholder": "ページや skill を検索（今後対応）",
     "theme": "テーマ",
     "language": "言語",
+    "settings": "設定",
     "languageOptions": {
       "zhCN": "簡体字中国語",
       "enUS": "英語",
       "jaJP": "日本語"
+    }
+  },
+  "settings": {
+    "eyebrow": "設定と保存先",
+    "title": "設定",
+    "description": "言語、テーマ、Skills リポジトリの保存先をここでまとめて管理します。リポジトリ移行では managed canonical store を旧パスから新パスへ移します。",
+    "preferencesTitle": "表示設定",
+    "preferencesDescription": "トップバーのクイック切り替えは残しつつ、このページで完全な設定を保存します。",
+    "save": "設定を保存",
+    "saving": "保存中...",
+    "saved": "設定を保存しました。",
+    "themeOptions": {
+      "system": "システムに合わせる",
+      "light": "ライト",
+      "dark": "ダーク"
+    },
+    "themeDescriptions": {
+      "system": "現在のシステムテーマに合わせます。",
+      "light": "常にライトテーマを使います。",
+      "dark": "常にダークテーマを使います。"
+    },
+    "repository": {
+      "title": "リポジトリ保存先",
+      "description": "統一リポジトリは既定ではアプリデータ配下に保存されます。別ドライブへ移行すると、検証後に managed canonical path も更新されます。",
+      "customBadge": "カスタム保存先",
+      "defaultBadge": "既定の保存先",
+      "currentPath": "現在の有効パス",
+      "defaultPath": "既定パス",
+      "unavailable": "未読み込み",
+      "warningTitle": "移行時の注意",
+      "warningBody": "移行では現在のリポジトリをコピーし、内容を検証し、SQLite 内の canonical path を更新してから旧ディレクトリを削除します。対象ディレクトリは空、または未作成である必要があります。",
+      "targetLabel": "移行先ディレクトリ",
+      "browse": "参照",
+      "pickTitle": "Skills リポジトリ保存先を選択",
+      "applyAction": "この場所へ移行",
+      "resetAction": "既定の場所に戻す",
+      "migrating": "移行中...",
+      "confirmMessage": "統一リポジトリを\n{{currentPath}}\nから\n{{targetPath}}\nへ移行します。\n\n成功後は旧ディレクトリを自動削除します。続行しますか？",
+      "success": "移行が完了しました。{{count}} 件の skill を {{targetPath}} に移動しました。",
+      "validation": {
+        "required": "移行先ディレクトリを入力してください。"
+      }
     }
   },
   "repository": {

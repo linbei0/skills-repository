@@ -9,16 +9,60 @@
     "skills": "My Skills",
     "market": "Market",
     "security": "Security",
-    "templates": "Templates"
+    "templates": "Templates",
+    "settings": "Settings"
   },
   "topbar": {
     "searchPlaceholder": "Search pages or skills (coming soon)",
     "theme": "Theme",
     "language": "Language",
+    "settings": "Settings",
     "languageOptions": {
       "zhCN": "Simplified Chinese",
       "enUS": "English",
       "jaJP": "Japanese"
+    }
+  },
+  "settings": {
+    "eyebrow": "Preferences & Storage",
+    "title": "Settings",
+    "description": "Manage language, theme, and the Skills repository storage location in one place. Repository migration moves the managed canonical store from the old location to the new one.",
+    "preferencesTitle": "Interface Preferences",
+    "preferencesDescription": "The top bar keeps quick switches, while this page stores the complete preference set.",
+    "save": "Save Preferences",
+    "saving": "Saving...",
+    "saved": "Preferences saved.",
+    "themeOptions": {
+      "system": "Follow System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "themeDescriptions": {
+      "system": "Match the current system appearance.",
+      "light": "Always use the light theme.",
+      "dark": "Always use the dark theme."
+    },
+    "repository": {
+      "title": "Repository Storage",
+      "description": "The unified repository is stored in the app data directory by default. You can migrate it to another drive, and the app will rewrite managed canonical paths after verification.",
+      "customBadge": "Custom Location",
+      "defaultBadge": "Default Location",
+      "currentPath": "Current Active Path",
+      "defaultPath": "Default Path",
+      "unavailable": "Not loaded yet",
+      "warningTitle": "Migration Notes",
+      "warningBody": "Migration copies the current repository, verifies the moved skills, rewrites canonical paths in SQLite, and deletes the old directory only after success. The target directory must be empty or not exist.",
+      "targetLabel": "Target Directory",
+      "browse": "Browse",
+      "pickTitle": "Choose repository storage directory",
+      "applyAction": "Migrate to this location",
+      "resetAction": "Restore default location",
+      "migrating": "Migrating...",
+      "confirmMessage": "Move the unified repository from\n{{currentPath}}\nto\n{{targetPath}}\n\nThe old directory will be deleted after success. Continue?",
+      "success": "Migration finished. Moved {{count}} skills to {{targetPath}}.",
+      "validation": {
+        "required": "Enter a target directory first."
+      }
     }
   },
   "repository": {

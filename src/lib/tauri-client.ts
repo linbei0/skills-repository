@@ -12,6 +12,8 @@ import type {
   ImportRepositorySkillRequest,
   MarketSearchRequest,
   MarketSearchResponse,
+  MigrateRepositoryStorageRequest,
+  MigrateRepositoryStorageResult,
   ResolveRepositoryImportRequest,
   ResolveRepositoryImportResult,
   RepositorySkillDetail,
@@ -31,6 +33,9 @@ export const bootstrapApp = () => invoke<BootstrapPayload>('bootstrap_app')
 
 export const saveSettings = (settings: AppSettings) =>
   invoke<AppSettings>('save_settings', { settings })
+
+export const migrateRepositoryStorage = (request: MigrateRepositoryStorageRequest) =>
+  invoke<MigrateRepositoryStorageResult>('migrate_repository_storage', { request })
 
 export const openSourceReference = (reference: string) =>
   invoke<void>('open_source_reference', { reference })

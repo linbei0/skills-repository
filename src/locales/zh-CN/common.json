@@ -9,16 +9,60 @@
     "skills": "我的 Skills",
     "market": "市场",
     "security": "安全",
-    "templates": "模板"
+    "templates": "模板",
+    "settings": "设置"
   },
   "topbar": {
     "searchPlaceholder": "搜索页面或技能（即将完善）",
     "theme": "主题",
     "language": "语言",
+    "settings": "设置",
     "languageOptions": {
       "zhCN": "简体中文",
       "enUS": "English",
       "jaJP": "日本語"
+    }
+  },
+  "settings": {
+    "eyebrow": "偏好与仓库",
+    "title": "设置",
+    "description": "在这里统一管理语言、主题和 Skills 仓库存储位置。语言与主题会立即影响界面，仓库迁移会把统一仓库从旧目录完整搬到新目录。",
+    "preferencesTitle": "界面偏好",
+    "preferencesDescription": "保留顶部快捷切换的同时，在这里集中保存完整偏好设置。",
+    "save": "保存偏好",
+    "saving": "保存中...",
+    "saved": "偏好已保存。",
+    "themeOptions": {
+      "system": "跟随系统",
+      "light": "浅色",
+      "dark": "深色"
+    },
+    "themeDescriptions": {
+      "system": "自动跟随当前系统主题。",
+      "light": "始终使用亮色主题。",
+      "dark": "始终使用暗色主题。"
+    },
+    "repository": {
+      "title": "仓库存储位置",
+      "description": "统一仓库默认保存在应用数据目录。你可以迁移到其他磁盘目录，迁移会同步更新受管 skills 的 canonical path。",
+      "customBadge": "自定义位置",
+      "defaultBadge": "默认位置",
+      "currentPath": "当前生效路径",
+      "defaultPath": "默认路径",
+      "unavailable": "尚未加载",
+      "warningTitle": "迁移说明",
+      "warningBody": "迁移会复制当前统一仓库、校验内容、重写数据库中的 canonical path，并在成功后删除旧目录。目标目录必须为空或不存在。",
+      "targetLabel": "目标目录",
+      "browse": "选择目录",
+      "pickTitle": "选择 Skills 仓库存储目录",
+      "applyAction": "迁移到该位置",
+      "resetAction": "恢复默认位置",
+      "migrating": "迁移中...",
+      "confirmMessage": "将统一仓库从\n{{currentPath}}\n迁移到\n{{targetPath}}\n\n迁移成功后旧目录会自动删除，是否继续？",
+      "success": "迁移完成，已迁移 {{count}} 个 skill 到 {{targetPath}}。",
+      "validation": {
+        "required": "请先输入目标目录。"
+      }
     }
   },
   "repository": {

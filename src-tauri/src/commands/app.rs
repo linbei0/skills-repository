@@ -8,9 +8,11 @@ use crate::{
             BatchDistributeRepositorySkillsRequest, BatchDistributeResult, DistributionRequest,
             DistributionResult, ImportRepositorySkillRequest, InjectTemplateRequest,
             InjectTemplateResult, InstallSkillRequest, InstallSkillResult, MarketSearchRequest,
-            MarketSearchResponse, RepositorySkillDeletionPreview, RepositorySkillDetail,
-            RepositorySkillSummary, RepositoryUninstallResult, ResolveRepositoryImportRequest,
-            ResolveRepositoryImportResult, SaveTemplateRequest, SecurityReport, TemplateRecord,
+            MarketSearchResponse, MigrateRepositoryStorageRequest,
+            MigrateRepositoryStorageResult, RepositorySkillDeletionPreview,
+            RepositorySkillDetail, RepositorySkillSummary, RepositoryUninstallResult,
+            ResolveRepositoryImportRequest, ResolveRepositoryImportResult, SaveTemplateRequest,
+            SecurityReport, TemplateRecord,
         },
     },
     repositories::security as security_repository,
@@ -44,6 +46,15 @@ pub fn save_settings(
 ) -> Result<AppSettings, String> {
     log::info!("save_settings invoked");
     settings::save_settings(&state, &settings).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn migrate_repository_storage(
+    state: State<'_, AppState>,
+    request: MigrateRepositoryStorageRequest,
+) -> Result<MigrateRepositoryStorageResult, String> {
+    log::info!("migrate_repository_storage invoked");
+    settings::migrate_repository_storage(&state, &request).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -112,7 +123,8 @@ pub fn install_skill(
     request: InstallSkillRequest,
 ) -> Result<InstallSkillResult, String> {
     log::info!("install_skill invoked");
-    install::install_skill(&state.paths, &request).map_err(|error| error.to_string())
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
+    install::install_skill(&paths, &request).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -121,7 +133,8 @@ pub fn resolve_repository_import_source(
     request: ResolveRepositoryImportRequest,
 ) -> Result<ResolveRepositoryImportResult, String> {
     log::info!("resolve_repository_import_source invoked");
-    repository_import::resolve_repository_import_source(&state.paths, &request)
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
+    repository_import::resolve_repository_import_source(&paths, &request)
         .map_err(|error| error.to_string())
 }
 
@@ -131,7 +144,8 @@ pub fn import_repository_skill(
     request: ImportRepositorySkillRequest,
 ) -> Result<InstallSkillResult, String> {
     log::info!("import_repository_skill invoked");
-    repository_import::import_repository_skill(&state.paths, &request)
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
+    repository_import::import_repository_skill(&paths, &request)
         .map_err(|error| error.to_string())
 }
 
@@ -140,7 +154,8 @@ pub fn list_repository_skills(
     state: State<'_, AppState>,
 ) -> Result<Vec<RepositorySkillSummary>, String> {
     log::info!("list_repository_skills invoked");
-    repository::list_repository_skills(&state.paths.db_file, &state.paths.canonical_store_dir)
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
+    repository::list_repository_skills(&paths.db_file, &paths.canonical_store_dir)
         .map_err(|error| error.to_string())
 }
 
@@ -150,9 +165,10 @@ pub fn get_repository_skill_detail(
     skill_id: String,
 ) -> Result<RepositorySkillDetail, String> {
     log::info!("get_repository_skill_detail invoked");
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
     repository::get_repository_skill_detail(
-        &state.paths.db_file,
-        &state.paths.canonical_store_dir,
+        &paths.db_file,
+        &paths.canonical_store_dir,
         &skill_id,
     )
     .map_err(|error| error.to_string())
@@ -219,9 +235,10 @@ pub fn uninstall_repository_skill(
     skill_id: String,
 ) -> Result<RepositoryUninstallResult, String> {
     log::info!("uninstall_repository_skill invoked");
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
     repository::uninstall_repository_skill(
-        &state.paths.db_file,
-        &state.paths.canonical_store_dir,
+        &paths.db_file,
+        &paths.canonical_store_dir,
         &skill_id,
     )
     .map_err(|error| error.to_string())
@@ -289,9 +306,10 @@ pub fn get_repository_skill_deletion_preview(
     skill_id: String,
 ) -> Result<RepositorySkillDeletionPreview, String> {
     log::info!("get_repository_skill_deletion_preview invoked");
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
     repository::get_repository_skill_deletion_preview(
-        &state.paths.db_file,
-        &state.paths.canonical_store_dir,
+        &paths.db_file,
+        &paths.canonical_store_dir,
         &skill_id,
     )
     .map_err(|error| error.to_string())

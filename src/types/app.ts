@@ -7,6 +7,7 @@ export interface AppSettings {
   themeMode: ThemeMode
   visibleSkillsTargetIds: string[]
   customSkillsTargets: CustomSkillsTarget[]
+  repositoryStoragePath: string | null
 }
 
 export interface CustomSkillsTarget {
@@ -36,6 +37,25 @@ export interface BootstrapPayload {
   system: SystemInfo
   settings: AppSettings
   agents: AgentCapability[]
+  repositoryStorage: RepositoryStorageInfo
+}
+
+export interface RepositoryStorageInfo {
+  defaultPath: string
+  currentPath: string
+  isCustom: boolean
+}
+
+export interface MigrateRepositoryStorageRequest {
+  targetPath: string
+}
+
+export interface MigrateRepositoryStorageResult {
+  previousPath: string
+  currentPath: string
+  migratedSkillCount: number
+  removedOldPath: boolean
+  cleanupWarning: string | null
 }
 
 export interface RepositorySkillSummary {
