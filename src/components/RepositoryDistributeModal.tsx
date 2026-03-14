@@ -189,7 +189,7 @@ function RepositoryDistributeModalContent({
                   >
                     <input
                       type="checkbox"
-                      className="checkbox checkbox-sm checkbox-primary border-[var(--border-subtle)] bg-base-100"
+                      className="checkbox checkbox-sm checkbox-primary border-[var(--border-subtle)] bg-base-100 checked:border-primary checked:bg-primary"
                       checked={selectedSkillIds.includes(skill.id)}
                       onChange={() => toggleSkill(skill.id)}
                     />

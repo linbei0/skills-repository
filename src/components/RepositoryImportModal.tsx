@@ -521,7 +521,7 @@ export function RepositoryImportModal({
                       >
                         <input
                           type="checkbox"
-                          className="checkbox checkbox-sm checkbox-primary mt-1 border-[var(--border-subtle)] bg-base-100"
+                          className="checkbox checkbox-sm checkbox-primary mt-1 border-[var(--border-subtle)] bg-base-100 checked:border-primary checked:bg-primary"
                           checked={isSelected}
                           onChange={() => toggleManifestPath(candidate.manifestPath)}
                         />
@@ -558,48 +558,67 @@ export function RepositoryImportModal({
                 </div>
 
                 <div className="flex-1 max-h-[400px] overflow-y-auto p-5 custom-scrollbar">
-                  {selectedCandidate ? (
+                  {selectedCandidates.length > 0 ? (
                     <div className="space-y-4 text-sm">
-                      <div className="rounded-lg border border-[var(--border-subtle)] bg-base-100 p-5 shadow-inner">
-                        <div className="mb-4 flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary">
-                            <i className="hn hn-code-block text-xl"></i>
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-base-content">{selectedCandidate.name}</p>
-                            <p className="text-xs text-base-content/50">
-                              {selectedCandidate.version || 'v1.0.0'}
-                            </p>
-                          </div>
-                        </div>
+                      <div className="space-y-3">
+                        {selectedCandidates.map((candidate) => {
+                          const candidateBatchResult =
+                            batchResults.find((item) => item.manifestPath === candidate.manifestPath) ?? null
 
-                        <div className="space-y-3 rounded bg-[var(--bg-input)] p-4 font-mono text-xs text-base-content/60">
-                          <div className="flex justify-between">
-                            <span className="text-base-content/40">Source:</span>
-                            <span className="text-right text-base-content">
-                              {t(`repository.import.sourceKinds.${sourceKind}`)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-base-content/40">Slug:</span>
-                            <span className="text-right text-primary">{selectedCandidate.slug}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-base-content/40">Author:</span>
-                            <span className="text-right text-base-content">
-                              {selectedCandidate.author || 'Unknown'}
-                            </span>
-                          </div>
-                        </div>
+                          return (
+                            <article
+                              key={candidate.manifestPath}
+                              className="rounded-lg border border-[var(--border-subtle)] bg-base-100 p-5 shadow-inner"
+                            >
+                              <div className="mb-4 flex items-start justify-between gap-3">
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary">
+                                    <i className="hn hn-code-block text-xl"></i>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="truncate text-lg font-bold text-base-content">{candidate.name}</p>
+                                    <p className="text-xs text-base-content/50">
+                                      {candidate.version || 'v1.0.0'}
+                                    </p>
+                                  </div>
+                                </div>
+                                {candidateBatchResult ? (
+                                  <span className={renderResultBadgeClass(candidateBatchResult.status)}>
+                                    {t(`repository.import.result.statuses.${candidateBatchResult.status}`)}
+                                  </span>
+                                ) : null}
+                              </div>
 
-                        <div className="mt-4 border-t border-[var(--border-subtle)] pt-4">
-                          <p className="mb-2 text-xs uppercase tracking-wider text-base-content/40">
-                            Source URL
-                          </p>
-                          <p className="break-all font-mono text-xs text-primary/80">
-                            {normalizeDisplayPath(selectedCandidate.sourceUrl)}
-                          </p>
-                        </div>
+                              <div className="space-y-3 rounded bg-[var(--bg-input)] p-4 font-mono text-xs text-base-content/60">
+                                <div className="flex justify-between gap-3">
+                                  <span className="text-base-content/40">Source:</span>
+                                  <span className="text-right text-base-content">
+                                    {t(`repository.import.sourceKinds.${sourceKind}`)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between gap-3">
+                                  <span className="text-base-content/40">Slug:</span>
+                                  <span className="break-all text-right text-primary">{candidate.slug}</span>
+                                </div>
+                                <div className="flex justify-between gap-3">
+                                  <span className="text-base-content/40">Author:</span>
+                                  <span className="text-right text-base-content">
+                                    {candidate.author || 'Unknown'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 border-t border-[var(--border-subtle)] pt-4">
+                                <p className="mb-2 text-xs uppercase tracking-wider text-base-content/40">
+                                  Source URL
+                                </p>
+                                <p className="break-all font-mono text-xs text-primary/80">
+                                  {normalizeDisplayPath(candidate.sourceUrl)}
+                                </p>
+                              </div>
+                            </article>
+                          )
+                        })}
                       </div>
 
                       {activeResolvedImport.warnings.length > 0 ? (
