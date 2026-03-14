@@ -3,6 +3,7 @@ use rusqlite::params;
 use std::path::Path;
 
 use crate::domain::types::{SecurityIssue, SecurityRecommendation, SecurityReport};
+use crate::path_utils::display_path;
 
 use super::db::open_connection;
 
@@ -88,23 +89,35 @@ pub fn list_security_reports(path: &Path) -> Result<Vec<SecurityReport>> {
         let issues_json: String = row.get(8)?;
         let recommendations_json: String = row.get(9)?;
         let scanned_files_json: String = row.get(10)?;
+        let mut issues =
+            serde_json::from_str::<Vec<SecurityIssue>>(&issues_json).unwrap_or_default();
+        for issue in &mut issues {
+            issue.file_path = issue.file_path.as_deref().map(display_path);
+        }
+        let scanned_files = serde_json::from_str::<Vec<String>>(&scanned_files_json)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|path| display_path(&path))
+            .collect::<Vec<_>>();
 
         Ok(SecurityReport {
             id: row.get(0)?,
             skill_id: row.get(1)?,
             skill_name: row.get(2)?,
-            source_path: row.get(3)?,
+            source_path: row
+                .get::<_, Option<String>>(3)?
+                .as_deref()
+                .map(display_path),
             scan_scope: row.get(4)?,
             level: row.get(5)?,
             score: row.get(6)?,
             blocked: row.get::<_, i64>(7)? != 0,
-            issues: serde_json::from_str::<Vec<SecurityIssue>>(&issues_json).unwrap_or_default(),
+            issues,
             recommendations: serde_json::from_str::<Vec<SecurityRecommendation>>(
                 &recommendations_json,
             )
             .unwrap_or_default(),
-            scanned_files: serde_json::from_str::<Vec<String>>(&scanned_files_json)
-                .unwrap_or_default(),
+            scanned_files,
             category_breakdown: Vec::new(),
             blocking_reasons: Vec::new(),
             engine_version: row.get(11)?,

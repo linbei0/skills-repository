@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useMemo } from 'react'
+import { normalizeDisplayPath } from '../lib/normalize-display-path'
 import { useSecurityStore } from '../stores/use-security-store'
 
 export function SecurityPage() {
@@ -157,7 +158,7 @@ export function SecurityPage() {
                       ) : null}
                     </div>
                     <p className="font-mono text-xs text-base-content/40">
-                      {report.sourcePath ?? t('security.temporaryScan')}
+                  {report.sourcePath ? normalizeDisplayPath(report.sourcePath) : t('security.temporaryScan')}
                     </p>
                   </div>
                   <div className="text-right">

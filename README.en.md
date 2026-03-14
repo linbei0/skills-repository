@@ -116,8 +116,7 @@ corepack pnpm tauri:dev
 │  ├─ src/domain/           # Domain state and types
 │  └─ tauri.conf.json       # Desktop shell configuration
 ├─ docs/API.md              # Tauri command reference
-├─ assets/                  # Design drafts and assets
-└─ tep-docs/                # Product, design, and technical reference docs
+└─ assets/                  # Design drafts and assets
 ```
 
 ## Architecture

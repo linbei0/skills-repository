@@ -116,8 +116,7 @@ corepack pnpm tauri:dev
 │  ├─ src/domain/           # 领域状态与类型
 │  └─ tauri.conf.json       # 桌面壳配置
 ├─ docs/API.md              # Tauri command 速查
-├─ assets/                  # 设计草稿与资源
-└─ tep-docs/                # 产品/设计/技术参考文档
+└─ assets/                  # 设计草稿与资源
 ```
 
 ## 架构说明
