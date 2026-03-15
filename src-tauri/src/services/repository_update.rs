@@ -72,7 +72,7 @@ impl Drop for PreparedRepositoryArchive {
 
 fn github_get_json(url: &str) -> Result<Value> {
     let response = ureq::get(url)
-        .set("User-Agent", "skills-manager/0.1.0")
+        .set("User-Agent", concat!("skills-manager/", env!("CARGO_PKG_VERSION")))
         .set("Accept", "application/vnd.github+json")
         .call()
         .map_err(|error| anyhow!("github request failed: {}", error))?;
@@ -85,7 +85,7 @@ fn github_get_json(url: &str) -> Result<Value> {
 
 fn download_url_bytes(url: &str) -> Result<Vec<u8>> {
     let response = ureq::get(url)
-        .set("User-Agent", "skills-manager/0.1.0")
+        .set("User-Agent", concat!("skills-manager/", env!("CARGO_PKG_VERSION")))
         .call()
         .map_err(|error| anyhow!("failed to download GitHub skill archive: {}", error))?;
     let mut bytes = Vec::new();

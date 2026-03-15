@@ -120,7 +120,7 @@ fn parse_github_input(input: &str) -> Result<ParsedGithubInput> {
 
 fn github_get_json(url: &str) -> Result<Value> {
     let response = ureq::get(url)
-        .set("User-Agent", "skills-manager/0.1.0")
+        .set("User-Agent", concat!("skills-manager/", env!("CARGO_PKG_VERSION")))
         .set("Accept", "application/vnd.github+json")
         .call()
         .map_err(|error| anyhow!("github request failed: {}", error))?;

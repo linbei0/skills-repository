@@ -1,8 +1,8 @@
 [package]
 name = "skills-manager"
-version = "0.1.0"
+version = "0.1.1"
 description = "skills管理器 desktop shell"
-authors = ["vibecoding-project"]
+authors = ["jiang"]
 license = "MIT"
 repository = ""
 edition = "2021"

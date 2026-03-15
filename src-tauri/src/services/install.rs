@@ -64,7 +64,7 @@ pub(crate) fn stage_source(temp_dir: &Path, request: &InstallSkillRequest) -> Re
 
     if source.starts_with("http://") || source.starts_with("https://") {
         let response = ureq::get(&source)
-            .set("User-Agent", "skills-manager/0.1.0")
+            .set("User-Agent", concat!("skills-manager/", env!("CARGO_PKG_VERSION")))
             .call()
             .map_err(|error| anyhow!("failed to download skill archive: {}", error))?;
         let mut bytes = Vec::new();
