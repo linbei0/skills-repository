@@ -55,3 +55,22 @@ async function loadSkills() {
 ## Reference
 
 - Tauri command docs: <https://v2.tauri.app/develop/calling-rust/>
+
+## Repository Update IPC
+
+- `update_repository_skill(skillId)`
+  - input: `skillId: string`
+  - output: `RepositorySkillUpdateItemResult`
+  - behavior: updates one repository skill that can resolve to a public GitHub repo URL; preserves repository identity and canonical path
+- `update_github_repository_skills()`
+  - input: none
+  - output: `BatchRepositorySkillUpdateResult`
+  - behavior: updates every repository skill whose persisted metadata can resolve to a public GitHub repo URL
+- `RepositorySkillSummary` / `RepositorySkillDetail`
+  - new field: `canUpdate: boolean`
+- `RepositorySkillUpdateItemResult`
+  - fields: `skillId`, `skillName`, `status`, `reasonCode`, `details`, `previousVersion`, `currentVersion`, `copyDistributionCount`
+  - `reasonCode` values currently include `updated_to_latest`, `already_up_to_date`, `blocked_by_security_scan`, `update_failed`
+  - `details` is structured metadata for UI composition, for example `{ "error": "..." }` on generic failures
+- `BatchRepositorySkillUpdateResult`
+  - fields: `updated`, `skipped`, `failed`

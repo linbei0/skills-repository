@@ -1,8 +1,9 @@
 use super::agent_registry::{
-    default_visible_skill_target_ids as default_builtin_visible_skill_target_ids,
-    AgentCapability, BuiltinSkillsTarget, VISIBLE_SKILLS_TARGETS_VERSION,
+    default_visible_skill_target_ids as default_builtin_visible_skill_target_ids, AgentCapability,
+    BuiltinSkillsTarget, VISIBLE_SKILLS_TARGETS_VERSION,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -144,6 +145,8 @@ pub struct RepositorySkillSummary {
     pub blocked: bool,
     #[serde(default)]
     pub risk_override_applied: bool,
+    #[serde(default)]
+    pub can_update: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -162,6 +165,8 @@ pub struct RepositorySkillDetail {
     pub blocked: bool,
     #[serde(default)]
     pub risk_override_applied: bool,
+    #[serde(default)]
+    pub can_update: bool,
     pub skill_markdown: String,
 }
 
@@ -470,4 +475,25 @@ pub struct BatchDistributeResult {
     pub installed: Vec<BatchDistributeItemResult>,
     pub skipped: Vec<BatchDistributeItemResult>,
     pub failed: Vec<BatchDistributeItemResult>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepositorySkillUpdateItemResult {
+    pub skill_id: String,
+    pub skill_name: String,
+    pub status: String,
+    pub reason_code: String,
+    pub details: Value,
+    pub previous_version: Option<String>,
+    pub current_version: Option<String>,
+    pub copy_distribution_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchRepositorySkillUpdateResult {
+    pub updated: Vec<RepositorySkillUpdateItemResult>,
+    pub skipped: Vec<RepositorySkillUpdateItemResult>,
+    pub failed: Vec<RepositorySkillUpdateItemResult>,
 }

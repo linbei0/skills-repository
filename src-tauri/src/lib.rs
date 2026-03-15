@@ -12,7 +12,8 @@ use commands::app::{
     get_template, import_repository_skill, inject_template, install_skill, list_repository_skills,
     list_templates, migrate_repository_storage, open_source_reference, rescan_security,
     resolve_repository_import_source, save_settings, save_template, scan_agent_global_skills,
-    search_market_skills, uninstall_repository_skill,
+    search_market_skills, uninstall_repository_skill, update_github_repository_skills,
+    update_repository_skill,
 };
 use domain::app_state::AppState;
 use repositories::db::run_migrations;
@@ -62,6 +63,8 @@ pub fn run() {
             scan_agent_global_skills,
             search_market_skills,
             uninstall_repository_skill,
+            update_github_repository_skills,
+            update_repository_skill,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

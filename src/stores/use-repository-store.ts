@@ -7,8 +7,11 @@ import {
   listRepositorySkills as listRepositorySkillsCommand,
   resolveRepositoryImportSource as resolveRepositoryImportSourceCommand,
   uninstallRepositorySkill as uninstallRepositorySkillCommand,
+  updateGithubRepositorySkills as updateGithubRepositorySkillsCommand,
+  updateRepositorySkill as updateRepositorySkillCommand,
 } from '../lib/tauri-client'
 import type {
+  BatchRepositorySkillUpdateResult,
   BatchDistributeRepositorySkillsRequest,
   BatchDistributeResult,
   InstallSkillResult,
@@ -16,10 +19,17 @@ import type {
   RepositorySkillDetail,
   RepositorySkillDeletionPreview,
   RepositorySkillSummary,
+  RepositorySkillUpdateItemResult,
   ResolveRepositoryImportRequest,
   ResolveRepositoryImportResult,
   SecurityReport,
 } from '../types/app'
+
+export const flattenBatchUpdateResult = (result: BatchRepositorySkillUpdateResult) => [
+  ...result.updated,
+  ...result.skipped,
+  ...result.failed,
+]
 
 interface RepositoryStoreState {
   items: RepositorySkillSummary[]
@@ -33,6 +43,11 @@ interface RepositoryStoreState {
   deletePreview: RepositorySkillDeletionPreview | null
   deletePreviewLoading: boolean
   deletePreviewError: string | null
+  updatingSkillId: string | null
+  batchUpdating: boolean
+  updateError: string | null
+  lastUpdateResult: RepositorySkillUpdateItemResult | null
+  lastBatchUpdateResult: BatchRepositorySkillUpdateResult | null
   distributionOpen: boolean
   distributing: boolean
   distributionError: string | null
@@ -48,6 +63,9 @@ interface RepositoryStoreState {
   uninstall: (skillId: string) => Promise<void>
   loadDeletePreview: (skillId: string) => Promise<void>
   clearDeletePreview: () => void
+  updateSkill: (skillId: string) => Promise<RepositorySkillUpdateItemResult>
+  updateGithubSkills: () => Promise<BatchRepositorySkillUpdateResult>
+  clearUpdateState: () => void
   openDistribution: () => void
   closeDistribution: () => void
   batchDistributeSkills: (request: BatchDistributeRepositorySkillsRequest) => Promise<BatchDistributeResult>
@@ -69,6 +87,11 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
   deletePreview: null,
   deletePreviewLoading: false,
   deletePreviewError: null,
+  updatingSkillId: null,
+  batchUpdating: false,
+  updateError: null,
+  lastUpdateResult: null,
+  lastBatchUpdateResult: null,
   distributionOpen: false,
   distributing: false,
   distributionError: null,
@@ -119,6 +142,85 @@ export const useRepositoryStore = create<RepositoryStoreState>((set, get) => ({
   },
   clearDeletePreview: () =>
     set({ deletePreview: null, deletePreviewLoading: false, deletePreviewError: null }),
+  updateSkill: async (skillId) => {
+    set({
+      updatingSkillId: skillId,
+      updateError: null,
+      lastUpdateResult: null,
+      lastBatchUpdateResult: null,
+    })
+    try {
+      const result = await updateRepositorySkillCommand(skillId)
+      const items = await listRepositorySkillsCommand()
+      const shouldReloadDetail = get().selectedDetail?.id === skillId
+      set({
+        items,
+        updatingSkillId: null,
+        updateError: null,
+        lastUpdateResult: result,
+        lastBatchUpdateResult: null,
+        loaded: true,
+      })
+      if (shouldReloadDetail) {
+        const selectedDetail = await getRepositorySkillDetailCommand(skillId)
+        set({ selectedDetail, detailError: null, detailLoading: false })
+      }
+      return result
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      set({
+        updatingSkillId: null,
+        updateError: message,
+      })
+      throw error
+    }
+  },
+  updateGithubSkills: async () => {
+    set({
+      batchUpdating: true,
+      updateError: null,
+      lastUpdateResult: null,
+      lastBatchUpdateResult: null,
+    })
+    try {
+      const result = await updateGithubRepositorySkillsCommand()
+      const items = await listRepositorySkillsCommand()
+      const selectedSkillId = get().selectedDetail?.id
+      set({
+        items,
+        batchUpdating: false,
+        updateError: null,
+        lastUpdateResult: null,
+        lastBatchUpdateResult: result,
+        loaded: true,
+      })
+      if (selectedSkillId) {
+        const refreshedItems = flattenBatchUpdateResult(result).some(
+          (item) => item.skillId === selectedSkillId,
+        )
+        if (refreshedItems) {
+          const selectedDetail = await getRepositorySkillDetailCommand(selectedSkillId)
+          set({ selectedDetail, detailError: null, detailLoading: false })
+        }
+      }
+      return result
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      set({
+        batchUpdating: false,
+        updateError: message,
+      })
+      throw error
+    }
+  },
+  clearUpdateState: () =>
+    set({
+      updatingSkillId: null,
+      batchUpdating: false,
+      updateError: null,
+      lastUpdateResult: null,
+      lastBatchUpdateResult: null,
+    }),
   uninstall: async (skillId) => {
     set({ uninstallingSkillId: skillId })
     try {

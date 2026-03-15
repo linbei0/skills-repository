@@ -211,7 +211,31 @@
     "deleteDistributedPaths": "Distributed locations",
     "deleteDistributedCount": "{{count}} targets",
     "deleteNoDistributions": "This skill has not been distributed to any project or agent path.",
-    "confirmUninstall": "Delete skill"
+    "confirmUninstall": "Delete skill",
+    "update": {
+      "open": "Update GitHub Skills",
+      "single": "Update",
+      "resultTitle": "Update Result",
+      "batchTitle": "Batch Update Result",
+      "batchSummary": "Updated {{updated}}, skipped {{skipped}}, failed {{failed}}.",
+      "batchUpdated": "Updated {{count}}",
+      "batchSkipped": "Skipped {{count}}",
+      "batchFailed": "Failed {{count}}",
+      "copyDistributionNotice": "{{count}} copy distributions may need manual redistribution.",
+      "errorDetail": "Details: {{error}}",
+      "reasons": {
+        "updatedToLatest": "Repository skill updated to the latest GitHub revision.",
+        "alreadyUpToDate": "Repository skill is already up to date.",
+        "blockedBySecurityScan": "The new GitHub revision was blocked by the security scan.",
+        "updateFailed": "Repository skill update failed.",
+        "unknown": "Repository skill update finished with an unknown result."
+      },
+      "statuses": {
+        "updated": "Updated",
+        "skipped": "Skipped",
+        "failed": "Failed"
+      }
+    }
   },
   "skills": {
     "title": "My Skills",

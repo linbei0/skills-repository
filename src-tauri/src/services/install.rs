@@ -53,7 +53,7 @@ pub(crate) fn extract_zip_bytes(bytes: &[u8], target_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-fn stage_source(temp_dir: &Path, request: &InstallSkillRequest) -> Result<PathBuf> {
+pub(crate) fn stage_source(temp_dir: &Path, request: &InstallSkillRequest) -> Result<PathBuf> {
     let staged_dir = temp_dir.join("staged");
     ensure_clean_dir(&staged_dir)?;
 
@@ -133,7 +133,10 @@ pub(crate) fn path_suffix_matches(candidate: &str, expected: &str) -> bool {
     candidate == expected || candidate.ends_with(&format!("/{}", expected))
 }
 
-fn resolve_requested_skill_root(root: &Path, request: &InstallSkillRequest) -> Result<PathBuf> {
+pub(crate) fn resolve_requested_skill_root(
+    root: &Path,
+    request: &InstallSkillRequest,
+) -> Result<PathBuf> {
     let roots = collect_skill_roots(root)?;
     if roots.is_empty() {
         return Err(anyhow!("no SKILL.md found in downloaded source"));
@@ -329,8 +332,7 @@ mod tests {
         domain::app_state::AppPaths,
         repositories::{
             db::{open_connection, run_migrations},
-            security as security_repository,
-            skills as skills_repository,
+            security as security_repository, skills as skills_repository,
         },
     };
     use tempfile::tempdir;

@@ -211,7 +211,31 @@
     "deleteDistributedPaths": "配布先",
     "deleteDistributedCount": "{{count}} 件のターゲット",
     "deleteNoDistributions": "この skill はまだどのプロジェクトや Agent パスにも配布されていません。",
-    "confirmUninstall": "Skill を削除"
+    "confirmUninstall": "Skill を削除",
+    "update": {
+      "open": "GitHub Skills を更新",
+      "single": "更新",
+      "resultTitle": "更新結果",
+      "batchTitle": "一括更新結果",
+      "batchSummary": "更新 {{updated}} 件、スキップ {{skipped}} 件、失敗 {{failed}} 件。",
+      "batchUpdated": "更新 {{count}}",
+      "batchSkipped": "スキップ {{count}}",
+      "batchFailed": "失敗 {{count}}",
+      "copyDistributionNotice": "{{count}} 件の copy 配布先は手動で再配布が必要な場合があります。",
+      "errorDetail": "詳細: {{error}}",
+      "reasons": {
+        "updatedToLatest": "リポジトリ skill を最新の GitHub リビジョンへ更新しました。",
+        "alreadyUpToDate": "リポジトリ skill はすでに最新です。",
+        "blockedBySecurityScan": "新しい GitHub リビジョンはセキュリティスキャンによりブロックされました。",
+        "updateFailed": "リポジトリ skill の更新に失敗しました。",
+        "unknown": "リポジトリ skill の更新結果を判定できませんでした。"
+      },
+      "statuses": {
+        "updated": "更新済み",
+        "skipped": "スキップ",
+        "failed": "失敗"
+      }
+    }
   },
   "skills": {
     "title": "My Skills",

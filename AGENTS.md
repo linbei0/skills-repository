@@ -49,19 +49,19 @@
 
 ## 常用命令
 
-以下命令均应从仓库根目录执行；其中 `corepack pnpm lint`、`corepack pnpm typecheck`、`corepack pnpm build`、`corepack pnpm tauri info`、`cargo test --manifest-path src-tauri/Cargo.toml` 已在当前仓库实际验证通过。`corepack pnpm tauri:dev` 与 `corepack pnpm tauri:build` 属于交互式或耗时命令，按需执行。
+以下命令均应从仓库根目录执行；其中 `corepack pnpm lint`、`corepack pnpm typecheck`、`corepack pnpm build`、`corepack pnpm tauri info`、`cargo test --manifest-path src-tauri/Cargo.toml` 已在当前仓库实际验证通过。`corepack pnpm tauri:dev` 与 `corepack pnpm tauri:build` 属于交互式、长时间运行或高开销命令。对于 Codex 等代理，默认都不应主动执行，尤其不要把 `corepack pnpm tauri:build` 当作常规验证步骤；只有在用户明确要求代理执行，且任务确实需要桌面联调或安装包构建时，才可考虑运行。
 
 | 目的 | 命令 | 说明 |
 | --- | --- | --- |
 | 安装依赖 | `corepack pnpm install` | 安装前端依赖 |
 | 启动前端开发服务器 | `corepack pnpm dev` | 仅启动 Vite |
-| 启动桌面应用开发模式 | `corepack pnpm tauri:dev` | 会启动 Vite + Tauri 桌面壳，属于交互式命令 |
+| 启动桌面应用开发模式 | `corepack pnpm tauri:dev` | 会启动 Vite + Tauri 桌面壳；默认由用户自行执行，代理不主动启动 |
 | 前端静态检查 | `corepack pnpm lint` | 运行 ESLint |
 | TypeScript 类型检查 | `corepack pnpm typecheck` | 分别检查 `tsconfig.app.json` 与 `tsconfig.node.json` |
 | 前端生产构建 | `corepack pnpm build` | 执行 `tsc -b && vite build` |
 | 检查 Tauri 环境 | `corepack pnpm tauri info` | 检查 WebView2 / Rust / CLI 先决条件 |
 | 运行 Rust 测试 | `cargo test --manifest-path src-tauri/Cargo.toml` | 当前后端主要自动化测试入口 |
-| 构建桌面安装包 | `corepack pnpm tauri:build` | 生成桌面应用包，耗时较长 |
+| 构建桌面安装包 | `corepack pnpm tauri:build` | 生成桌面应用包，耗时较长，且会显著增大 `src-tauri/target/` 占用；默认由用户自行执行，代理不主动运行 |
 
 ## 开发工作流
 
@@ -73,6 +73,7 @@
 | 改数据库结构 | 修改 `src-tauri/src/repositories/db.rs` 的迁移逻辑，并补充/更新对应 Rust 测试 |
 | 新增页面 | 同步更新 `src/app/router.tsx`、导航壳 `src/components/layout/AppShell.tsx` 与多语言文案 |
 | 新增可见文案 | 同步维护 `src/locales/zh-CN/common.json`、`src/locales/en-US/common.json`、`src/locales/ja-JP/common.json` |
+| 本地运行与验证 | 代理默认使用 `corepack pnpm lint`、`corepack pnpm typecheck`、`corepack pnpm build`、`cargo test --manifest-path src-tauri/Cargo.toml` 等非交互命令完成验证；不要把 `corepack pnpm tauri:build` 作为常规验证步骤 |
 
 ## 代码约定
 
@@ -124,4 +125,5 @@
 
 - `docs/API.md` 是当前 command 面的速查表；任何 IPC 面变更都应一起更新，避免文档与实现漂移。
 - `eslint.config.js` 已忽略 `dist/`、`src-tauri/target/**`、`src-tauri/target-codex*/**`、`tep-docs/**`；排查 lint 结果时注意范围。
-- `vite.config.ts` 已为 Tauri 开发模式配置端口、HMR 与 `src-tauri` 目录监听忽略规则，修改 dev server 行为时要兼顾桌面壳联调。
+- `vite.config.ts` 已为 Tauri 开发模式配置端口、HMR 与 `src-tauri` 目录监听忽略规则，修改 dev server 行为时要兼顾桌面壳联调；实际桌面联调默认由用户自行执行 `corepack pnpm tauri:dev`。
+- `corepack pnpm tauri:build` 会生成较大的 Rust/Tauri 构建产物，并持续增加 `src-tauri/target/` 目录体积；除非用户明确要求且确实需要安装包或构建产物，否则代理不应主动运行该命令。

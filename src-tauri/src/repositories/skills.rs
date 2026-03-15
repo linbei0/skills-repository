@@ -1,11 +1,12 @@
 use anyhow::{anyhow, Context, Result};
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, Transaction};
 use serde_json::{json, Value};
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 use time::OffsetDateTime;
+use url::Url;
 use uuid::Uuid;
 
 use crate::domain::types::{InstallSkillRequest, RepositorySkillDetail, RepositorySkillSummary};
@@ -48,6 +49,58 @@ fn repo_url_from_metadata(metadata_json: Option<String>) -> Option<String> {
                 .and_then(Value::as_str)
                 .map(ToString::to_string)
         })
+}
+
+fn metadata_from_json(metadata_json: Option<String>) -> Value {
+    metadata_json
+        .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
+        .filter(|value| value.is_object())
+        .unwrap_or_else(|| json!({}))
+}
+
+fn metadata_string_field(metadata_json: Option<String>, field: &str) -> Option<String> {
+    metadata_from_json(metadata_json)
+        .get(field)
+        .and_then(Value::as_str)
+        .map(ToString::to_string)
+}
+
+fn normalize_github_repo_url(value: &str) -> Option<String> {
+    let parsed = Url::parse(value.trim()).ok()?;
+    let host = parsed.host_str()?;
+    if host != "github.com" && host != "www.github.com" {
+        return None;
+    }
+
+    let segments = parsed
+        .path_segments()?
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>();
+    if segments.len() < 2 {
+        return None;
+    }
+
+    let owner = segments[0];
+    let repo = segments[1].trim_end_matches(".git");
+    if owner.is_empty() || repo.is_empty() {
+        return None;
+    }
+
+    Some(format!("https://github.com/{owner}/{repo}"))
+}
+
+pub fn resolve_github_repo_url(
+    repo_url: Option<String>,
+    source_url: Option<String>,
+) -> Option<String> {
+    repo_url
+        .as_deref()
+        .and_then(normalize_github_repo_url)
+        .or_else(|| source_url.as_deref().and_then(normalize_github_repo_url))
+}
+
+fn can_update_from_source(repo_url: Option<String>, source_url: Option<String>) -> bool {
+    resolve_github_repo_url(repo_url, source_url).is_some()
 }
 
 fn risk_override_from_metadata(metadata_json: Option<String>) -> bool {
@@ -164,10 +217,71 @@ pub fn save_operation_log(
     detail_json: Option<serde_json::Value>,
 ) -> Result<String> {
     let conn = open_connection(path)?;
+    save_operation_log_in_connection(
+        &conn,
+        operation_type,
+        entity_type,
+        entity_id,
+        status,
+        summary,
+        detail_json,
+    )
+}
+
+fn save_operation_log_in_connection(
+    conn: &Connection,
+    operation_type: &str,
+    entity_type: &str,
+    entity_id: Option<&str>,
+    status: &str,
+    summary: &str,
+    detail_json: Option<serde_json::Value>,
+) -> Result<String> {
     let log_id = Uuid::new_v4().to_string();
     let now = OffsetDateTime::now_utc().unix_timestamp();
 
     conn.execute(
+        "
+        INSERT INTO operation_logs (
+            id,
+            operation_type,
+            entity_type,
+            entity_id,
+            status,
+            summary,
+            detail_json,
+            created_at
+        )
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        ",
+        params![
+            log_id,
+            operation_type,
+            entity_type,
+            entity_id,
+            status,
+            summary,
+            detail_json.map(|value| value.to_string()),
+            now,
+        ],
+    )?;
+
+    Ok(log_id)
+}
+
+pub fn save_operation_log_in_tx(
+    tx: &Transaction<'_>,
+    operation_type: &str,
+    entity_type: &str,
+    entity_id: Option<&str>,
+    status: &str,
+    summary: &str,
+    detail_json: Option<serde_json::Value>,
+) -> Result<String> {
+    let log_id = Uuid::new_v4().to_string();
+    let now = OffsetDateTime::now_utc().unix_timestamp();
+
+    tx.execute(
         "
         INSERT INTO operation_logs (
             id,
@@ -209,6 +323,67 @@ pub struct InstalledSkillSummary {
     pub repo_url: Option<String>,
     pub version: Option<String>,
     pub risk_override_applied: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct RepositorySkillUpdateTarget {
+    pub skill_id: String,
+    pub name: String,
+    pub slug: String,
+    pub canonical_path: String,
+    pub source_type: String,
+    pub repo_url: String,
+    pub manifest_path: Option<String>,
+    pub skill_root: Option<String>,
+    pub version: Option<String>,
+    pub copy_distribution_count: usize,
+}
+
+type RepositorySkillUpdateRow = (
+    String,
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    i64,
+);
+
+fn build_repository_skill_update_target(
+    row: RepositorySkillUpdateRow,
+) -> Result<RepositorySkillUpdateTarget> {
+    let (
+        skill_id,
+        slug,
+        name,
+        canonical_path,
+        source_type,
+        source_url,
+        version,
+        metadata_json,
+        copy_distribution_count,
+    ) = row;
+
+    let repo_url = resolve_github_repo_url(
+        repo_url_from_metadata(metadata_json.clone()),
+        source_url.clone(),
+    )
+    .ok_or_else(|| anyhow!("skill does not have an updatable GitHub repository source"))?;
+
+    Ok(RepositorySkillUpdateTarget {
+        skill_id,
+        name,
+        slug,
+        canonical_path,
+        source_type,
+        repo_url,
+        manifest_path: metadata_string_field(metadata_json.clone(), "manifestPath"),
+        skill_root: metadata_string_field(metadata_json.clone(), "skillRoot"),
+        version,
+        copy_distribution_count: copy_distribution_count.max(0) as usize,
+    })
 }
 
 pub struct RepositorySkillRemovalPlan {
@@ -453,6 +628,7 @@ pub fn list_repository_skills(
             description,
             source_type,
             source_market,
+            source_url,
             installed_at,
             security_level,
             blocked,
@@ -472,11 +648,12 @@ pub fn list_repository_skills(
             row.get::<_, Option<String>>(3)?,
             row.get::<_, String>(4)?,
             row.get::<_, Option<String>>(5)?,
-            row.get::<_, i64>(6)?,
-            row.get::<_, String>(7)?,
-            row.get::<_, i64>(8)? != 0,
-            row.get::<_, String>(9)?,
-            row.get::<_, Option<String>>(10)?,
+            row.get::<_, Option<String>>(6)?,
+            row.get::<_, i64>(7)?,
+            row.get::<_, String>(8)?,
+            row.get::<_, i64>(9)? != 0,
+            row.get::<_, String>(10)?,
+            row.get::<_, Option<String>>(11)?,
         ))
     })?;
 
@@ -489,6 +666,7 @@ pub fn list_repository_skills(
             description,
             source_type,
             source_market,
+            source_url,
             installed_at,
             security_level,
             blocked,
@@ -507,6 +685,7 @@ pub fn list_repository_skills(
             continue;
         }
 
+        let risk_override_applied = risk_override_from_metadata(metadata_json.clone());
         skills.push(RepositorySkillSummary {
             id,
             slug,
@@ -517,7 +696,11 @@ pub fn list_repository_skills(
             installed_at,
             security_level,
             blocked,
-            risk_override_applied: risk_override_from_metadata(metadata_json),
+            risk_override_applied,
+            can_update: can_update_from_source(
+                repo_url_from_metadata(metadata_json.clone()),
+                source_url,
+            ),
         });
     }
 
@@ -601,6 +784,10 @@ pub fn get_repository_skill_detail(
         )
     })?;
     let display_source_url = display_source_url(&source_type, source_url);
+    let can_update = can_update_from_source(
+        repo_url_from_metadata(metadata_json.clone()),
+        display_source_url.clone(),
+    );
 
     Ok(RepositorySkillDetail {
         id,
@@ -615,8 +802,188 @@ pub fn get_repository_skill_detail(
         security_level,
         blocked,
         risk_override_applied: risk_override_from_metadata(metadata_json),
+        can_update,
         skill_markdown,
     })
+}
+
+pub fn load_repository_skill_update_target(
+    path: &Path,
+    skill_id: &str,
+) -> Result<RepositorySkillUpdateTarget> {
+    let conn = open_connection(path)?;
+    let row = conn.query_row(
+        "
+        SELECT
+            id,
+            slug,
+            name,
+            canonical_path,
+            source_type,
+            source_url,
+            version,
+            metadata_json,
+            (
+                SELECT COUNT(*)
+                FROM skill_distributions
+                WHERE skill_id = skills.id AND install_mode = 'copy'
+            ) AS copy_distribution_count
+        FROM skills
+        WHERE id = ?1 AND canonical_path IS NOT NULL
+        ",
+        params![skill_id],
+        |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+                row.get::<_, Option<String>>(5)?,
+                row.get::<_, Option<String>>(6)?,
+                row.get::<_, Option<String>>(7)?,
+                row.get::<_, i64>(8)?,
+            ))
+        },
+    )?;
+    build_repository_skill_update_target(row)
+}
+
+pub fn list_repository_skill_update_targets(
+    path: &Path,
+) -> Result<Vec<RepositorySkillUpdateTarget>> {
+    let conn = open_connection(path)?;
+    let mut stmt = conn.prepare(
+        "
+        SELECT
+            id,
+            slug,
+            name,
+            canonical_path,
+            source_type,
+            source_url,
+            version,
+            metadata_json,
+            COALESCE(copy_stats.copy_distribution_count, 0)
+        FROM skills
+        LEFT JOIN (
+            SELECT
+                skill_id,
+                COUNT(*) AS copy_distribution_count
+            FROM skill_distributions
+            WHERE install_mode = 'copy'
+            GROUP BY skill_id
+        ) AS copy_stats ON copy_stats.skill_id = skills.id
+        WHERE canonical_path IS NOT NULL
+        ORDER BY updated_at DESC, name ASC
+        ",
+    )?;
+
+    let mut targets = Vec::new();
+    let rows = stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, String>(3)?,
+            row.get::<_, String>(4)?,
+            row.get::<_, Option<String>>(5)?,
+            row.get::<_, Option<String>>(6)?,
+            row.get::<_, Option<String>>(7)?,
+            row.get::<_, i64>(8)?,
+        ))
+    })?;
+
+    for row in rows {
+        if let Ok(target) = build_repository_skill_update_target(row?) {
+            targets.push(target);
+        }
+    }
+
+    Ok(targets)
+}
+
+pub struct UpdateRepositorySkillRecordInput {
+    pub description: Option<String>,
+    pub version: Option<String>,
+    pub author: Option<String>,
+    pub source_url: String,
+    pub repo_url: String,
+    pub download_url: Option<String>,
+    pub package_ref: Option<String>,
+    pub manifest_path: Option<String>,
+    pub skill_root: Option<String>,
+    pub security_level: String,
+    pub blocked: bool,
+    pub scanned_at: i64,
+}
+
+pub fn update_repository_skill_record_in_tx(
+    tx: &Transaction<'_>,
+    skill_id: &str,
+    input: &UpdateRepositorySkillRecordInput,
+) -> Result<()> {
+    let updated_at = OffsetDateTime::now_utc().unix_timestamp();
+
+    let metadata_json: Option<String> = tx.query_row(
+        "SELECT metadata_json FROM skills WHERE id = ?1",
+        params![skill_id],
+        |row| row.get(0),
+    )?;
+    let mut metadata = metadata_from_json(metadata_json);
+    metadata["repoUrl"] = Value::String(input.repo_url.clone());
+    metadata["downloadUrl"] = input
+        .download_url
+        .clone()
+        .map(Value::String)
+        .unwrap_or(Value::Null);
+    metadata["packageRef"] = input
+        .package_ref
+        .clone()
+        .map(Value::String)
+        .unwrap_or(Value::Null);
+    metadata["manifestPath"] = input
+        .manifest_path
+        .clone()
+        .map(Value::String)
+        .unwrap_or(Value::Null);
+    metadata["skillRoot"] = input
+        .skill_root
+        .clone()
+        .map(Value::String)
+        .unwrap_or(Value::Null);
+    metadata["riskOverrideApplied"] = Value::Bool(false);
+
+    tx.execute(
+        "
+        UPDATE skills
+        SET
+            description = ?2,
+            source_url = ?3,
+            version = ?4,
+            author = ?5,
+            security_level = ?6,
+            blocked = ?7,
+            updated_at = ?8,
+            last_scanned_at = ?9,
+            metadata_json = ?10
+        WHERE id = ?1
+        ",
+        params![
+            skill_id,
+            input.description,
+            input.source_url,
+            input.version,
+            input.author,
+            input.security_level,
+            input.blocked as i64,
+            updated_at,
+            input.scanned_at,
+            metadata.to_string(),
+        ],
+    )?;
+
+    Ok(())
 }
 
 pub fn load_repository_skill_removal_plan(
@@ -780,6 +1147,60 @@ mod tests {
             detail.description.as_deref(),
             Some("Improve confusing UX copy and labels.")
         );
+    }
+
+    #[test]
+    fn marks_only_github_backed_skills_as_updatable() {
+        let dir = tempdir().unwrap();
+        let (db_path, github_skill_id) = seed_skill(dir.path(), "market", Some("github"));
+        let (_db_path, local_skill_id) = seed_skill(dir.path(), "local", None);
+        let canonical_store_dir = dir.path().join("app-data").join("skills");
+        let conn = open_connection(&db_path).unwrap();
+        conn.execute(
+            "UPDATE skills SET source_url = ?2, metadata_json = ?3 WHERE id = ?1",
+            params![
+                github_skill_id,
+                "https://github.com/demo/repo/tree/main/skills/demo-skill",
+                json!({
+                    "repoUrl": "https://github.com/demo/repo",
+                    "manifestPath": "skills/demo-skill/SKILL.md",
+                    "skillRoot": "skills/demo-skill",
+                })
+                .to_string(),
+            ],
+        )
+        .unwrap();
+        conn.execute(
+            "UPDATE skills SET source_url = ?2, metadata_json = ?3 WHERE id = ?1",
+            params![
+                local_skill_id,
+                "E:/skills/demo-skill",
+                json!({
+                    "repoUrl": Value::Null,
+                })
+                .to_string(),
+            ],
+        )
+        .unwrap();
+
+        let skills = list_repository_skills(&db_path, &canonical_store_dir).unwrap();
+        let github_skill = skills
+            .iter()
+            .find(|item| item.id == github_skill_id)
+            .unwrap();
+        let local_skill = skills
+            .iter()
+            .find(|item| item.id == local_skill_id)
+            .unwrap();
+        assert!(github_skill.can_update);
+        assert!(!local_skill.can_update);
+
+        let github_detail =
+            get_repository_skill_detail(&db_path, &canonical_store_dir, &github_skill_id).unwrap();
+        let local_detail =
+            get_repository_skill_detail(&db_path, &canonical_store_dir, &local_skill_id).unwrap();
+        assert!(github_detail.can_update);
+        assert!(!local_detail.can_update);
     }
 
     #[test]

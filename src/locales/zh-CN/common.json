@@ -211,7 +211,31 @@
     "deleteDistributedPaths": "已分发位置",
     "deleteDistributedCount": "{{count}} 个目标",
     "deleteNoDistributions": "这个 skill 还没有分发到任何项目或 Agent 路径。",
-    "confirmUninstall": "删除 Skill"
+    "confirmUninstall": "删除 Skill",
+    "update": {
+      "open": "更新 GitHub Skills",
+      "single": "更新",
+      "resultTitle": "更新结果",
+      "batchTitle": "批量更新结果",
+      "batchSummary": "成功 {{updated}} 项，跳过 {{skipped}} 项，失败 {{failed}} 项。",
+      "batchUpdated": "成功 {{count}}",
+      "batchSkipped": "跳过 {{count}}",
+      "batchFailed": "失败 {{count}}",
+      "copyDistributionNotice": "{{count}} 个 copy 分发目标可能需要手动重新分发。",
+      "errorDetail": "详情：{{error}}",
+      "reasons": {
+        "updatedToLatest": "仓库技能已更新到最新 GitHub 修订版本。",
+        "alreadyUpToDate": "仓库技能已经是最新版本。",
+        "blockedBySecurityScan": "新的 GitHub 修订版本被安全扫描拦截。",
+        "updateFailed": "仓库技能更新失败。",
+        "unknown": "仓库技能更新返回了未知结果。"
+      },
+      "statuses": {
+        "updated": "已更新",
+        "skipped": "已跳过",
+        "failed": "失败"
+      }
+    }
   },
   "skills": {
     "title": "我的 Skills",

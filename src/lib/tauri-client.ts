@@ -3,6 +3,7 @@ import type {
   AgentGlobalScanRequest,
   AgentGlobalScanResult,
   AppSettings,
+  BatchRepositorySkillUpdateResult,
   BatchDistributeRepositorySkillsRequest,
   BatchDistributeResult,
   BootstrapPayload,
@@ -19,6 +20,7 @@ import type {
   RepositorySkillDetail,
   RepositorySkillDeletionPreview,
   RepositorySkillSummary,
+  RepositorySkillUpdateItemResult,
   RepositoryUninstallResult,
   SecurityReport,
   SaveTemplateRequest,
@@ -51,6 +53,12 @@ export const getRepositorySkillDeletionPreview = (skillId: string) =>
 
 export const uninstallRepositorySkill = (skillId: string) =>
   invoke<RepositoryUninstallResult>('uninstall_repository_skill', { skillId })
+
+export const updateRepositorySkill = (skillId: string) =>
+  invoke<RepositorySkillUpdateItemResult>('update_repository_skill', { skillId })
+
+export const updateGithubRepositorySkills = () =>
+  invoke<BatchRepositorySkillUpdateResult>('update_github_repository_skills')
 
 export const scanAgentGlobalSkills = (request: AgentGlobalScanRequest) =>
   invoke<AgentGlobalScanResult>('scan_agent_global_skills', { request })

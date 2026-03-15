@@ -68,6 +68,7 @@ export interface RepositorySkillSummary {
   securityLevel: string
   blocked: boolean
   riskOverrideApplied?: boolean
+  canUpdate?: boolean
 }
 
 export interface RepositorySkillDetail {
@@ -83,6 +84,7 @@ export interface RepositorySkillDetail {
   securityLevel: string
   blocked: boolean
   riskOverrideApplied?: boolean
+  canUpdate?: boolean
   skillMarkdown: string
 }
 
@@ -370,5 +372,22 @@ export interface BatchDistributeResult {
   installed: BatchDistributeItemResult[]
   skipped: BatchDistributeItemResult[]
   failed: BatchDistributeItemResult[]
+}
+
+export interface RepositorySkillUpdateItemResult {
+  skillId: string
+  skillName: string
+  status: 'updated' | 'skipped' | 'failed'
+  reasonCode: string
+  details: Record<string, unknown> | null
+  previousVersion?: string | null
+  currentVersion?: string | null
+  copyDistributionCount: number
+}
+
+export interface BatchRepositorySkillUpdateResult {
+  updated: RepositorySkillUpdateItemResult[]
+  skipped: RepositorySkillUpdateItemResult[]
+  failed: RepositorySkillUpdateItemResult[]
 }
 

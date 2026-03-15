@@ -1,16 +1,17 @@
-use tauri::{AppHandle, State};
+use tauri::{async_runtime::spawn_blocking, AppHandle, State};
 
 use crate::{
     domain::{
         app_state::AppState,
         types::{
             AgentGlobalScanRequest, AgentGlobalScanResult, AppSettings,
-            BatchDistributeRepositorySkillsRequest, BatchDistributeResult, DistributionRequest,
-            DistributionResult, ImportRepositorySkillRequest, InjectTemplateRequest,
-            InjectTemplateResult, InstallSkillRequest, InstallSkillResult, MarketSearchRequest,
-            MarketSearchResponse, MigrateRepositoryStorageRequest,
-            MigrateRepositoryStorageResult, RepositorySkillDeletionPreview,
-            RepositorySkillDetail, RepositorySkillSummary, RepositoryUninstallResult,
+            BatchDistributeRepositorySkillsRequest, BatchDistributeResult,
+            BatchRepositorySkillUpdateResult, DistributionRequest, DistributionResult,
+            ImportRepositorySkillRequest, InjectTemplateRequest, InjectTemplateResult,
+            InstallSkillRequest, InstallSkillResult, MarketSearchRequest, MarketSearchResponse,
+            MigrateRepositoryStorageRequest, MigrateRepositoryStorageResult,
+            RepositorySkillDeletionPreview, RepositorySkillDetail, RepositorySkillSummary,
+            RepositorySkillUpdateItemResult, RepositoryUninstallResult,
             ResolveRepositoryImportRequest, ResolveRepositoryImportResult, SaveTemplateRequest,
             SecurityReport, TemplateRecord,
         },
@@ -19,7 +20,7 @@ use crate::{
     repositories::skills as skills_repository,
     services::{
         agent_scan, bootstrap, distribution, install, market, project_distribution, repository,
-        repository_import, settings, source_reference, templates,
+        repository_import, repository_update, settings, source_reference, templates,
     },
 };
 
@@ -145,8 +146,7 @@ pub fn import_repository_skill(
 ) -> Result<InstallSkillResult, String> {
     log::info!("import_repository_skill invoked");
     let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
-    repository_import::import_repository_skill(&paths, &request)
-        .map_err(|error| error.to_string())
+    repository_import::import_repository_skill(&paths, &request).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -166,12 +166,33 @@ pub fn get_repository_skill_detail(
 ) -> Result<RepositorySkillDetail, String> {
     log::info!("get_repository_skill_detail invoked");
     let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
-    repository::get_repository_skill_detail(
-        &paths.db_file,
-        &paths.canonical_store_dir,
-        &skill_id,
-    )
-    .map_err(|error| error.to_string())
+    repository::get_repository_skill_detail(&paths.db_file, &paths.canonical_store_dir, &skill_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn update_repository_skill(
+    state: State<'_, AppState>,
+    skill_id: String,
+) -> Result<RepositorySkillUpdateItemResult, String> {
+    log::info!("update_repository_skill invoked");
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
+    spawn_blocking(move || repository_update::update_repository_skill(&paths, &skill_id))
+        .await
+        .map_err(|error| error.to_string())?
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn update_github_repository_skills(
+    state: State<'_, AppState>,
+) -> Result<BatchRepositorySkillUpdateResult, String> {
+    log::info!("update_github_repository_skills invoked");
+    let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
+    spawn_blocking(move || repository_update::update_github_repository_skills(&paths))
+        .await
+        .map_err(|error| error.to_string())?
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -236,12 +257,8 @@ pub fn uninstall_repository_skill(
 ) -> Result<RepositoryUninstallResult, String> {
     log::info!("uninstall_repository_skill invoked");
     let paths = settings::runtime_paths(&state).map_err(|error| error.to_string())?;
-    repository::uninstall_repository_skill(
-        &paths.db_file,
-        &paths.canonical_store_dir,
-        &skill_id,
-    )
-    .map_err(|error| error.to_string())
+    repository::uninstall_repository_skill(&paths.db_file, &paths.canonical_store_dir, &skill_id)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

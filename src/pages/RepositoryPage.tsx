@@ -6,11 +6,16 @@ import { normalizeDisplayPath } from '../lib/normalize-display-path'
 import { resolveSkillsTargets } from '../lib/skills-targets'
 import { openSourceReference } from '../lib/tauri-client'
 import { useAppStore } from '../stores/use-app-store'
-import { useRepositoryStore } from '../stores/use-repository-store'
+import {
+  flattenBatchUpdateResult,
+  useRepositoryStore,
+} from '../stores/use-repository-store'
 import { useSettingsStore } from '../stores/use-settings-store'
 import type {
+  BatchRepositorySkillUpdateResult,
   BatchDistributeRepositorySkillsRequest,
   ImportRepositorySkillRequest,
+  RepositorySkillUpdateItemResult,
   RepositoryImportSourceKind,
 } from '../types/app'
 
@@ -60,6 +65,60 @@ const logSourceOpenFailure = (error: unknown) => {
   console.error('Failed to open source reference:', error)
 }
 
+const shouldShowSingleUpdateFeedback = (result: RepositorySkillUpdateItemResult | null) =>
+  Boolean(result && (result.status !== 'updated' || result.copyDistributionCount > 0))
+
+const batchResultCount = (result: BatchRepositorySkillUpdateResult | null) =>
+  result ? result.updated.length + result.skipped.length + result.failed.length : 0
+
+const asRecord = (value: Record<string, unknown> | null | undefined) =>
+  value && typeof value === 'object' ? value : null
+
+const detailString = (details: Record<string, unknown> | null | undefined, key: string) => {
+  const value = asRecord(details)?.[key]
+  return typeof value === 'string' && value.trim() ? value : null
+}
+
+const formatUpdateMessage = (
+  result: RepositorySkillUpdateItemResult,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) => {
+  const parts: string[] = []
+
+  switch (result.reasonCode) {
+    case 'updated_to_latest':
+      parts.push(t('repository.update.reasons.updatedToLatest'))
+      break
+    case 'already_up_to_date':
+      parts.push(t('repository.update.reasons.alreadyUpToDate'))
+      break
+    case 'blocked_by_security_scan':
+      parts.push(t('repository.update.reasons.blockedBySecurityScan'))
+      break
+    case 'update_failed':
+      parts.push(t('repository.update.reasons.updateFailed'))
+      break
+    default:
+      parts.push(t('repository.update.reasons.unknown'))
+      break
+  }
+
+  if (result.copyDistributionCount > 0) {
+    parts.push(
+      t('repository.update.copyDistributionNotice', {
+        count: result.copyDistributionCount,
+      }),
+    )
+  }
+
+  const error = detailString(result.details, 'error')
+  if (error) {
+    parts.push(t('repository.update.errorDetail', { error }))
+  }
+
+  return parts.join(' ')
+}
+
 export function RepositoryPage() {
   const { t, i18n } = useTranslation()
   const [importOpen, setImportOpen] = useState(false)
@@ -76,6 +135,11 @@ export function RepositoryPage() {
   const deletePreview = useRepositoryStore((state) => state.deletePreview)
   const deletePreviewLoading = useRepositoryStore((state) => state.deletePreviewLoading)
   const deletePreviewError = useRepositoryStore((state) => state.deletePreviewError)
+  const updatingSkillId = useRepositoryStore((state) => state.updatingSkillId)
+  const batchUpdating = useRepositoryStore((state) => state.batchUpdating)
+  const updateError = useRepositoryStore((state) => state.updateError)
+  const lastUpdateResult = useRepositoryStore((state) => state.lastUpdateResult)
+  const lastBatchUpdateResult = useRepositoryStore((state) => state.lastBatchUpdateResult)
   const distributionOpen = useRepositoryStore((state) => state.distributionOpen)
   const distributing = useRepositoryStore((state) => state.distributing)
   const distributionError = useRepositoryStore((state) => state.distributionError)
@@ -90,6 +154,9 @@ export function RepositoryPage() {
   const closeDetail = useRepositoryStore((state) => state.closeDetail)
   const loadDeletePreview = useRepositoryStore((state) => state.loadDeletePreview)
   const clearDeletePreview = useRepositoryStore((state) => state.clearDeletePreview)
+  const updateSkill = useRepositoryStore((state) => state.updateSkill)
+  const updateGithubSkills = useRepositoryStore((state) => state.updateGithubSkills)
+  const clearUpdateState = useRepositoryStore((state) => state.clearUpdateState)
   const uninstall = useRepositoryStore((state) => state.uninstall)
   const openDistribution = useRepositoryStore((state) => state.openDistribution)
   const closeDistribution = useRepositoryStore((state) => state.closeDistribution)
@@ -106,9 +173,11 @@ export function RepositoryPage() {
   const visibleTargets = resolveSkillsTargets(builtinSkillsTargets, settings).filter((target) =>
     settings.visibleSkillsTargetIds.includes(target.id),
   )
+  const updatableCount = items.filter((item) => item.canUpdate).length
 
   const openImportModal = () => {
     resetImportState()
+    clearUpdateState()
     setImportOpen(true)
   }
 
@@ -119,6 +188,7 @@ export function RepositoryPage() {
 
   const handleOpenDistribution = () => {
     resetDistributionState()
+    clearUpdateState()
     openDistribution()
   }
 
@@ -133,6 +203,14 @@ export function RepositoryPage() {
 
   const handleCloseDeletePreview = () => {
     clearDeletePreview()
+  }
+
+  const handleUpdateSkill = async (skillId: string) => {
+    await updateSkill(skillId)
+  }
+
+  const handleUpdateGithubSkills = async () => {
+    await updateGithubSkills()
   }
 
   const handleResolveImport = async (sourceKind: RepositoryImportSourceKind, input: string) => {
@@ -160,6 +238,18 @@ export function RepositoryPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <button
+              className="btn btn-outline h-10 min-h-[2.5rem] border-[var(--border-subtle)] px-4 text-base-content hover:border-primary hover:bg-primary/10 hover:text-primary"
+              disabled={updatableCount === 0 || batchUpdating || Boolean(updatingSkillId)}
+              onClick={() => void handleUpdateGithubSkills()}
+            >
+              {batchUpdating ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                <i className="hn hn-refresh text-base"></i>
+              )}
+              {t('repository.update.open', { count: updatableCount })}
+            </button>
             <button 
               className="btn btn-primary h-10 w-40 min-h-[2.5rem] border-none bg-primary px-4 text-[var(--text-inverse)] transition-all duration-300 hover:bg-primary hover:shadow-[var(--shadow-neon-primary)]" 
               onClick={openImportModal}
@@ -178,6 +268,114 @@ export function RepositoryPage() {
           </div>
         </div>
       </section>
+
+      {updateError ? (
+        <div className="rounded-lg border border-error/20 bg-error/5 px-5 py-4 text-sm text-error">
+          <div className="flex items-start justify-between gap-3">
+            <p className="flex-1">{updateError}</p>
+            <button
+              className="btn btn-circle btn-ghost btn-xs text-error/70 hover:bg-error/10 hover:text-error"
+              onClick={clearUpdateState}
+              title={t('common.close')}
+            >
+              <i className="hn hn-times text-sm"></i>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {shouldShowSingleUpdateFeedback(lastUpdateResult) ? (
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-base-100 p-5 shadow-[inset_0_0_20px_rgba(var(--color-primary),0.02)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-base-content">{t('repository.update.resultTitle')}</h3>
+              <p className="mt-1 text-sm text-base-content/60">{lastUpdateResult?.skillName}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`badge border-0 ${
+                lastUpdateResult?.status === 'updated'
+                  ? 'bg-success/10 text-success'
+                  : lastUpdateResult?.status === 'skipped'
+                    ? 'bg-info/10 text-info'
+                    : 'bg-error/10 text-error'
+              }`}>
+                {t(`repository.update.statuses.${lastUpdateResult?.status ?? 'failed'}`)}
+              </span>
+              <button
+                className="btn btn-circle btn-ghost btn-xs text-base-content/50 hover:bg-base-content/10 hover:text-base-content"
+                onClick={clearUpdateState}
+                title={t('common.close')}
+              >
+                <i className="hn hn-times text-sm"></i>
+              </button>
+            </div>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-base-content/70">
+            {lastUpdateResult ? formatUpdateMessage(lastUpdateResult, t) : ''}
+          </p>
+        </section>
+      ) : null}
+
+      {lastBatchUpdateResult && batchResultCount(lastBatchUpdateResult) > 0 ? (
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-base-100 p-5 shadow-[inset_0_0_20px_rgba(var(--color-primary),0.02)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-base-content">{t('repository.update.batchTitle')}</h3>
+              <p className="mt-1 text-sm text-base-content/60">
+                {t('repository.update.batchSummary', {
+                  updated: lastBatchUpdateResult.updated.length,
+                  skipped: lastBatchUpdateResult.skipped.length,
+                  failed: lastBatchUpdateResult.failed.length,
+                })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex flex-wrap gap-2">
+                <span className="badge border-0 bg-success/10 text-success">
+                  {t('repository.update.batchUpdated', { count: lastBatchUpdateResult.updated.length })}
+                </span>
+                <span className="badge border-0 bg-info/10 text-info">
+                  {t('repository.update.batchSkipped', { count: lastBatchUpdateResult.skipped.length })}
+                </span>
+                <span className="badge border-0 bg-error/10 text-error">
+                  {t('repository.update.batchFailed', { count: lastBatchUpdateResult.failed.length })}
+                </span>
+              </div>
+              <button
+                className="btn btn-circle btn-ghost btn-xs text-base-content/50 hover:bg-base-content/10 hover:text-base-content"
+                onClick={clearUpdateState}
+                title={t('common.close')}
+              >
+                <i className="hn hn-times text-sm"></i>
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 space-y-3">
+            {flattenBatchUpdateResult(lastBatchUpdateResult).map((item) => (
+                <article
+                  key={`${item.skillId}-${item.status}`}
+                  className="rounded-lg border border-[var(--border-subtle)] bg-base-200/30 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-medium text-base-content">{item.skillName}</p>
+                    <span className={`badge border-0 ${
+                      item.status === 'updated'
+                        ? 'bg-success/10 text-success'
+                        : item.status === 'skipped'
+                          ? 'bg-info/10 text-info'
+                          : 'bg-error/10 text-error'
+                    }`}>
+                      {t(`repository.update.statuses.${item.status}`)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-base-content/65">
+                    {formatUpdateMessage(item, t)}
+                  </p>
+                </article>
+              ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Skills List Section */}
       <section className="overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-base-100 shadow-[inset_0_0_20px_rgba(var(--color-primary),0.02)]">
@@ -207,7 +405,7 @@ export function RepositoryPage() {
                   <th className="w-28 text-center">{t('repository.source')}</th>
                   <th className="w-32 text-center">{t('repository.installedAt')}</th>
                   <th className="w-28 text-center">{t('common.status')}</th>
-                  <th className="w-24 pr-6 text-center">{t('repository.actions')}</th>
+                  <th className="w-40 pr-6 text-center">{t('repository.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -262,6 +460,20 @@ export function RepositoryPage() {
                     </td>
                     <td className="pr-6 text-center">
                       <div className="flex justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        {item.canUpdate ? (
+                          <button
+                            className="btn btn-square btn-ghost btn-sm text-primary/80 hover:bg-primary/10 hover:text-primary"
+                            onClick={() => void handleUpdateSkill(item.id)}
+                            disabled={batchUpdating || updatingSkillId === item.id}
+                            title={t('repository.update.single')}
+                          >
+                            {updatingSkillId === item.id ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : (
+                              <i className="hn hn-refresh text-sm"></i>
+                            )}
+                          </button>
+                        ) : null}
                         <button
                           className="btn btn-square btn-ghost btn-sm text-base-content/70 hover:bg-primary/10 hover:text-primary"
                           onClick={() => void loadDetail(item.id)}
@@ -322,6 +534,19 @@ export function RepositoryPage() {
                       <span className="badge badge-outline border-[var(--border-subtle)] text-xs text-base-content/60">
                         {resolveSourceLabel(selectedDetail.sourceType, selectedDetail.sourceMarket, t)}
                       </span>
+                      {selectedDetail.canUpdate ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleUpdateSkill(selectedDetail.id)}
+                          disabled={batchUpdating || updatingSkillId === selectedDetail.id}
+                          className="btn btn-ghost btn-xs text-primary hover:bg-primary/10"
+                        >
+                          {updatingSkillId === selectedDetail.id ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                          ) : null}
+                          {t('repository.update.single')}
+                        </button>
+                      ) : null}
                       {selectedDetail.sourceUrl && (
                         <button
                           type="button"
